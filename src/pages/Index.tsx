@@ -1,11 +1,9 @@
-
-import { Fingerprint } from "lucide-react";
 import { NotifyForm } from "@/components/NotifyForm";
 import { Logo } from "@/components/Logo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#008080] text-white">
       <div className="container mx-auto px-4 py-20">
         <div className="flex flex-col items-center justify-center space-y-12 text-center">
           <div className="animate-float">
