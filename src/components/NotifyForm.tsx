@@ -12,7 +12,6 @@ export const NotifyForm = () => {
     e.preventDefault();
     if (!email) return;
     
-    // Here you would typically send this to your backend
     console.log("Email submitted:", email);
     
     toast({
@@ -30,7 +29,7 @@ export const NotifyForm = () => {
         placeholder="Enter your email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="bg-white/10 border-white/20"
+        className="bg-white/5 border-white/10"
         required
       />
       <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">

@@ -1,23 +1,24 @@
 
 import { Fingerprint } from "lucide-react";
 import { NotifyForm } from "@/components/NotifyForm";
+import { Logo } from "@/components/Logo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2C3E50] text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-20">
         <div className="flex flex-col items-center justify-center space-y-12 text-center">
           <div className="animate-float">
-            <Fingerprint size={80} className="text-primary animate-pulse" />
+            <Logo />
           </div>
           
           <div className="space-y-6 max-w-2xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-              Your Digital Fingerprint for Public Giving
+              Your Digital Identity for <span className="text-primary">Public Giving</span>
             </h1>
             
             <p className="text-xl text-gray-300 leading-relaxed">
-              Coming soon - a revolutionary platform that will transform how we track and celebrate public giving. Create your unique fingerprint profile and make a lasting impact.
+              Coming soon - join the revolution in transparent public giving. Create your unique profile and make a lasting impact with Oddogo.
             </p>
           </div>
 
@@ -30,7 +31,7 @@ const Index = () => {
 
           <div className="pt-12">
             <p className="text-sm text-gray-400">
-              © 2024 Fingerprint Profile. All rights reserved.
+              © 2024 Oddogo. All rights reserved.
             </p>
           </div>
         </div>
