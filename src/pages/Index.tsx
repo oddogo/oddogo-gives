@@ -1,3 +1,4 @@
+
 import { NotifyForm } from "@/components/NotifyForm";
 import { Logo } from "@/components/Logo";
 
@@ -16,7 +17,7 @@ const Index = () => {
             </h1>
             
             <p className="text-xl text-gray-300 leading-relaxed">
-              Coming soon - join the revolution in transparent public giving. Create your unique profile and make a lasting impact with Oddogo.
+              Website and Pilot coming soon - join the revolution in transparent public giving. Create your unique profile and make a lasting impact with Oddogo.
             </p>
           </div>
 
