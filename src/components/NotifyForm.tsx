@@ -2,24 +2,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
 
 export const NotifyForm = () => {
   const [email, setEmail] = useState("");
-  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     
-    console.log("Email submitted:", email);
-    
-    toast({
-      title: "Thank you for your interest!",
-      description: "We'll notify you when we launch.",
-    });
-    
-    setEmail("");
+    // Redirect to Oddogo.co.uk
+    window.location.href = "https://oddogo.co.uk";
   };
 
   return (
@@ -33,7 +25,7 @@ export const NotifyForm = () => {
         required
       />
       <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
-        Notify Me
+        Register Now
       </Button>
     </form>
   );
