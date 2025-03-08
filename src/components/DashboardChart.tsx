@@ -45,7 +45,7 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                   fill={COLORS[index % COLORS.length]}
                   textAnchor={x > cx ? 'start' : 'end'}
                   dominantBaseline="central"
-                  className="font-semibold"
+                  className="font-semibold pointer-events-none"
                 >
                   {`${value.toFixed(0)}%`}
                 </text>
@@ -58,7 +58,10 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                 fill={COLORS[index % COLORS.length]}
                 strokeWidth={hoveredIndex === index ? 2 : 0}
                 stroke={hoveredIndex === index ? "#F1F0FB" : undefined}
-                opacity={hoveredIndex === null || hoveredIndex === index ? 1 : 0.5}
+                style={{
+                  filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
+                  opacity: hoveredIndex === null || hoveredIndex === index ? 1 : 0.5,
+                }}
               />
             ))}
           </Pie>
