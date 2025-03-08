@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/Avatar";
+import { ShareProfile } from "@/components/ShareProfile";
 
 interface ProfileFormProps {
   onSuccess?: () => void;
@@ -90,13 +90,15 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex justify-center mb-8">
-        <Avatar 
-          uid={userId || ''} 
-          url={profile.avatar_url}
-          onUpload={handleAvatarUpload}
-          size="lg"
-          editable
-        />
+        <div className="rounded-full shadow-[0_0_15px_rgba(0,0,0,0.1)]">
+          <Avatar 
+            uid={userId || ''} 
+            url={profile.avatar_url}
+            onUpload={handleAvatarUpload}
+            size="lg"
+            editable
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -141,23 +143,7 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         </div>
 
         {profile.is_published && userId && (
-          <div className="bg-white p-4 rounded-lg w-fit">
-            <QRCodeSVG
-              value={`${window.location.origin}/profile/${userId}`}
-              size={150}
-              level="H"
-              imageSettings={{
-                src: "/lovable-uploads/b7702484-a438-4044-b5ef-cc6fbc31513f.png",
-                height: 24,
-                width: 24,
-                excavate: true,
-                x: undefined,
-                y: undefined,
-              }}
-              bgColor="#FFFFFF"
-              fgColor="#000000"
-            />
-          </div>
+          <ShareProfile userId={userId} />
         )}
       </div>
 
