@@ -11,6 +11,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     checkUser();
@@ -62,7 +63,7 @@ const Dashboard = () => {
         return;
       }
 
-      // Get the allocations with all possible joins
+      // Get the allocations with properly formatted joins
       const { data: allocationsData, error: allocError } = await supabase
         .from('fingerprints_allocations')
         .select(`
@@ -101,14 +102,14 @@ const Dashboard = () => {
         }));
 
         const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const chartData = processedData.map((item, index) => ({
+        const newChartData = processedData.map((item, index) => ({
           name: item.allocation_name,
           value: item.allocation_percentage,
           color: colors[index % colors.length]
         }));
 
         setAllocations(processedData);
-        setChartData(chartData);
+        setChartData(newChartData);
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
