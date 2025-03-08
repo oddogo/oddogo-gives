@@ -23,12 +23,12 @@ interface AllocationTableProps {
 
 export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: AllocationTableProps) => {
   return (
-    <div className="bg-white rounded-lg p-4">
+    <div className="bg-white rounded-lg p-4 max-w-2xl">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="text-black text-sm">Name</TableHead>
-            <TableHead className="text-black text-sm text-right">Percentage</TableHead>
+            <TableHead className="text-black text-sm text-right w-24">Percentage</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -51,7 +51,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                     </div>
                     <span className="break-words font-medium">{toSentenceCase(allocation.allocation_name)}</span>
                   </div>
-                  <div className="ml-13">
+                  <div className="pl-13">
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                       {allocation.allocation_type}
                     </span>
