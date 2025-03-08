@@ -93,8 +93,8 @@ const Dashboard = () => {
                          'None - Error',
           allocation_type: item.allocation_charity_id ? 'Charity' :
                          item.allocation_subcause_id ? 'Subcause' :
-                         item.allocation_meta_id ? 'Meta' :
                          item.allocation_region_id ? 'Region' :
+                         item.allocation_meta_id ? 'Meta' :
                          item.allocation_daf ? 'DAF' :
                          item.allocation_spotlight ? 'Spotlight' :
                          'None - Error'
