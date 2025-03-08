@@ -36,8 +36,8 @@ const Dashboard = () => {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('v_fingerprint_live')
-        .select('charity_name, allocation_percentage, cause_name')
+        .from('v_fingerprints_live')
+        .select('*')
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -45,7 +45,7 @@ const Dashboard = () => {
       if (data) {
         const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
         const chartData = data.map((item, index) => ({
-          name: item.charity_name || 'Unnamed Charity',
+          name: item.allocation_name || 'Unnamed',
           value: Number(item.allocation_percentage),
           color: colors[index % colors.length]
         }));

@@ -612,7 +612,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
-          fingerprint?: string
+          fingerprint: string
           name?: string | null
           updated_at?: string | null
           version?: number | null
@@ -678,6 +678,62 @@ export type Database = {
             referencedRelation: "fingerprints_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_meta"
+            columns: ["allocation_meta_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_metadata"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_region"
+            columns: ["allocation_region_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_region"
+            columns: ["allocation_region_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_regions_spotlight"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_sub_causes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["subcause_id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_sub_causes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fingerprints_users: {
@@ -703,13 +759,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fingerprints_users_fingerprint_id_fkey"
-            columns: ["fingerprint_id"]
-            isOneToOne: false
-            referencedRelation: "fingerprints"
-            referencedColumns: ["fingerprint"]
-          },
           {
             foreignKeyName: "fingerprints_users_user_id_fkey"
             columns: ["user_id"]
@@ -1726,6 +1775,105 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "v_donors_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_fingerprints_live: {
+        Row: {
+          allocation_charity_id: string | null
+          allocation_daf: boolean | null
+          allocation_meta_id: number | null
+          allocation_name: string | null
+          allocation_percentage: number | null
+          allocation_region_id: number | null
+          allocation_spotlight: boolean | null
+          allocation_subcause_id: number | null
+          allocation_type: string | null
+          created_at: string | null
+          deleted_at: string | null
+          fingerprint_id: string | null
+          fingerprints_users_id: number | null
+          id: number | null
+          user_id: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fingerprint_allocation_fingerprint_user_id_fkey"
+            columns: ["fingerprints_users_id"]
+            isOneToOne: false
+            referencedRelation: "fingerprints_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fingerprints_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fingerprints_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_donors_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_meta"
+            columns: ["allocation_meta_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_metadata"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_region"
+            columns: ["allocation_region_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_region"
+            columns: ["allocation_region_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_regions_spotlight"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_sub_causes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["subcause_id"]
+          },
+          {
+            foreignKeyName: "fk_allocation_subcause"
+            columns: ["allocation_subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_sub_causes"
             referencedColumns: ["id"]
           },
         ]

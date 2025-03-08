@@ -1,11 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export const ProfileForm = () => {
+interface ProfileFormProps {
+  onSuccess?: () => void;
+}
+
+export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
   const [profile, setProfile] = useState({
     display_name: "",
     bio: "",
@@ -53,6 +56,7 @@ export const ProfileForm = () => {
 
       if (error) throw error;
       toast.success("Profile updated successfully!");
+      if (onSuccess) onSuccess();
     } catch (error: any) {
       toast.error(error.message);
     } finally {

@@ -28,13 +28,8 @@ const Profile = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-    } catch (error: any) {
-      console.error("Error signing out:", error.message);
-    }
+  const handleGoBack = () => {
+    navigate("/dashboard");
   };
 
   if (loading) return null;
@@ -44,15 +39,15 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <Logo />
-          <Button onClick={handleSignOut} variant="outline">
-            Sign Out
+          <Button onClick={handleGoBack} variant="outline">
+            Cancel
           </Button>
         </div>
         
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Your Profile</h1>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <ProfileForm />
+            <ProfileForm onSuccess={() => navigate('/dashboard')} />
           </div>
         </div>
       </div>
