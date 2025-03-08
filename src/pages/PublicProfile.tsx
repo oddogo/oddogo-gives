@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,7 +104,7 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col items-center mb-12 text-center">
           <div className="mb-8">
             <Logo />
@@ -116,11 +117,11 @@ const PublicProfile = () => {
             <span>{profile.location || "London, UK"}</span>
           </div>
           <h1 className="text-2xl font-semibold mb-4 text-black">{profile.display_name}</h1>
-          <p className="text-gray-600 max-w-2xl mb-12 px-6 text-lg leading-relaxed">
+          <p className="text-gray-600 max-w-2xl mb-12 px-4 sm:px-6 text-lg leading-relaxed">
             {profile.bio}
           </p>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <div className="flex flex-wrap justify-center gap-3 mb-8 px-4">
             <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
               <Trophy size={14} />
               <span>Silver Supporter</span>
@@ -150,9 +151,9 @@ const PublicProfile = () => {
         </div>
 
         {allocations.length > 0 && (
-          <div className="mb-12 w-full">
-            <div className="grid md:grid-cols-12 gap-8 items-start">
-              <div className="md:col-span-4">
+          <div className="mb-12 w-full px-4 sm:px-0">
+            <div className="flex flex-col md:grid md:grid-cols-12 gap-8">
+              <div className="w-full md:col-span-4">
                 <div className="aspect-square relative w-full">
                   <DashboardChart 
                     data={allocations} 
@@ -161,7 +162,7 @@ const PublicProfile = () => {
                   />
                 </div>
               </div>
-              <div className="md:col-span-8">
+              <div className="w-full md:col-span-8">
                 <AllocationTable 
                   data={allocations} 
                   hoveredIndex={hoveredIndex}
@@ -172,7 +173,7 @@ const PublicProfile = () => {
           </div>
         )}
 
-        <div className="text-center">
+        <div className="text-center px-4 sm:px-0">
           <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-full mb-4">
             <Zap className="w-4 h-4" />
             <span>Active Campaign</span>
