@@ -59,18 +59,10 @@ const Dashboard = () => {
           allocation_subcause_id,
           allocation_region_id,
           allocation_meta_id,
-          charities_charities (
-            charity_name
-          ),
-          charities_charity_sub_causes (
-            subcause_name
-          ),
-          charities_charity_regions (
-            region_name
-          ),
-          charities_charity_metadata (
-            meta_name
-          )
+          charities_charities:allocation_charity_id (charity_name),
+          charities_charity_sub_causes:allocation_subcause_id (subcause_name),
+          charities_charity_regions:allocation_region_id (region_name),
+          charities_charity_metadata:allocation_meta_id (meta_name)
         `)
         .eq('fingerprints_users_id', fingerprintUsers.id)
         .is('deleted_at', null);
