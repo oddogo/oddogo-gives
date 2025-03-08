@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,11 +5,12 @@ import { DashboardChart } from "@/components/DashboardChart";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { AllocationTable } from "@/components/AllocationTable";
+import { Allocation } from "@/types/allocation";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [allocations, setAllocations] = useState<any[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,11 +24,11 @@ const Dashboard = () => {
         navigate("/auth");
         return;
       }
-      console.log('Current authenticated user ID:', user.id); // Debug log
+      console.log('Current authenticated user ID:', user.id);
       setUserId(user.id);
       await loadFingerprints(user.id);
     } catch (error) {
-      console.error('Error checking user:', error); // Debug log
+      console.error('Error checking user:', error);
       navigate("/auth");
     } finally {
       setLoading(false);
@@ -37,26 +37,20 @@ const Dashboard = () => {
 
   const loadFingerprints = async (userId: string) => {
     try {
-      console.log('Fetching fingerprints for user:', userId); // Debug log
+      console.log('Fetching fingerprints for user:', userId);
       
       const { data, error } = await supabase
         .from('v_fingerprints_live')
         .select('*')
         .eq('user_id', userId);
 
-      console.log('Raw response:', { data, error }); // Debug log
+      console.log('Raw response:', { data, error });
 
       if (error) throw error;
 
       if (data) {
-        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const chartData = data.map((item, index) => ({
-          name: item.allocation_name || 'Unnamed',
-          value: Number(item.allocation_percentage),
-          color: colors[index % colors.length]
-        }));
         setAllocations(data);
-        console.log('Processed data:', data); // Debug log
+        console.log('Processed data:', data);
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
@@ -92,7 +86,6 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">My Giving Dashboard</h1>
           
-          {/* Debug info */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
             <p className="text-sm">Current User ID: {userId}</p>
           </div>
@@ -119,4 +112,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

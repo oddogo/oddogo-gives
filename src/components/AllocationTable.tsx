@@ -7,19 +7,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Allocation } from "@/types/allocation";
 
-type AllocationData = {
-  allocation_name: string;
-  allocation_percentage: number;
-  cause_name: string | null;
-};
-
-export const AllocationTable = ({ data }: { data: AllocationData[] }) => {
+export const AllocationTable = ({ data }: { data: Allocation[] }) => {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Type</TableHead>
           <TableHead>Percentage</TableHead>
           <TableHead>Cause</TableHead>
         </TableRow>
@@ -27,8 +23,9 @@ export const AllocationTable = ({ data }: { data: AllocationData[] }) => {
       <TableBody>
         {data.map((allocation, index) => (
           <TableRow key={index}>
-            <TableCell>{allocation.allocation_name || 'Unnamed'}</TableCell>
-            <TableCell>{allocation.allocation_percentage}%</TableCell>
+            <TableCell>{allocation.allocation_name}</TableCell>
+            <TableCell>{allocation.allocation_type}</TableCell>
+            <TableCell>{allocation.allocation_percentage * 100}%</TableCell>
             <TableCell>{allocation.cause_name || 'N/A'}</TableCell>
           </TableRow>
         ))}
