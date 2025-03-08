@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,21 +36,20 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Query fingerprints_allocations with proper join syntax
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('fingerprints_allocations')
         .select(`
           id,
           allocation_percentage,
           allocation_charity_id,
-          charities_charities!inner (
+          charities_charities (
             charity_name
           ),
-          charities_charity_causes!inner (
+          charities_charity_causes (
             cause_name
           )
         `)
-        .eq('fingerprints_users_id', id)
+        .eq('fingerprints_users_id', Number(id))
         .is('deleted_at', null);
 
       console.log('Raw fingerprint data:', fingerprintData);
@@ -60,7 +58,7 @@ const PublicProfile = () => {
       if (fingerprintError) throw fingerprintError;
       
       const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
-        id: Number(item.id), // Ensure id is converted to number
+        id: Number(item.id),
         allocation_name: item.charities_charities?.charity_name || 'Unknown',
         allocation_type: (item.charities_charity_causes?.cause_name || 'Unknown') as AllocationType,
         allocation_percentage: Number(item.allocation_percentage),
