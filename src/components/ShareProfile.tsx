@@ -1,5 +1,5 @@
 
-import { Copy } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -20,6 +20,11 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
     }
   };
 
+  const handleViewProfile = () => {
+    const profileUrl = `${window.location.origin}/profile/${userId}`;
+    window.open(profileUrl, '_blank');
+  };
+
   return (
     <Card className="p-6 bg-white/10 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-4">
@@ -38,14 +43,24 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
             fgColor="#000000"
           />
         </div>
-        <Button 
-          onClick={handleShare} 
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <Copy className="h-4 w-4" />
-          Copy Profile Link
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleShare} 
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            Copy Profile Link
+          </Button>
+          <Button
+            onClick={handleViewProfile}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            View Public Profile
+          </Button>
+        </div>
       </div>
     </Card>
   );
