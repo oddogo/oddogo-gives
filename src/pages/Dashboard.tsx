@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,10 +15,10 @@ type AllocationData = {
   allocation_meta_id: number | null;
   allocation_daf: boolean;
   allocation_spotlight: boolean;
-  charities_charities: { charity_name: string }[] | null;
-  charities_charity_sub_causes: { subcause_name: string }[] | null;
-  charities_charity_regions: { region_name: string }[] | null;
-  charities_charity_metadata: { meta_name: string }[] | null;
+  charities_charities: { charity_name: string } | null;
+  charities_charity_sub_causes: { subcause_name: string } | null;
+  charities_charity_regions: { region_name: string } | null;
+  charities_charity_metadata: { meta_name: string } | null;
 };
 
 const Dashboard = () => {
@@ -89,13 +88,13 @@ const Dashboard = () => {
       }
 
       if (allocationsData) {
-        const processedData = (allocationsData as AllocationData[]).map(item => ({
+        const processedData = allocationsData.map(item => ({
           id: item.id,
           allocation_percentage: Number(item.allocation_percentage),
-          allocation_name: item.charities_charities?.[0]?.charity_name || 
-                         item.charities_charity_sub_causes?.[0]?.subcause_name ||
-                         item.charities_charity_regions?.[0]?.region_name ||
-                         item.charities_charity_metadata?.[0]?.meta_name ||
+          allocation_name: item.charities_charities?.charity_name || 
+                         item.charities_charity_sub_causes?.subcause_name ||
+                         item.charities_charity_regions?.region_name ||
+                         item.charities_charity_metadata?.meta_name ||
                          (item.allocation_daf ? 'DAF' : '') ||
                          (item.allocation_spotlight ? 'Spotlight' : '') ||
                          'None - Error',
