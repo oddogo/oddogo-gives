@@ -105,7 +105,7 @@ const PublicProfile = () => {
                   y: undefined,
                 }}
                 bgColor="#FFFFFF"
-                fgColor="#008080"
+                fgColor="#000000"
               />
             </div>
           </div>
