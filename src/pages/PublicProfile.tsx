@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { ChartLegend } from "@/components/ChartLegend";
 import { Logo } from "@/components/Logo";
-import { MapPin, Trophy, Coins, Flag } from "lucide-react";
+import { MapPin, Trophy, Coins, Flag, Zap } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Allocation, AllocationType } from "@/types/allocation";
 
