@@ -6,5 +6,5 @@ export interface Allocation {
   allocation_name: string;
   allocation_type: AllocationType;
   allocation_percentage: number;
-  cause_name: string | null;
+  cause_name?: string | null;  // Make cause_name optional
 }
