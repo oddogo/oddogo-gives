@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ImageIcon } from "lucide-react";
 import { Allocation } from "@/types/allocation";
 import { COLORS } from "./DashboardChart";
 
@@ -30,6 +31,9 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
             <TableRow key={index}>
               <TableCell className="text-black">
                 <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="w-4 h-4 text-gray-400" />
+                  </div>
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}

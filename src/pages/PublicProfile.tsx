@@ -137,8 +137,8 @@ const PublicProfile = () => {
                 <div className="aspect-square relative w-3/4 mx-auto">
                   <DashboardChart data={allocations} />
                 </div>
-                <div className="space-y-4">
-                  <ChartLegend data={chartData} />
+                <div>
+                  <AllocationTable data={allocations} />
                 </div>
               </div>
             </div>
