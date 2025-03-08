@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -102,10 +103,18 @@ const Dashboard = () => {
             {allocations.length > 0 ? (
               <div className="grid lg:grid-cols-2 gap-6">
                 <div className="w-full">
-                  <DashboardChart data={allocations} />
+                  <DashboardChart 
+                    data={allocations} 
+                    hoveredIndex={hoveredIndex}
+                    onHoverChange={setHoveredIndex}
+                  />
                 </div>
                 <div className="w-full">
-                  <AllocationTable data={allocations} />
+                  <AllocationTable 
+                    data={allocations} 
+                    hoveredIndex={hoveredIndex}
+                    onHoverChange={setHoveredIndex}
+                  />
                 </div>
               </div>
             ) : (
