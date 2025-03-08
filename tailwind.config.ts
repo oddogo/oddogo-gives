@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +18,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        manrope: ['Manrope', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -37,6 +39,13 @@ export default {
           DEFAULT: "#FF8800",
           foreground: "#FFFFFF",
         },
+        pastel: {
+          blue: '#D3E4FD',
+          green: '#F2FCE2',
+          yellow: '#FEF7CD',
+          purple: '#E5DEFF',
+          orange: '#FEC6A1',
+        }
       },
       keyframes: {
         float: {

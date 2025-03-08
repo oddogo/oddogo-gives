@@ -2,7 +2,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
-export const COLORS = ['#00B8D9', '#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#FF7452'];
+export const COLORS = ['#D3E4FD', '#F2FCE2', '#FEF7CD', '#E5DEFF', '#FEC6A1', '#FFDEE2'];
 
 export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   const chartData = data.map(allocation => ({

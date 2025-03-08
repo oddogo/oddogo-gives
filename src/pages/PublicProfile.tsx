@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { ChartLegend } from "@/components/ChartLegend";
 import { Logo } from "@/components/Logo";
-import { MapPin, Trophy, Coins, Flag, Zap } from "lucide-react";
+import { MapPin, Trophy, Coins, Flag } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Allocation, AllocationType } from "@/types/allocation";
 
@@ -59,13 +58,13 @@ const PublicProfile = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-manrope">
       <div className="animate-pulse text-black">Loading...</div>
     </div>
   );
   
   if (!profile) return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-manrope">
       <div className="text-black">Profile not found or not public</div>
     </div>
   );
@@ -77,66 +76,66 @@ const PublicProfile = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      {/* Header Logo */}
-      <div className="py-6 border-b">
-        <div className="container mx-auto px-4">
-          <Logo />
+    <div className="min-h-screen bg-white text-black font-manrope">
+      <div className="py-8 container mx-auto px-4">
+        <div className="flex justify-center animate-fade-in">
+          <img 
+            src="/lovable-uploads/84d2bfc5-f954-419b-bc27-5208fd6f2676.png" 
+            alt="Oddogo Logo" 
+            className="h-12"
+          />
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Profile Section */}
           <div className="flex flex-col items-center mb-12 text-center">
             <div className="mb-4">
               <Avatar uid={id || ''} size="lg" url={profile?.avatar_url} />
             </div>
-            <div className="flex items-center gap-2 text-gray-600 mb-2">
+            <div className="inline-flex bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm items-center gap-2 mb-4">
               <MapPin className="w-4 h-4" />
               <span>{profile.location || "London, UK"}</span>
             </div>
-            <h1 className="text-3xl font-semibold mb-4 text-black">{profile.display_name}</h1>
-            <p className="text-gray-600 max-w-2xl mb-8">
+            <h1 className="text-2xl font-semibold mb-4 text-black">{profile.display_name}</h1>
+            <p className="text-gray-600 max-w-2xl mb-12 px-6 text-lg leading-relaxed">
               {profile.bio}
             </p>
 
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-full flex items-center gap-2">
-                <Trophy size={16} />
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              <div className="bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <Trophy size={14} />
                 <span>Silver Supporter</span>
               </div>
-              <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full flex items-center gap-2">
-                <Trophy size={16} />
+              <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <Trophy size={14} />
                 <span>Rank #24</span>
               </div>
-              <div className="bg-teal-50 text-teal-700 px-4 py-2 rounded-full flex items-center gap-2">
-                <Coins size={16} />
+              <div className="bg-teal-50 text-teal-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <Coins size={14} />
                 <span>18 Donations</span>
               </div>
-              <div className="bg-purple-50 text-purple-700 px-4 py-2 rounded-full flex items-center gap-2">
-                <Flag size={16} />
+              <div className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <Flag size={14} />
                 <span>3 Successful Campaigns</span>
               </div>
             </div>
 
-            <button className="bg-[#008080] text-white px-6 py-2 rounded-full flex items-center gap-2">
+            <button className="bg-[#008080] text-white px-5 py-2 rounded-full flex items-center gap-2 text-sm">
               <img 
                 src="/lovable-uploads/16dff745-56b1-4162-b2c6-2f3ca2eb1b09.png" 
                 alt="Fingerprint" 
-                className="w-5 h-5"
+                className="w-4 h-4 brightness-0 invert"
               />
               <span>Giving Fingerprint</span>
             </button>
           </div>
 
-          {/* Fingerprint Section */}
           {allocations.length > 0 && (
             <div className="bg-white rounded-xl p-8 mb-12 shadow-sm border">
               <h2 className="text-2xl font-semibold mb-6 text-black">Donation Distribution</h2>
               <div className="grid md:grid-cols-2 gap-8 items-start">
-                <div className="aspect-square relative">
+                <div className="aspect-square relative w-3/4 mx-auto">
                   <DashboardChart data={allocations} />
                 </div>
                 <div className="space-y-4">
@@ -146,7 +145,6 @@ const PublicProfile = () => {
             </div>
           )}
 
-          {/* Active Campaign Section */}
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-full mb-4">
               <Zap className="w-4 h-4" />
