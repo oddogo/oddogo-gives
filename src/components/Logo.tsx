@@ -4,7 +4,7 @@ import React from 'react';
 export const Logo = () => {
   return (
     <img 
-      src="/lovable-uploads/b7702484-a438-4044-b5ef-cc6fbc31513f.png"
+      src="/lovable-uploads/73c9c40f-6400-4389-aec9-42268145ca00.png"
       alt="Oddogo Logo"
       className="h-12 md:h-16"
     />
