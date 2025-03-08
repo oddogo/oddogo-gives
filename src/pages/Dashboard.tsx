@@ -54,7 +54,7 @@ const Dashboard = () => {
           allocation_name: item.allocation_name,
           allocation_type: item.allocation_type as AllocationType,
           allocation_percentage: Number(item.allocation_percentage),
-          cause_name: item.subcause_name || item.cause_name || null
+          cause_name: item.allocation_name // Using allocation_name as fallback since it's the human-readable name
         }));
         setAllocations(formattedAllocations);
         console.log('Processed data:', formattedAllocations);
