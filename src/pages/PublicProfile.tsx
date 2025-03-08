@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,25 +36,11 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // First get the user's fingerprint ID
-      const { data: fingerprintUserData } = await supabase
-        .from('fingerprints_users')
-        .select('fingerprint_id')
-        .eq('user_id', id)
-        .is('deleted_at', null)
-        .single();
-
-      if (!fingerprintUserData?.fingerprint_id) {
-        console.log('No fingerprint found for user');
-        setLoading(false);
-        return;
-      }
-
-      // Then get the fingerprint allocations
+      // Directly query v_fingerprints_live with user_id
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
-        .eq('fingerprint_id', fingerprintUserData.fingerprint_id)
+        .eq('user_id', id)
         .is('deleted_at', null);
 
       console.log('Raw fingerprint data:', fingerprintData);
