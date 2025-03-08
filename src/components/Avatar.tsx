@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Avatar as AvatarUI, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,12 +22,8 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
   const downloadImage = async (path: string) => {
     try {
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('avatars')
-        .getPublicUrl(path);
-
-      setAvatarUrl(publicUrl);
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
     } catch (error) {
       console.error('Error downloading image: ', error);
     }
@@ -71,7 +66,7 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
   return (
     <div className="flex flex-col items-center gap-4">
       <AvatarUI className={sizeClasses[size]}>
-        <AvatarImage src={avatarUrl || undefined} />
+        <AvatarImage src={avatarUrl || ""} />
         <AvatarFallback>{uid.slice(0, 2).toUpperCase()}</AvatarFallback>
       </AvatarUI>
       {editable && (
