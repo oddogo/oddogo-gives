@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +35,22 @@ const PublicProfile = () => {
 
       console.log('Profile data:', profileData);
       setProfile(profileData);
+
+      // Debug query to check data in fingerprints table
+      const { data: fingerprintsDebug, error: fingerprintsError } = await supabase
+        .from('fingerprints')
+        .select('*');
+      
+      console.log('All fingerprints:', fingerprintsDebug);
+      console.log('Fingerprints error:', fingerprintsError);
+
+      // Debug query to check data in fingerprints_allocations table
+      const { data: allocationsDebug, error: allocationsError } = await supabase
+        .from('fingerprints_allocations')
+        .select('*');
+      
+      console.log('All allocations:', allocationsDebug);
+      console.log('Allocations error:', allocationsError);
 
       // Debug query to check view data
       const { data: viewDebug, error: viewError } = await supabase
