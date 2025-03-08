@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -42,7 +41,16 @@ const PublicProfile = () => {
         .eq('user_id', id);
 
       if (fingerprintError) throw fingerprintError;
-      setAllocations(fingerprintData || []);
+      
+      const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
+        id: item.id,
+        allocation_name: item.allocation_name,
+        allocation_type: item.allocation_type as AllocationType,
+        allocation_percentage: item.allocation_percentage,
+        cause_name: item.cause_name
+      }));
+      
+      setAllocations(formattedAllocations);
     } catch (error) {
       console.error('Error loading public profile:', error);
     } finally {

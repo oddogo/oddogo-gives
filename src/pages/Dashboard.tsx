@@ -49,8 +49,15 @@ const Dashboard = () => {
       if (error) throw error;
 
       if (data) {
-        setAllocations(data);
-        console.log('Processed data:', data);
+        const formattedAllocations: Allocation[] = data.map(item => ({
+          id: item.id,
+          allocation_name: item.allocation_name,
+          allocation_type: item.allocation_type as AllocationType,
+          allocation_percentage: item.allocation_percentage,
+          cause_name: item.cause_name
+        }));
+        setAllocations(formattedAllocations);
+        console.log('Processed data:', formattedAllocations);
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
