@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Avatar as AvatarUI, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, Fingerprint } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AvatarProps {
@@ -91,19 +91,24 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <AvatarUI className={sizeClasses[size]}>
-        {avatarUrl ? (
-          <AvatarImage 
-            src={avatarUrl} 
-            alt="Profile" 
-            className="object-cover"
-          />
-        ) : (
-          <AvatarFallback className="bg-muted">
-            {getFallbackInitials()}
-          </AvatarFallback>
-        )}
-      </AvatarUI>
+      <div className="relative">
+        <AvatarUI className={sizeClasses[size]}>
+          {avatarUrl ? (
+            <AvatarImage 
+              src={avatarUrl} 
+              alt="Profile" 
+              className="object-cover"
+            />
+          ) : (
+            <AvatarFallback className="bg-muted">
+              {getFallbackInitials()}
+            </AvatarFallback>
+          )}
+        </AvatarUI>
+        <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-md">
+          <Fingerprint className="w-5 h-5 text-[#40B8B8]" />
+        </div>
+      </div>
       {editable && (
         <div>
           <Button variant="outline" size="sm" className="relative" disabled={uploading}>
