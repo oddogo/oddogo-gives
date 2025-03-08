@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
-import { ChartLegend } from "@/components/ChartLegend";
-import { Logo } from "@/components/Logo";
 import { MapPin, Trophy, Coins, Flag, Zap } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -84,7 +82,7 @@ const PublicProfile = () => {
           </div>
         </div>
 
-        <div className="bg-white min-h-screen rounded-xl shadow-lg">
+        <div className="bg-white min-h-[calc(100vh-7rem)] rounded-xl shadow-lg">
           <div className="p-8">
             <div className="flex flex-col items-center mb-12 text-center">
               <div className="mb-4">
