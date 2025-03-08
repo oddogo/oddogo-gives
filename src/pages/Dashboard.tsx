@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
+import { AllocationTable } from "@/components/AllocationTable";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 
@@ -41,7 +42,7 @@ const Dashboard = () => {
         .select('id, fingerprint_id')
         .eq('user_id', user.id)
         .is('deleted_at', null)
-        .single();
+        .maybeSingle();
 
       if (userError || !fingerprintUsers) {
         console.log('No fingerprint found for user');
@@ -54,34 +55,60 @@ const Dashboard = () => {
         .select('*')
         .eq('fingerprint', fingerprintUsers.fingerprint_id)
         .is('deleted_at', null)
-        .single();
+        .maybeSingle();
 
       if (fingerError || !fingerprint) {
         console.log('No active fingerprint found');
         return;
       }
 
-      // Get the allocations
+      // Get the allocations with all possible joins
       const { data: allocationsData, error: allocError } = await supabase
         .from('fingerprints_allocations')
         .select(`
-          allocation_percentage,
-          allocation_charity_id,
-          charities_charities:allocation_charity_id (charity_name)
+          *,
+          charities_charities:allocation_charity_id (charity_name),
+          charities_charity_sub_causes:allocation_subcause_id (subcause_name),
+          charities_charity_regions:allocation_region_id (region_name),
+          charities_charity_metadata:allocation_meta_id (meta_name)
         `)
         .eq('fingerprints_users_id', fingerprintUsers.id)
         .is('deleted_at', null);
 
-      if (allocError) throw allocError;
+      if (allocError) {
+        console.error('Error loading allocations:', allocError);
+        return;
+      }
 
       if (allocationsData) {
+        const processedData = allocationsData.map(item => ({
+          id: item.id,
+          allocation_percentage: Number(item.allocation_percentage),
+          allocation_name: item.charities_charities?.charity_name || 
+                         item.charities_charity_sub_causes?.subcause_name ||
+                         item.charities_charity_regions?.region_name ||
+                         item.charities_charity_metadata?.meta_name ||
+                         (item.allocation_daf ? 'DAF' : '') ||
+                         (item.allocation_spotlight ? 'Spotlight' : '') ||
+                         'None - Error',
+          allocation_type: item.allocation_charity_id ? 'Charity' :
+                         item.allocation_subcause_id ? 'Subcause' :
+                         item.allocation_meta_id ? 'Meta' :
+                         item.allocation_region_id ? 'Region' :
+                         item.allocation_daf ? 'DAF' :
+                         item.allocation_spotlight ? 'Spotlight' :
+                         'None - Error'
+        }));
+
         const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const chartData = allocationsData.map((item, index) => ({
-          name: item.charities_charities?.charity_name || 'Unnamed Charity',
-          value: Number(item.allocation_percentage),
+        const chartData = processedData.map((item, index) => ({
+          name: item.allocation_name,
+          value: item.allocation_percentage,
           color: colors[index % colors.length]
         }));
-        setAllocations(chartData);
+
+        setAllocations(processedData);
+        setChartData(chartData);
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
@@ -117,13 +144,24 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">My Giving Dashboard</h1>
           
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Charity Allocation</h2>
-            {allocations.length > 0 ? (
-              <DashboardChart data={allocations} />
-            ) : (
-              <p className="text-center text-gray-300">No allocations found</p>
-            )}
+          <div className="space-y-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Charity Allocation Chart</h2>
+              {allocations.length > 0 ? (
+                <DashboardChart data={chartData} />
+              ) : (
+                <p className="text-center text-gray-300">No allocations found</p>
+              )}
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Allocation Details</h2>
+              {allocations.length > 0 ? (
+                <AllocationTable data={allocations} />
+              ) : (
+                <p className="text-center text-gray-300">No allocations found</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
