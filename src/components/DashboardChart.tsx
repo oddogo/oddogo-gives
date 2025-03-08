@@ -1,8 +1,6 @@
-
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
-// Define consistent colors for each allocation type
 const typeColors: Record<string, string> = {
   'Charity': '#FF6384',
   'Subcause': '#36A2EB',
@@ -16,12 +14,12 @@ const typeColors: Record<string, string> = {
 export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   const chartData = data.map(allocation => ({
     name: allocation.allocation_name,
-    value: allocation.allocation_percentage * 100, // Convert to percentage
+    value: allocation.allocation_percentage * 100,
     type: allocation.allocation_type
   }));
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="w-full h-[400px] bg-white rounded-lg p-4">
       <ResponsiveContainer>
         <PieChart>
           <Pie

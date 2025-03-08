@@ -17,7 +17,6 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
           <TableHead>Name</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Percentage</TableHead>
-          <TableHead>Cause</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -26,7 +25,6 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
             <TableCell>{allocation.allocation_name}</TableCell>
             <TableCell>{allocation.allocation_type}</TableCell>
             <TableCell>{allocation.allocation_percentage * 100}%</TableCell>
-            <TableCell>{allocation.cause_name || 'N/A'}</TableCell>
           </TableRow>
         ))}
       </TableBody>

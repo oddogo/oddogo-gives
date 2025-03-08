@@ -84,14 +84,14 @@ const Dashboard = () => {
         </div>
         
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">My Giving Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-8">Your Charitable Fingerprint™</h1>
           
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
             <p className="text-sm">Current User ID: {userId}</p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Charity Allocation</h2>
+            <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
             {allocations.length > 0 ? (
               <>
                 <div className="mb-8">
