@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,6 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First get the fingerprint_users record
       const { data: fingerprintUsers, error: userError } = await supabase
         .from('fingerprints_users')
         .select('id, fingerprint_id')
@@ -50,7 +48,6 @@ const Dashboard = () => {
         return;
       }
 
-      // Get the allocations with properly formatted joins
       const { data: allocationsData, error: allocError } = await supabase
         .from('fingerprints_allocations')
         .select(`
@@ -58,6 +55,10 @@ const Dashboard = () => {
           allocation_percentage,
           allocation_daf,
           allocation_spotlight,
+          allocation_charity_id,
+          allocation_subcause_id,
+          allocation_region_id,
+          allocation_meta_id,
           charities_charities (
             charity_name
           ),
