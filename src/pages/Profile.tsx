@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileForm } from "@/components/ProfileForm";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { toast } from "sonner";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -21,6 +23,7 @@ const Profile = () => {
         navigate("/auth");
         return;
       }
+      setUserId(user.id);
     } catch (error) {
       navigate("/auth");
     } finally {
@@ -32,6 +35,18 @@ const Profile = () => {
     navigate("/dashboard");
   };
 
+  const handleShare = async () => {
+    if (!userId) return;
+    
+    const profileUrl = `${window.location.origin}/profile/${userId}`;
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      toast.success("Profile link copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy profile link");
+    }
+  };
+
   if (loading) return null;
 
   return (
@@ -39,9 +54,14 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <Logo />
-          <Button onClick={handleGoBack} variant="outline">
-            Cancel
-          </Button>
+          <div className="space-x-4">
+            <Button onClick={handleShare} variant="outline">
+              Share Profile
+            </Button>
+            <Button onClick={handleGoBack} variant="outline">
+              Cancel
+            </Button>
+          </div>
         </div>
         
         <div className="max-w-2xl mx-auto">
