@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { AllocationTable } from "@/components/AllocationTable";
 import { Allocation, AllocationType } from "@/types/allocation";
+import { Logo } from "@/components/Logo";
+import { Share2, Globe } from "lucide-react";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -19,7 +21,6 @@ const PublicProfile = () => {
 
   const loadPublicProfile = async () => {
     try {
-      // Load profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -34,7 +35,6 @@ const PublicProfile = () => {
 
       setProfile(profileData);
 
-      // Load fingerprint data
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
@@ -47,7 +47,7 @@ const PublicProfile = () => {
         allocation_name: item.allocation_name,
         allocation_type: item.allocation_type as AllocationType,
         allocation_percentage: Number(item.allocation_percentage),
-        cause_name: item.allocation_name // Using allocation_name as fallback since it's the human-readable name
+        cause_name: item.allocation_name
       }));
       
       setAllocations(formattedAllocations);
@@ -58,42 +58,72 @@ const PublicProfile = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#008080] text-white flex items-center justify-center">Loading...</div>;
-  if (!profile) return <div className="min-h-screen bg-[#008080] text-white flex items-center justify-center">Profile not found or not public</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] to-[#D946EF] text-white flex items-center justify-center">
+      <div className="animate-pulse">Loading...</div>
+    </div>
+  );
+  
+  if (!profile) return (
+    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] to-[#D946EF] text-white flex items-center justify-center">
+      Profile not found or not public
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#008080] text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8">
-            <h1 className="text-3xl font-bold mb-4">{profile.display_name}'s Charitable Fingerprint™</h1>
-            {profile.bio && <p className="mb-4">{profile.bio}</p>}
-            {profile.causes_description && (
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold mb-2">Important Causes</h2>
-                <p>{profile.causes_description}</p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] to-[#D946EF] text-white">
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="glass-morphism rounded-2xl p-8 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gradient">{profile.display_name}'s</h1>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
+              <Globe className="w-5 h-5" />
+              <span className="font-medium">Charitable Fingerprint™</span>
+            </div>
+            
+            {profile.bio && (
+              <p className="mt-6 text-lg text-white/90 leading-relaxed">
+                {profile.bio}
+              </p>
             )}
           </div>
 
+          {profile.causes_description && (
+            <div className="glass-morphism rounded-2xl p-8">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <span className="text-gradient">Important Causes</span>
+              </h2>
+              <p className="text-white/90 leading-relaxed">
+                {profile.causes_description}
+              </p>
+            </div>
+          )}
+
           {allocations.length > 0 && (
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
-              <div className="mb-8">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="glass-morphism rounded-2xl p-6">
+                <h2 className="text-2xl font-semibold mb-6 text-gradient">Impact Distribution</h2>
                 <DashboardChart data={allocations} />
               </div>
-              <div className="bg-white/5 rounded-lg p-4">
-                <AllocationTable data={allocations} />
+
+              <div className="glass-morphism rounded-2xl p-6">
+                <h2 className="text-2xl font-semibold mb-6 text-gradient">Allocation Details</h2>
+                <div className="bg-white/5 rounded-xl overflow-hidden">
+                  <AllocationTable data={allocations} />
+                </div>
               </div>
             </div>
           )}
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4">Share This Profile</h2>
-            <div className="bg-white p-4 rounded-lg">
+          <div className="glass-morphism rounded-2xl p-8 text-center">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Share2 className="w-5 h-5" />
+              <h2 className="text-2xl font-semibold text-gradient">Share Profile</h2>
+            </div>
+            <div className="bg-white inline-block p-4 rounded-xl">
               <QRCodeSVG
                 value={currentUrl}
-                size={200}
+                size={180}
                 level="H"
                 includeMargin={true}
                 imageSettings={{
@@ -101,13 +131,13 @@ const PublicProfile = () => {
                   height: 24,
                   width: 24,
                   excavate: true,
-                  x: undefined,
-                  y: undefined,
                 }}
-                bgColor="#FFFFFF"
-                fgColor="#000000"
               />
             </div>
+          </div>
+
+          <div className="flex justify-center py-8 opacity-80 hover:opacity-100 transition-opacity">
+            <Logo />
           </div>
         </div>
       </div>
