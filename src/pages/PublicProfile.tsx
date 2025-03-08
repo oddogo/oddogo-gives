@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,8 +103,8 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col items-center mb-12 text-center">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="flex flex-col items-center mb-8 sm:mb-12 text-center">
           <div className="mb-8">
             <Logo />
           </div>
@@ -151,9 +150,9 @@ const PublicProfile = () => {
         </div>
 
         {allocations.length > 0 && (
-          <div className="mb-12 w-full px-4 sm:px-0">
-            <div className="flex flex-col md:grid md:grid-cols-12 gap-8">
-              <div className="w-full md:col-span-4">
+          <div className="mb-8 sm:mb-12 w-full px-2 sm:px-0">
+            <div className="flex flex-col gap-6 sm:gap-8">
+              <div className="w-full sm:max-w-[400px] mx-auto">
                 <div className="aspect-square relative w-full">
                   <DashboardChart 
                     data={allocations} 
@@ -162,7 +161,8 @@ const PublicProfile = () => {
                   />
                 </div>
               </div>
-              <div className="w-full md:col-span-8">
+              
+              <div className="w-full overflow-x-auto">
                 <AllocationTable 
                   data={allocations} 
                   hoveredIndex={hoveredIndex}
@@ -173,7 +173,7 @@ const PublicProfile = () => {
           </div>
         )}
 
-        <div className="text-center px-4 sm:px-0">
+        <div className="text-center px-2 sm:px-0">
           <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-full mb-4">
             <Zap className="w-4 h-4" />
             <span>Active Campaign</span>
