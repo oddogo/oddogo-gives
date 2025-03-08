@@ -1,7 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 interface ProfileFormProps {
@@ -16,6 +19,7 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     is_published: false
   });
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -25,6 +29,7 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -97,17 +102,33 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          id="publish"
-          checked={profile.is_published}
-          onChange={(e) => setProfile({ ...profile, is_published: e.target.checked })}
-          className="rounded border-gray-300"
-        />
-        <label htmlFor="publish" className="text-sm text-white">
-          Make profile public
-        </label>
+      <div className="flex flex-col space-y-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={profile.is_published}
+            onCheckedChange={(checked) => setProfile({ ...profile, is_published: checked })}
+            id="publish"
+          />
+          <label htmlFor="publish" className="text-sm text-white">
+            Make profile public
+          </label>
+        </div>
+
+        {profile.is_published && userId && (
+          <div className="bg-white p-4 rounded-lg w-fit">
+            <QRCodeSVG
+              value={`${window.location.origin}/profile/${userId}`}
+              size={150}
+              level="H"
+              imageSettings={{
+                src: "/lovable-uploads/73c9c40f-6400-4389-aec9-42268145ca00.png",
+                height: 24,
+                width: 24,
+                excavate: true
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <Button type="submit" disabled={loading}>
