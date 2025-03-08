@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
+import { Logo } from "@/components/Logo";
 import { MapPin, Trophy, Coins, Flag, Zap } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -58,31 +59,27 @@ const PublicProfile = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#008080]">
-      <div className="animate-pulse text-black">Loading...</div>
+    <div className="min-h-screen bg-[#008080] flex items-center justify-center">
+      <div className="animate-pulse text-white">Loading...</div>
     </div>
   );
   
   if (!profile) return (
-    <div className="min-h-screen bg-[#008080]">
-      <div className="text-black">Profile not found or not public</div>
+    <div className="min-h-screen bg-[#008080] flex items-center justify-center">
+      <div className="text-white">Profile not found or not public</div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-[#008080]">
-      <div className="min-h-screen mx-auto max-w-6xl">
-        <div className="py-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="pt-8 pb-4">
           <div className="flex justify-center">
-            <img 
-              src="/lovable-uploads/84d2bfc5-f954-419b-bc27-5208fd6f2676.png" 
-              alt="Oddogo Logo" 
-              className="h-12"
-            />
+            <Logo />
           </div>
         </div>
 
-        <div className="bg-white min-h-[calc(100vh-7rem)] rounded-xl shadow-lg">
+        <div className="bg-white min-h-[calc(100vh-6rem)] rounded-xl shadow-lg">
           <div className="p-8">
             <div className="flex flex-col items-center mb-12 text-center">
               <div className="mb-4">
@@ -127,7 +124,7 @@ const PublicProfile = () => {
             </div>
 
             {allocations.length > 0 && (
-              <div className="mb-12">
+              <div className="mb-12 w-full">
                 <div className="grid md:grid-cols-12 gap-8 items-start">
                   <div className="md:col-span-4">
                     <div className="aspect-square relative w-full">
