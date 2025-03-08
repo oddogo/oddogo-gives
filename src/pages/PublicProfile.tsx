@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,16 +37,15 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Directly query v_fingerprints_live with user_id
+      // Query v_fingerprints_live with user_id
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
-        .eq('user_id', id)
-        .is('deleted_at', null);
+        .eq('user_id', id);
 
       console.log('Raw fingerprint data:', fingerprintData);
-      console.log('Fingerprint error:', fingerprintError);
-
+      console.log('Query params used:', { user_id: id });
+      
       if (fingerprintError) throw fingerprintError;
       
       const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
