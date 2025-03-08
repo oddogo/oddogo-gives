@@ -12,7 +12,7 @@ export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   }));
 
   return (
-    <div className="w-full h-[300px] bg-white rounded-lg p-4">
+    <div className="w-full h-[300px] bg-white rounded-lg p-4 text-black">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

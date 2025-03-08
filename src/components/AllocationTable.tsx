@@ -16,15 +16,15 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead className="text-center">Percentage</TableHead>
+            <TableHead className="text-black">Name</TableHead>
+            <TableHead className="text-black">Type</TableHead>
+            <TableHead className="text-black text-center">Percentage</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((allocation, index) => (
             <TableRow key={index}>
-              <TableCell>
+              <TableCell className="text-black">
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full" 
@@ -33,8 +33,8 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
                   {allocation.allocation_name}
                 </div>
               </TableCell>
-              <TableCell>{allocation.allocation_type}</TableCell>
-              <TableCell className="text-center">{allocation.allocation_percentage * 100}%</TableCell>
+              <TableCell className="text-black">{allocation.allocation_type}</TableCell>
+              <TableCell className="text-black text-center">{allocation.allocation_percentage * 100}%</TableCell>
             </TableRow>
           ))}
         </TableBody>
