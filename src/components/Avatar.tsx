@@ -26,7 +26,7 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
       const { data: { publicUrl } } = supabase
         .storage
         .from('avatars')
-        .getPublicUrl(path.replace(`${supabase.storageUrl}/object/public/avatars/`, ''));
+        .getPublicUrl(path);
 
       setAvatarUrl(publicUrl);
     } catch (error) {
