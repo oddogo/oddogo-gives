@@ -1265,6 +1265,36 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          bio: string | null
+          causes_description: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_published: boolean
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          causes_description?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          is_published?: boolean
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          causes_description?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_published?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       register_interest: {
         Row: {
           charity_name: string | null

@@ -1,6 +1,6 @@
-
 import { NotifyForm } from "@/components/NotifyForm";
 import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   return (
@@ -26,6 +26,12 @@ const Index = () => {
               Be the first to know when we launch
             </p>
             <NotifyForm />
+          </div>
+
+          <div className="space-y-4">
+            <Button onClick={() => window.location.href = "/auth"} variant="outline">
+              Sign In / Sign Up
+            </Button>
           </div>
 
           <div className="pt-12">
