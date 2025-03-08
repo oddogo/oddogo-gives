@@ -105,7 +105,7 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
             </AvatarFallback>
           )}
         </AvatarUI>
-        <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-md">
+        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-md">
           <Fingerprint className="w-5 h-5 text-[#40B8B8]" />
         </div>
       </div>

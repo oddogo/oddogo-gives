@@ -89,15 +89,8 @@ const PublicProfile = () => {
         <div className="max-w-4xl mx-auto">
           {/* Profile Section */}
           <div className="flex flex-col items-center mb-12 text-center">
-            <div className="relative mb-4">
-              <Avatar uid={id || ''} size="lg" url={profile.avatar_url} />
-              <div className="absolute -bottom-2 -right-2 bg-[#008080] rounded-full p-2">
-                <img 
-                  src="/lovable-uploads/16dff745-56b1-4162-b2c6-2f3ca2eb1b09.png" 
-                  alt="Verified" 
-                  className="w-4 h-4"
-                />
-              </div>
+            <div className="mb-4">
+              <Avatar uid={id || ''} size="lg" url={profile?.avatar_url} />
             </div>
             <div className="flex items-center gap-2 text-gray-600 mb-2">
               <MapPin className="w-4 h-4" />
