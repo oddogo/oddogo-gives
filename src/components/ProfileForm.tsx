@@ -39,7 +39,15 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         .single();
 
       if (error) throw error;
-      if (data) setProfile(data);
+      if (data) {
+        setProfile({
+          display_name: data.display_name || "",
+          bio: data.bio || "",
+          causes_description: data.causes_description || "",
+          is_published: data.is_published || false,
+          avatar_url: data.avatar_url || ""
+        });
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

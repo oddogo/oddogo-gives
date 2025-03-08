@@ -1,14 +1,13 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { ChartLegend } from "@/components/ChartLegend";
-import { Allocation } from "@/types/allocation";
 import { Logo } from "@/components/Logo";
 import { Share2, MapPin } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
+import { Allocation, AllocationType } from "@/types/allocation";
 
 const PublicProfile = () => {
   const { id } = useParams();
