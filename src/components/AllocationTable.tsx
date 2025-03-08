@@ -15,7 +15,13 @@ const toSentenceCase = (str: string) => {
   return str.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
 };
 
-export const AllocationTable = ({ data }: { data: Allocation[] }) => {
+interface AllocationTableProps {
+  data: Allocation[];
+  hoveredIndex: number | null;
+  onHoverChange: (index: number | null) => void;
+}
+
+export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: AllocationTableProps) => {
   return (
     <div className="bg-white rounded-lg p-4">
       <Table>
@@ -28,7 +34,12 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
         </TableHeader>
         <TableBody>
           {data.map((allocation, index) => (
-            <TableRow key={index}>
+            <TableRow 
+              key={index}
+              className={`transition-colors ${hoveredIndex === index ? 'bg-gray-100' : ''}`}
+              onMouseEnter={() => onHoverChange(index)}
+              onMouseLeave={() => onHoverChange(null)}
+            >
               <TableCell className="text-black text-sm">
                 <div className="flex items-center gap-2">
                   <div 

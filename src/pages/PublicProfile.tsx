@@ -14,6 +14,7 @@ const PublicProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadPublicProfile();
@@ -137,11 +138,19 @@ const PublicProfile = () => {
               <div className="grid md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-4">
                   <div className="aspect-square relative w-full">
-                    <DashboardChart data={allocations} />
+                    <DashboardChart 
+                      data={allocations} 
+                      hoveredIndex={hoveredIndex}
+                      onHoverChange={setHoveredIndex}
+                    />
                   </div>
                 </div>
                 <div className="md:col-span-8">
-                  <AllocationTable data={allocations} />
+                  <AllocationTable 
+                    data={allocations} 
+                    hoveredIndex={hoveredIndex}
+                    onHoverChange={setHoveredIndex}
+                  />
                 </div>
               </div>
             </div>

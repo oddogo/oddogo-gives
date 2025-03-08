@@ -1,10 +1,16 @@
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
 export const COLORS = ['#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#14B8A6', '#F43F5E'];
 
-export const DashboardChart = ({ data }: { data: Allocation[] }) => {
+interface DashboardChartProps {
+  data: Allocation[];
+  hoveredIndex: number | null;
+  onHoverChange: (index: number | null) => void;
+}
+
+export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardChartProps) => {
   const chartData = data.map(allocation => ({
     name: allocation.allocation_name,
     value: allocation.allocation_percentage * 100,
@@ -24,6 +30,8 @@ export const DashboardChart = ({ data }: { data: Allocation[] }) => {
             nameKey="name"
             startAngle={90}
             endAngle={-270}
+            onMouseEnter={(_, index) => onHoverChange(index)}
+            onMouseLeave={() => onHoverChange(null)}
             label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
               const RADIAN = Math.PI / 180;
               const radius = 25 + innerRadius + (outerRadius - innerRadius);
@@ -48,7 +56,9 @@ export const DashboardChart = ({ data }: { data: Allocation[] }) => {
               <Cell 
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]}
-                strokeWidth={0}
+                strokeWidth={hoveredIndex === index ? 2 : 0}
+                stroke={hoveredIndex === index ? "#000" : undefined}
+                opacity={hoveredIndex === null || hoveredIndex === index ? 1 : 0.5}
               />
             ))}
           </Pie>
