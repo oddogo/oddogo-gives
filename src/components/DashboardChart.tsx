@@ -46,6 +46,7 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                   textAnchor={x > cx ? 'start' : 'end'}
                   dominantBaseline="central"
                   className="font-semibold"
+                  style={{ opacity: 1 }} // Keep text visible during hover
                 >
                   {`${value.toFixed(0)}%`}
                 </text>
@@ -57,7 +58,7 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]}
                 strokeWidth={hoveredIndex === index ? 2 : 0}
-                stroke={hoveredIndex === index ? "#000" : undefined}
+                stroke={hoveredIndex === index ? "#F1F0FB" : undefined}
                 opacity={hoveredIndex === null || hoveredIndex === index ? 1 : 0.5}
               />
             ))}
