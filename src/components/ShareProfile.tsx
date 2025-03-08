@@ -1,8 +1,9 @@
 
-import { Copy, Fingerprint } from "lucide-react";
+import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 interface ShareProfileProps {
   userId: string;
@@ -22,8 +23,20 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
   return (
     <Card className="p-6 bg-white/10 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-4">
-        <div className="p-4 rounded-full bg-primary/10">
-          <Fingerprint className="w-12 h-12 text-primary" />
+        <div className="bg-white p-4 rounded-lg">
+          <QRCodeSVG
+            value={`${window.location.origin}/profile/${userId}`}
+            size={150}
+            level="H"
+            imageSettings={{
+              src: "/lovable-uploads/b7702484-a438-4044-b5ef-cc6fbc31513f.png",
+              height: 24,
+              width: 24,
+              excavate: true,
+            }}
+            bgColor="#FFFFFF"
+            fgColor="#000000"
+          />
         </div>
         <Button 
           onClick={handleShare} 
