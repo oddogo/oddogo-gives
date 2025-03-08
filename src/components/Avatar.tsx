@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Avatar as AvatarUI, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,11 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
   const downloadImage = async (path: string) => {
     try {
       const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
+      if (data?.publicUrl) {
+        // Add a timestamp to bust cache
+        const urlWithTimestamp = `${data.publicUrl}?t=${new Date().getTime()}`;
+        setAvatarUrl(urlWithTimestamp);
+      }
     } catch (error) {
       console.error('Error downloading image: ', error);
     }
@@ -48,8 +53,12 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
       
-      setAvatarUrl(data.publicUrl);
-      if (onUpload) onUpload(filePath); // Store the path, not the full URL
+      if (data?.publicUrl) {
+        // Add a timestamp to bust cache
+        const urlWithTimestamp = `${data.publicUrl}?t=${new Date().getTime()}`;
+        setAvatarUrl(urlWithTimestamp);
+        if (onUpload) onUpload(filePath);
+      }
     } catch (error) {
       console.error("Error uploading avatar:", error);
     } finally {
@@ -66,7 +75,7 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
   return (
     <div className="flex flex-col items-center gap-4">
       <AvatarUI className={sizeClasses[size]}>
-        <AvatarImage src={avatarUrl || ""} />
+        <AvatarImage src={avatarUrl || ""} alt="Avatar" />
         <AvatarFallback>{uid.slice(0, 2).toUpperCase()}</AvatarFallback>
       </AvatarUI>
       {editable && (
