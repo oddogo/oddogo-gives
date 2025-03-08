@@ -46,7 +46,6 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                   textAnchor={x > cx ? 'start' : 'end'}
                   dominantBaseline="central"
                   className="font-semibold"
-                  style={{ opacity: 1 }} // Keep text visible during hover
                 >
                   {`${value.toFixed(0)}%`}
                 </text>
@@ -68,3 +67,4 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
     </div>
   );
 };
+
