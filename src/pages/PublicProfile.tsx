@@ -37,23 +37,30 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Query the fingerprints view with detailed logging
+      // Try querying fingerprints_allocations directly with joins
       const { data: fingerprintData, error: fingerprintError } = await supabase
-        .from('v_fingerprints_live')
-        .select('*')
-        .eq('user_id', id);
+        .from('fingerprints_allocations')
+        .select(`
+          id,
+          allocation_percentage,
+          allocation_charity_id,
+          allocation_name:charities_charities(charity_name),
+          allocation_type:charities_charity_causes(cause_name)
+        `)
+        .eq('fingerprints_users_id', id)
+        .is('deleted_at', null);
 
       console.log('Raw fingerprint data:', fingerprintData);
       console.log('Fingerprint error:', fingerprintError);
 
       if (fingerprintError) throw fingerprintError;
       
-      const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
-        id: Number(item.id),
-        allocation_name: item.allocation_name,
-        allocation_type: item.allocation_type as AllocationType,
+      const formattedAllocations = (fingerprintData || []).map(item => ({
+        id: item.id,
+        allocation_name: item.allocation_name?.charity_name || 'Unknown',
+        allocation_type: item.allocation_type?.cause_name || 'Unknown',
         allocation_percentage: Number(item.allocation_percentage),
-        cause_name: item.allocation_name
+        cause_name: item.allocation_name?.charity_name || 'Unknown'
       }));
       
       console.log('Formatted allocations:', formattedAllocations);
