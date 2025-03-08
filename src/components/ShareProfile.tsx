@@ -10,7 +10,8 @@ interface ShareProfileProps {
 }
 
 export const ShareProfile = ({ userId }: ShareProfileProps) => {
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any form submission
     const profileUrl = `${window.location.origin}/profile/${userId}`;
     try {
       await navigator.clipboard.writeText(profileUrl);
@@ -20,7 +21,8 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
     }
   };
 
-  const handleViewProfile = () => {
+  const handleViewProfile = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any form submission
     const profileUrl = `${window.location.origin}/profile/${userId}`;
     window.open(profileUrl, '_blank');
   };
@@ -47,6 +49,7 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
           <Button 
             onClick={handleShare} 
             variant="outline"
+            type="button"
             className="flex items-center gap-2"
           >
             <Copy className="h-4 w-4" />
@@ -55,6 +58,7 @@ export const ShareProfile = ({ userId }: ShareProfileProps) => {
           <Button
             onClick={handleViewProfile}
             variant="outline"
+            type="button"
             className="flex items-center gap-2"
           >
             <ExternalLink className="h-4 w-4" />

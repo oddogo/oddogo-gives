@@ -32,25 +32,6 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
             endAngle={-270}
             onMouseEnter={(_, index) => onHoverChange(index)}
             onMouseLeave={() => onHoverChange(null)}
-            label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
-              const RADIAN = Math.PI / 180;
-              const radius = 25 + innerRadius + (outerRadius - innerRadius);
-              const x = cx + radius * Math.cos(-midAngle * RADIAN);
-              const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-              return (
-                <text
-                  x={x}
-                  y={y}
-                  fill={COLORS[index % COLORS.length]}
-                  textAnchor={x > cx ? 'start' : 'end'}
-                  dominantBaseline="central"
-                  className="font-semibold pointer-events-none"
-                >
-                  {`${value.toFixed(0)}%`}
-                </text>
-              );
-            }}
           >
             {chartData.map((entry, index) => (
               <Cell 
@@ -65,9 +46,40 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
               />
             ))}
           </Pie>
+          {/* Separate layer for labels to ensure they're always visible */}
+          <Pie
+            data={chartData}
+            innerRadius="70%"
+            outerRadius="90%"
+            paddingAngle={4}
+            dataKey="value"
+            nameKey="name"
+            startAngle={90}
+            endAngle={-270}
+            fill="none"
+            stroke="none"
+            label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = 25 + innerRadius + (outerRadius - innerRadius);
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  fill={COLORS[index % COLORS.length]}
+                  textAnchor={x > cx ? 'start' : 'end'}
+                  dominantBaseline="central"
+                  className="font-semibold select-none pointer-events-none"
+                >
+                  {`${value.toFixed(0)}%`}
+                </text>
+              );
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>
   );
 };
-
