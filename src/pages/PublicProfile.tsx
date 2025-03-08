@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { MapPin, Trophy, Coins, Flag, Zap } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Allocation, AllocationType } from "@/types/allocation";
+import { AllocationTable } from "@/components/AllocationTable";
 
 const PublicProfile = () => {
   const { id } = useParams();
