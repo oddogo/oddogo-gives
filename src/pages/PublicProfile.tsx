@@ -34,12 +34,17 @@ const PublicProfile = () => {
         return;
       }
 
+      console.log('Profile data:', profileData);
       setProfile(profileData);
 
+      // Query the fingerprints view with detailed logging
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
         .eq('user_id', id);
+
+      console.log('Raw fingerprint data:', fingerprintData);
+      console.log('Fingerprint error:', fingerprintError);
 
       if (fingerprintError) throw fingerprintError;
       
