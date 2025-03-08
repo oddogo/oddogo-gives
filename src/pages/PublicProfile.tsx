@@ -37,6 +37,14 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
+      // Debug query to check view data
+      const { data: viewDebug, error: viewError } = await supabase
+        .from('v_fingerprints_live')
+        .select('*');
+      
+      console.log('All view data:', viewDebug);
+      console.log('View error:', viewError);
+
       // Query v_fingerprints_live with user_id
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
@@ -45,6 +53,7 @@ const PublicProfile = () => {
 
       console.log('Raw fingerprint data:', fingerprintData);
       console.log('Query params used:', { user_id: id });
+      console.log('Fingerprint error:', fingerprintError);
       
       if (fingerprintError) throw fingerprintError;
       
