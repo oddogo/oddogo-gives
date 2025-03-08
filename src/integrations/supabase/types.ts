@@ -612,7 +612,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
-          fingerprint?: string
+          fingerprint: string
           name?: string | null
           updated_at?: string | null
           version?: number | null
@@ -703,13 +703,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fingerprints_users_fingerprint_id_fkey"
-            columns: ["fingerprint_id"]
-            isOneToOne: false
-            referencedRelation: "fingerprints"
-            referencedColumns: ["fingerprint"]
-          },
           {
             foreignKeyName: "fingerprints_users_user_id_fkey"
             columns: ["user_id"]

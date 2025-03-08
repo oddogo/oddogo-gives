@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export const ProfileForm = () => {
   const [profile, setProfile] = useState({
@@ -13,6 +13,7 @@ export const ProfileForm = () => {
     is_published: false
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadProfile();
@@ -53,11 +54,16 @@ export const ProfileForm = () => {
 
       if (error) throw error;
       toast.success("Profile updated successfully!");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    navigate("/dashboard");
   };
 
   if (loading) return <div>Loading...</div>;
@@ -106,9 +112,14 @@ export const ProfileForm = () => {
         </label>
       </div>
 
-      <Button type="submit" disabled={loading}>
-        {loading ? "Saving..." : "Save Profile"}
-      </Button>
+      <div className="flex space-x-4">
+        <Button type="submit" disabled={loading}>
+          {loading ? "Saving..." : "Save Profile"}
+        </Button>
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 };

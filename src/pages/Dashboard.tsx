@@ -35,17 +35,49 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('v_fingerprint_live')
-        .select('charity_name, allocation_percentage, cause_name')
-        .eq('user_id', user.id);
+      // First get the fingerprint_users record
+      const { data: fingerprintUsers, error: userError } = await supabase
+        .from('fingerprints_users')
+        .select('id, fingerprint_id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .single();
 
-      if (error) throw error;
+      if (userError || !fingerprintUsers) {
+        console.log('No fingerprint found for user');
+        return;
+      }
 
-      if (data) {
+      // Get the fingerprint details
+      const { data: fingerprint, error: fingerError } = await supabase
+        .from('fingerprints')
+        .select('*')
+        .eq('fingerprint', fingerprintUsers.fingerprint_id)
+        .is('deleted_at', null)
+        .single();
+
+      if (fingerError || !fingerprint) {
+        console.log('No active fingerprint found');
+        return;
+      }
+
+      // Get the allocations
+      const { data: allocationsData, error: allocError } = await supabase
+        .from('fingerprints_allocations')
+        .select(`
+          allocation_percentage,
+          allocation_charity_id,
+          charities_charities:allocation_charity_id (charity_name)
+        `)
+        .eq('fingerprints_users_id', fingerprintUsers.id)
+        .is('deleted_at', null);
+
+      if (allocError) throw allocError;
+
+      if (allocationsData) {
         const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        const chartData = data.map((item, index) => ({
-          name: item.charity_name || 'Unnamed Charity',
+        const chartData = allocationsData.map((item, index) => ({
+          name: item.charities_charities?.charity_name || 'Unnamed Charity',
           value: Number(item.allocation_percentage),
           color: colors[index % colors.length]
         }));
