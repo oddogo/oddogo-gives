@@ -77,7 +77,7 @@ const PublicProfile = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-white text-black font-manrope">
+    <div className="min-h-screen bg-[#008080] text-black font-manrope">
       <div className="py-8 container mx-auto px-4">
         <div className="flex justify-center animate-fade-in">
           <img 
@@ -88,8 +88,8 @@ const PublicProfile = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="bg-white rounded-xl p-8 shadow-lg">
           <div className="flex flex-col items-center mb-12 text-center">
             <div className="mb-4">
               <Avatar uid={id || ''} size="lg" url={profile?.avatar_url} />
@@ -133,12 +133,14 @@ const PublicProfile = () => {
           </div>
 
           {allocations.length > 0 && (
-            <div className="bg-white rounded-xl p-8 mb-12">
-              <div className="grid md:grid-cols-2 gap-8 items-start">
-                <div className="aspect-square relative w-3/4 mx-auto">
-                  <DashboardChart data={allocations} />
+            <div className="mb-12">
+              <div className="grid md:grid-cols-12 gap-8 items-start">
+                <div className="md:col-span-4">
+                  <div className="aspect-square relative w-full">
+                    <DashboardChart data={allocations} />
+                  </div>
                 </div>
-                <div>
+                <div className="md:col-span-8">
                   <AllocationTable data={allocations} />
                 </div>
               </div>

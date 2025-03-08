@@ -17,19 +17,19 @@ const toSentenceCase = (str: string) => {
 
 export const AllocationTable = ({ data }: { data: Allocation[] }) => {
   return (
-    <div className="bg-white rounded-lg p-4 h-[300px] overflow-auto">
+    <div className="bg-white rounded-lg p-4">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-black w-1/2">Name</TableHead>
-            <TableHead className="text-black">Type</TableHead>
-            <TableHead className="text-black text-center">Percentage</TableHead>
+            <TableHead className="text-black text-sm w-1/2">Name</TableHead>
+            <TableHead className="text-black text-sm">Type</TableHead>
+            <TableHead className="text-black text-sm text-center">Percentage</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((allocation, index) => (
             <TableRow key={index}>
-              <TableCell className="text-black">
+              <TableCell className="text-black text-sm">
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0" 
@@ -41,8 +41,8 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
                   <span className="break-words">{toSentenceCase(allocation.allocation_name)}</span>
                 </div>
               </TableCell>
-              <TableCell className="text-black">{allocation.allocation_type}</TableCell>
-              <TableCell className="text-black text-center">{allocation.allocation_percentage * 100}%</TableCell>
+              <TableCell className="text-black text-sm">{allocation.allocation_type}</TableCell>
+              <TableCell className="text-black text-sm text-center">{allocation.allocation_percentage * 100}%</TableCell>
             </TableRow>
           ))}
         </TableBody>
