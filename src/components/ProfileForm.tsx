@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { Avatar } from "@/components/Avatar";
 
 interface ProfileFormProps {
   onSuccess?: () => void;
@@ -15,7 +16,8 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     display_name: "",
     bio: "",
     causes_description: "",
-    is_published: false
+    is_published: false,
+    avatar_url: ""
   });
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -55,7 +57,10 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
 
       const { error } = await supabase
         .from('profiles')
-        .update(profile)
+        .update({
+          ...profile,
+          avatar_url: profile.avatar_url
+        })
         .eq('id', user.id);
 
       if (error) throw error;
@@ -68,10 +73,24 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     }
   };
 
+  const handleAvatarUpload = (url: string) => {
+    setProfile(prev => ({ ...prev, avatar_url: url }));
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex justify-center mb-8">
+        <Avatar 
+          uid={userId || ''} 
+          url={profile.avatar_url}
+          onUpload={handleAvatarUpload}
+          size="lg"
+          editable
+        />
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-medium text-white">Display Name</label>
         <Input
