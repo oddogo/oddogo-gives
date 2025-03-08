@@ -24,9 +24,11 @@ const Dashboard = () => {
         navigate("/auth");
         return;
       }
+      console.log('Current authenticated user ID:', user.id); // Debug log
       setUserId(user.id);
       await loadFingerprints(user.id);
     } catch (error) {
+      console.error('Error checking user:', error); // Debug log
       navigate("/auth");
     } finally {
       setLoading(false);
@@ -35,10 +37,14 @@ const Dashboard = () => {
 
   const loadFingerprints = async (userId: string) => {
     try {
+      console.log('Fetching fingerprints for user:', userId); // Debug log
+      
       const { data, error } = await supabase
         .from('v_fingerprints_live')
         .select('*')
         .eq('user_id', userId);
+
+      console.log('Raw response:', { data, error }); // Debug log
 
       if (error) throw error;
 
@@ -50,7 +56,7 @@ const Dashboard = () => {
           color: colors[index % colors.length]
         }));
         setAllocations(data);
-        console.log('Fingerprints data:', data); // Debug log
+        console.log('Processed data:', data); // Debug log
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
@@ -113,3 +119,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
