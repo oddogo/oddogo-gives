@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,34 +49,21 @@ const Dashboard = () => {
         return;
       }
 
-      // Get the fingerprint details
-      const { data: fingerprint, error: fingerError } = await supabase
-        .from('fingerprints')
-        .select('*')
-        .eq('fingerprint', fingerprintUsers.fingerprint_id)
-        .is('deleted_at', null)
-        .maybeSingle();
-
-      if (fingerError || !fingerprint) {
-        console.log('No active fingerprint found');
-        return;
-      }
-
       // Get the allocations with properly formatted joins
       const { data: allocationsData, error: allocError } = await supabase
         .from('fingerprints_allocations')
         .select(`
           *,
-          charities:allocation_charity_id (
+          charities_charities!allocation_charity_id (
             charity_name
           ),
-          subcauses:allocation_subcause_id (
+          charities_charity_sub_causes!allocation_subcause_id (
             subcause_name
           ),
-          regions:allocation_region_id (
+          charities_charity_regions!allocation_region_id (
             region_name
           ),
-          metadata:allocation_meta_id (
+          charities_charity_metadata!allocation_meta_id (
             meta_name
           )
         `)
@@ -93,10 +79,10 @@ const Dashboard = () => {
         const processedData = allocationsData.map(item => ({
           id: item.id,
           allocation_percentage: Number(item.allocation_percentage),
-          allocation_name: item.charities?.charity_name || 
-                         item.subcauses?.subcause_name ||
-                         item.regions?.region_name ||
-                         item.metadata?.meta_name ||
+          allocation_name: item.charities_charities?.charity_name || 
+                         item.charities_charity_sub_causes?.subcause_name ||
+                         item.charities_charity_regions?.region_name ||
+                         item.charities_charity_metadata?.meta_name ||
                          (item.allocation_daf ? 'DAF' : '') ||
                          (item.allocation_spotlight ? 'Spotlight' : '') ||
                          'None - Error',
