@@ -23,14 +23,20 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
   const downloadImage = async (path: string) => {
     try {
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      // Get public URL for the avatar
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(path);
+
       if (data?.publicUrl) {
-        // Add a timestamp to bust cache
-        const urlWithTimestamp = `${data.publicUrl}?t=${new Date().getTime()}`;
+        // Add cache-busting query parameter
+        const timestamp = new Date().getTime();
+        const urlWithTimestamp = `${data.publicUrl}?t=${timestamp}`;
         setAvatarUrl(urlWithTimestamp);
       }
     } catch (error) {
       console.error('Error downloading image: ', error);
+      setAvatarUrl(null);
     }
   };
 
@@ -43,19 +49,26 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
       const file = event.target.files[0];
       const fileExt = file.name.split(".").pop();
+      // Create a unique file path including user ID
       const filePath = `${uid}/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '0',
+          upsert: true
+        });
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      // Get public URL after successful upload
+      const { data } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
       
       if (data?.publicUrl) {
-        // Add a timestamp to bust cache
-        const urlWithTimestamp = `${data.publicUrl}?t=${new Date().getTime()}`;
+        const timestamp = new Date().getTime();
+        const urlWithTimestamp = `${data.publicUrl}?t=${timestamp}`;
         setAvatarUrl(urlWithTimestamp);
         if (onUpload) onUpload(filePath);
       }
@@ -72,11 +85,24 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
     lg: "h-32 w-32"
   };
 
+  const getFallbackInitials = () => {
+    return uid.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="flex flex-col items-center gap-4">
       <AvatarUI className={sizeClasses[size]}>
-        <AvatarImage src={avatarUrl || ""} alt="Avatar" />
-        <AvatarFallback>{uid.slice(0, 2).toUpperCase()}</AvatarFallback>
+        {avatarUrl ? (
+          <AvatarImage 
+            src={avatarUrl} 
+            alt="Profile" 
+            className="object-cover"
+          />
+        ) : (
+          <AvatarFallback className="bg-muted">
+            {getFallbackInitials()}
+          </AvatarFallback>
+        )}
       </AvatarUI>
       {editable && (
         <div>
