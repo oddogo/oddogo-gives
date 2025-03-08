@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,17 +54,20 @@ const Dashboard = () => {
       const { data: allocationsData, error: allocError } = await supabase
         .from('fingerprints_allocations')
         .select(`
-          *,
-          charities_charities!allocation_charity_id (
+          id,
+          allocation_percentage,
+          allocation_daf,
+          allocation_spotlight,
+          charities_charities (
             charity_name
           ),
-          charities_charity_sub_causes!allocation_subcause_id (
+          charities_charity_sub_causes (
             subcause_name
           ),
-          charities_charity_regions!allocation_region_id (
+          charities_charity_regions (
             region_name
           ),
-          charities_charity_metadata!allocation_meta_id (
+          charities_charity_metadata (
             meta_name
           )
         `)
@@ -79,10 +83,10 @@ const Dashboard = () => {
         const processedData = allocationsData.map(item => ({
           id: item.id,
           allocation_percentage: Number(item.allocation_percentage),
-          allocation_name: item.charities_charities?.charity_name || 
-                         item.charities_charity_sub_causes?.subcause_name ||
-                         item.charities_charity_regions?.region_name ||
-                         item.charities_charity_metadata?.meta_name ||
+          allocation_name: item.charities_charities?.[0]?.charity_name || 
+                         item.charities_charity_sub_causes?.[0]?.subcause_name ||
+                         item.charities_charity_regions?.[0]?.region_name ||
+                         item.charities_charity_metadata?.[0]?.meta_name ||
                          (item.allocation_daf ? 'DAF' : '') ||
                          (item.allocation_spotlight ? 'Spotlight' : '') ||
                          'None - Error',
