@@ -1,15 +1,8 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
-const typeColors: Record<string, string> = {
-  'Charity': '#FF6384',
-  'Subcause': '#36A2EB',
-  'Meta': '#FFCE56',
-  'Region': '#4BC0C0',
-  'DAF': '#9966FF',
-  'Spotlight': '#FF9F40',
-  'None - Error': '#C9CBCF'
-};
+const COLORS = ['#00B8D9', '#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#FF7452'];
 
 export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   const chartData = data.map(allocation => ({
@@ -19,27 +12,27 @@ export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   }));
 
   return (
-    <div className="w-full h-[400px] bg-white rounded-lg p-4">
+    <div className="w-full h-full">
       <ResponsiveContainer>
         <PieChart>
           <Pie
             data={chartData}
-            innerRadius="60%"
-            outerRadius="80%"
-            paddingAngle={5}
+            innerRadius="70%"
+            outerRadius="90%"
+            paddingAngle={4}
             dataKey="value"
             nameKey="name"
-            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+            startAngle={90}
+            endAngle={-270}
           >
             {chartData.map((entry, index) => (
               <Cell 
                 key={`cell-${index}`} 
-                fill={typeColors[entry.type] || typeColors['None - Error']} 
+                fill={COLORS[index % COLORS.length]}
+                strokeWidth={0}
               />
             ))}
           </Pie>
-          <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
-          <Legend />
         </PieChart>
       </ResponsiveContainer>
     </div>
