@@ -90,7 +90,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Your Charitable Fingerprint™</h1>
           
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
@@ -100,14 +100,14 @@ const Dashboard = () => {
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
             {allocations.length > 0 ? (
-              <>
-                <div className="mb-8">
+              <div className="grid lg:grid-cols-2 gap-6">
+                <div className="w-full">
                   <DashboardChart data={allocations} />
                 </div>
-                <div className="bg-white/5 rounded-lg p-4">
+                <div className="w-full">
                   <AllocationTable data={allocations} />
                 </div>
-              </>
+              </div>
             ) : (
               <p className="text-center text-gray-300">No allocations found</p>
             )}
