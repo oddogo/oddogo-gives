@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,6 +6,21 @@ import { DashboardChart } from "@/components/DashboardChart";
 import { AllocationTable } from "@/components/AllocationTable";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+
+type AllocationData = {
+  id: number;
+  allocation_percentage: number;
+  allocation_charity_id: string | null;
+  allocation_subcause_id: number | null;
+  allocation_region_id: number | null;
+  allocation_meta_id: number | null;
+  allocation_daf: boolean;
+  allocation_spotlight: boolean;
+  charities_charities: { charity_name: string }[] | null;
+  charities_charity_sub_causes: { subcause_name: string }[] | null;
+  charities_charity_regions: { region_name: string }[] | null;
+  charities_charity_metadata: { meta_name: string }[] | null;
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -73,7 +89,7 @@ const Dashboard = () => {
       }
 
       if (allocationsData) {
-        const processedData = allocationsData.map(item => ({
+        const processedData = (allocationsData as AllocationData[]).map(item => ({
           id: item.id,
           allocation_percentage: Number(item.allocation_percentage),
           allocation_name: item.charities_charities?.[0]?.charity_name || 
