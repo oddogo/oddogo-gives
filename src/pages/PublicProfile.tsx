@@ -37,15 +37,19 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Try querying fingerprints_allocations directly with joins
+      // Query fingerprints_allocations with proper join syntax
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('fingerprints_allocations')
         .select(`
           id,
           allocation_percentage,
           allocation_charity_id,
-          allocation_name:charities_charities(charity_name),
-          allocation_type:charities_charity_causes(cause_name)
+          charities_charities!inner (
+            charity_name
+          ),
+          charities_charity_causes!inner (
+            cause_name
+          )
         `)
         .eq('fingerprints_users_id', id)
         .is('deleted_at', null);
@@ -55,12 +59,12 @@ const PublicProfile = () => {
 
       if (fingerprintError) throw fingerprintError;
       
-      const formattedAllocations = (fingerprintData || []).map(item => ({
-        id: item.id,
-        allocation_name: item.allocation_name?.charity_name || 'Unknown',
-        allocation_type: item.allocation_type?.cause_name || 'Unknown',
+      const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
+        id: Number(item.id), // Ensure id is converted to number
+        allocation_name: item.charities_charities?.charity_name || 'Unknown',
+        allocation_type: (item.charities_charity_causes?.cause_name || 'Unknown') as AllocationType,
         allocation_percentage: Number(item.allocation_percentage),
-        cause_name: item.allocation_name?.charity_name || 'Unknown'
+        cause_name: item.charities_charities?.charity_name || 'Unknown'
       }));
       
       console.log('Formatted allocations:', formattedAllocations);
