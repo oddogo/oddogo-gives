@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -124,8 +123,12 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
                 src: "/lovable-uploads/73c9c40f-6400-4389-aec9-42268145ca00.png",
                 height: 24,
                 width: 24,
-                excavate: true
+                excavate: true,
+                x: undefined,
+                y: undefined,
               }}
+              bgColor="#FFFFFF"
+              fgColor="#008080"
             />
           </div>
         )}

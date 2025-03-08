@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -97,6 +96,16 @@ const PublicProfile = () => {
                 size={200}
                 level="H"
                 includeMargin={true}
+                imageSettings={{
+                  src: "/lovable-uploads/73c9c40f-6400-4389-aec9-42268145ca00.png",
+                  height: 24,
+                  width: 24,
+                  excavate: true,
+                  x: undefined,
+                  y: undefined,
+                }}
+                bgColor="#FFFFFF"
+                fgColor="#008080"
               />
             </div>
           </div>
