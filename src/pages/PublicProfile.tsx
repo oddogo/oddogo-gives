@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { AllocationTable } from "@/components/AllocationTable";
-import { Allocation } from "@/types/allocation";
+import { Allocation, AllocationType } from "@/types/allocation";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -43,11 +43,11 @@ const PublicProfile = () => {
       if (fingerprintError) throw fingerprintError;
       
       const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
-        id: item.id,
+        id: Number(item.id),
         allocation_name: item.allocation_name,
         allocation_type: item.allocation_type as AllocationType,
-        allocation_percentage: item.allocation_percentage,
-        cause_name: item.cause_name
+        allocation_percentage: Number(item.allocation_percentage),
+        cause_name: item.subcause_name || item.cause_name || null
       }));
       
       setAllocations(formattedAllocations);

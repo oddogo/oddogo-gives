@@ -5,7 +5,7 @@ import { DashboardChart } from "@/components/DashboardChart";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { AllocationTable } from "@/components/AllocationTable";
-import { Allocation } from "@/types/allocation";
+import { Allocation, AllocationType } from "@/types/allocation";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -50,11 +50,11 @@ const Dashboard = () => {
 
       if (data) {
         const formattedAllocations: Allocation[] = data.map(item => ({
-          id: item.id,
+          id: Number(item.id),
           allocation_name: item.allocation_name,
           allocation_type: item.allocation_type as AllocationType,
-          allocation_percentage: item.allocation_percentage,
-          cause_name: item.cause_name
+          allocation_percentage: Number(item.allocation_percentage),
+          cause_name: item.subcause_name || item.cause_name || null
         }));
         setAllocations(formattedAllocations);
         console.log('Processed data:', formattedAllocations);
