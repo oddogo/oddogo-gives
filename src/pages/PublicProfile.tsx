@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,8 +132,7 @@ const PublicProfile = () => {
           </div>
 
           {allocations.length > 0 && (
-            <div className="bg-white rounded-xl p-8 mb-12 shadow-sm border">
-              <h2 className="text-2xl font-semibold mb-6 text-black">Donation Distribution</h2>
+            <div className="bg-white rounded-xl p-8 mb-12">
               <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div className="aspect-square relative w-3/4 mx-auto">
                   <DashboardChart data={allocations} />

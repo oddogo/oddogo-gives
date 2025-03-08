@@ -1,8 +1,8 @@
 
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
-export const COLORS = ['#D3E4FD', '#F2FCE2', '#FEF7CD', '#E5DEFF', '#FEC6A1', '#FFDEE2'];
+export const COLORS = ['#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#14B8A6', '#F43F5E'];
 
 export const DashboardChart = ({ data }: { data: Allocation[] }) => {
   const chartData = data.map(allocation => ({
@@ -24,6 +24,25 @@ export const DashboardChart = ({ data }: { data: Allocation[] }) => {
             nameKey="name"
             startAngle={90}
             endAngle={-270}
+            label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = 25 + innerRadius + (outerRadius - innerRadius);
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  fill={COLORS[index % COLORS.length]}
+                  textAnchor={x > cx ? 'start' : 'end'}
+                  dominantBaseline="central"
+                  className="font-semibold"
+                >
+                  {`${value.toFixed(0)}%`}
+                </text>
+              );
+            }}
           >
             {chartData.map((entry, index) => (
               <Cell 
