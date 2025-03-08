@@ -27,9 +27,8 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-black text-sm w-1/2">Name</TableHead>
-            <TableHead className="text-black text-sm">Type</TableHead>
-            <TableHead className="text-black text-sm text-center">Percentage</TableHead>
+            <TableHead className="text-black text-sm">Name</TableHead>
+            <TableHead className="text-black text-sm text-right">Percentage</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -40,20 +39,26 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
               onMouseEnter={() => onHoverChange(index)}
               onMouseLeave={() => onHoverChange(null)}
             >
-              <TableCell className="text-black text-sm">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0" 
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-5 h-5 text-gray-400" />
+              <TableCell className="text-black">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <ImageIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <span className="break-words font-medium">{toSentenceCase(allocation.allocation_name)}</span>
                   </div>
-                  <span className="break-words">{toSentenceCase(allocation.allocation_name)}</span>
+                  <div className="ml-13">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      {allocation.allocation_type}
+                    </span>
+                  </div>
                 </div>
               </TableCell>
-              <TableCell className="text-black text-sm">{allocation.allocation_type}</TableCell>
-              <TableCell className="text-black text-sm text-center">{allocation.allocation_percentage * 100}%</TableCell>
+              <TableCell className="text-black text-sm text-right">{allocation.allocation_percentage * 100}%</TableCell>
             </TableRow>
           ))}
         </TableBody>
