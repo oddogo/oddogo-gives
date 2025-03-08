@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -61,13 +60,13 @@ const PublicProfile = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-white">
-      <div className="animate-pulse">Loading...</div>
+      <div className="animate-pulse text-black">Loading...</div>
     </div>
   );
   
   if (!profile) return (
     <div className="min-h-screen bg-white">
-      <div className="text-gray-600">Profile not found or not public</div>
+      <div className="text-black">Profile not found or not public</div>
     </div>
   );
 
@@ -78,7 +77,7 @@ const PublicProfile = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-black">
       {/* Header Logo */}
       <div className="py-6 border-b">
         <div className="container mx-auto px-4">
@@ -100,11 +99,11 @@ const PublicProfile = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 mb-2">
+            <div className="flex items-center gap-2 text-gray-600 mb-2">
               <MapPin className="w-4 h-4" />
               <span>{profile.location || "London, UK"}</span>
             </div>
-            <h1 className="text-3xl font-semibold mb-4">{profile.display_name}</h1>
+            <h1 className="text-3xl font-semibold mb-4 text-black">{profile.display_name}</h1>
             <p className="text-gray-600 max-w-2xl mb-8">
               {profile.bio}
             </p>
@@ -141,8 +140,8 @@ const PublicProfile = () => {
 
           {/* Fingerprint Section */}
           {allocations.length > 0 && (
-            <div className="bg-white rounded-xl p-8 mb-12">
-              <h2 className="text-2xl font-semibold mb-6">Donation Distribution</h2>
+            <div className="bg-white rounded-xl p-8 mb-12 shadow-sm border">
+              <h2 className="text-2xl font-semibold mb-6 text-black">Donation Distribution</h2>
               <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div className="aspect-square relative">
                   <DashboardChart data={allocations} />
@@ -160,7 +159,7 @@ const PublicProfile = () => {
               <Zap className="w-4 h-4" />
               <span>Active Campaign</span>
             </div>
-            <h3 className="text-2xl font-semibold mb-4">Marathon Fundraiser</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-black">Marathon Fundraiser</h3>
             <p className="text-gray-600 max-w-2xl mx-auto">
               I'm running my first marathon to support causes that are close to my heart.
               Every mile I run will help fund my Giving Fingerprint and support these amazing organizations.
