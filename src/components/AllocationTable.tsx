@@ -31,13 +31,13 @@ export const AllocationTable = ({ data }: { data: Allocation[] }) => {
             <TableRow key={index}>
               <TableCell className="text-black">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-4 h-4 text-gray-400" />
-                  </div>
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                  </div>
                   <span className="break-words">{toSentenceCase(allocation.allocation_name)}</span>
                 </div>
               </TableCell>
