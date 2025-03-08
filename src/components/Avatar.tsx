@@ -14,12 +14,25 @@ interface AvatarProps {
 }
 
 export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: AvatarProps) => {
-  const [avatarUrl, setAvatarUrl] = useState(url);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (url) setAvatarUrl(url);
+    if (url) downloadImage(url);
   }, [url]);
+
+  const downloadImage = async (path: string) => {
+    try {
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(path.replace(`${supabase.storageUrl}/object/public/avatars/`, ''));
+
+      setAvatarUrl(publicUrl);
+    } catch (error) {
+      console.error('Error downloading image: ', error);
+    }
+  };
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -40,9 +53,8 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
 
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
       
-      const newAvatarUrl = data.publicUrl;
-      setAvatarUrl(newAvatarUrl);
-      if (onUpload) onUpload(newAvatarUrl);
+      setAvatarUrl(data.publicUrl);
+      if (onUpload) onUpload(filePath); // Store the path, not the full URL
     } catch (error) {
       console.error("Error uploading avatar:", error);
     } finally {
@@ -59,7 +71,7 @@ export const Avatar = ({ uid, url, onUpload, size = "md", editable = false }: Av
   return (
     <div className="flex flex-col items-center gap-4">
       <AvatarUI className={sizeClasses[size]}>
-        <AvatarImage src={avatarUrl} />
+        <AvatarImage src={avatarUrl || undefined} />
         <AvatarFallback>{uid.slice(0, 2).toUpperCase()}</AvatarFallback>
       </AvatarUI>
       {editable && (
