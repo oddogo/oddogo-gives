@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +89,7 @@ const Dashboard = () => {
       }
 
       if (allocationsData) {
-        const processedData = allocationsData.map(item => ({
+        const processedData = (allocationsData as AllocationData[]).map(item => ({
           id: item.id,
           allocation_percentage: Number(item.allocation_percentage),
           allocation_name: item.charities_charities?.charity_name || 
