@@ -37,19 +37,9 @@ const PublicProfile = () => {
       setProfile(profileData);
 
       const { data: fingerprintData, error: fingerprintError } = await supabase
-        .from('fingerprints_allocations')
-        .select(`
-          id,
-          allocation_percentage,
-          allocation_charity_id,
-          charities_charities (
-            charity_name
-          ),
-          charities_charity_causes (
-            cause_name
-          )
-        `)
-        .eq('fingerprints_users_id', Number(id))
+        .from('v_fingerprints_live')
+        .select('*')
+        .eq('user_id', id)
         .is('deleted_at', null);
 
       console.log('Raw fingerprint data:', fingerprintData);
@@ -59,10 +49,10 @@ const PublicProfile = () => {
       
       const formattedAllocations: Allocation[] = (fingerprintData || []).map(item => ({
         id: Number(item.id),
-        allocation_name: item.charities_charities?.charity_name || 'Unknown',
-        allocation_type: (item.charities_charity_causes?.cause_name || 'Unknown') as AllocationType,
+        allocation_name: item.allocation_name || 'Unknown',
+        allocation_type: (item.allocation_type || 'Unknown') as AllocationType,
         allocation_percentage: Number(item.allocation_percentage),
-        cause_name: item.charities_charities?.charity_name || 'Unknown'
+        cause_name: item.allocation_name || 'Unknown'
       }));
       
       console.log('Formatted allocations:', formattedAllocations);
