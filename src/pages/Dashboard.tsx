@@ -5,15 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { DashboardChart } from "@/components/DashboardChart";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { AllocationTable } from "@/components/AllocationTable";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     checkUser();
-    loadFingerprints();
   }, []);
 
   const checkUser = async () => {
@@ -23,6 +24,8 @@ const Dashboard = () => {
         navigate("/auth");
         return;
       }
+      setUserId(user.id);
+      await loadFingerprints(user.id);
     } catch (error) {
       navigate("/auth");
     } finally {
@@ -30,15 +33,12 @@ const Dashboard = () => {
     }
   };
 
-  const loadFingerprints = async () => {
+  const loadFingerprints = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
         .from('v_fingerprints_live')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -49,7 +49,8 @@ const Dashboard = () => {
           value: Number(item.allocation_percentage),
           color: colors[index % colors.length]
         }));
-        setAllocations(chartData);
+        setAllocations(data);
+        console.log('Fingerprints data:', data); // Debug log
       }
     } catch (error: any) {
       console.error('Error loading fingerprints:', error.message);
@@ -85,10 +86,22 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">My Giving Dashboard</h1>
           
+          {/* Debug info */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
+            <p className="text-sm">Current User ID: {userId}</p>
+          </div>
+
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Charity Allocation</h2>
             {allocations.length > 0 ? (
-              <DashboardChart data={allocations} />
+              <>
+                <div className="mb-8">
+                  <DashboardChart data={allocations} />
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <AllocationTable data={allocations} />
+                </div>
+              </>
             ) : (
               <p className="text-center text-gray-300">No allocations found</p>
             )}
