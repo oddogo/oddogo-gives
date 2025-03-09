@@ -30,7 +30,7 @@ export const RegisterInterestForm = () => {
           full_name: formData.fullName,
           email: formData.email,
           charity_name: type === 'Charity' ? formData.charityName : null,
-          charity_number: type === 'Charity' ? formData.charityNumber : null,
+          charity_number: type === 'Charity' ? parseInt(formData.charityNumber) || null : null,
           message: formData.message,
           opt_in: formData.optIn,
           source: 'oddogo.gives'
