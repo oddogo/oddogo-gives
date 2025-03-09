@@ -1357,6 +1357,7 @@ export type Database = {
           id: string
           message: string | null
           opt_in: boolean | null
+          source: string | null
           type: string
         }
         Insert: {
@@ -1368,6 +1369,7 @@ export type Database = {
           id?: string
           message?: string | null
           opt_in?: boolean | null
+          source?: string | null
           type: string
         }
         Update: {
@@ -1379,6 +1381,7 @@ export type Database = {
           id?: string
           message?: string | null
           opt_in?: boolean | null
+          source?: string | null
           type?: string
         }
         Relationships: []
