@@ -29,7 +29,10 @@ const Index = () => {
 
           <div className="w-full max-w-md space-y-8">
             <div>
-              <p className="text-gray-400 mb-4">Register your interest</p>
+              <h2 className="text-2xl font-semibold text-white mb-2">Interested In Oddogo?</h2>
+              <p className="text-gray-100 mb-6">
+                Register your interest to be notified when we launch our platform for supporting and creating fundraising campaigns.
+              </p>
               <RegisterInterestForm />
             </div>
           </div>
@@ -49,6 +52,3 @@ const Index = () => {
       </div>
     </div>
   );
-};
-
-export default Index;

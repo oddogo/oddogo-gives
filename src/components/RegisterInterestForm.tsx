@@ -25,7 +25,7 @@ export const RegisterInterestForm = () => {
     try {
       const { error } = await supabase
         .from('register_interest')
-        .insert([{
+        .insert({
           type,
           full_name: formData.fullName,
           email: formData.email,
@@ -34,7 +34,7 @@ export const RegisterInterestForm = () => {
           message: formData.message,
           opt_in: formData.optIn,
           source: 'oddogo.gives'
-        }]);
+        });
 
       if (error) throw error;
 
@@ -132,7 +132,11 @@ export const RegisterInterestForm = () => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">Submit</Button>
+      <Button type="submit" className="w-full">Get Updates</Button>
+
+      <p className="text-sm text-gray-300 mt-4 text-center">
+        Your privacy is important to us. We'll only use your information to send you updates about Oddogo and will never share it with third parties. You can unsubscribe at any time.
+      </p>
     </form>
   );
 };
