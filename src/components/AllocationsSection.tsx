@@ -1,26 +1,37 @@
 
 import { Allocation } from "@/types/allocation";
 import { AllocationTable } from "./AllocationTable";
+import { DashboardChart } from "./DashboardChart";
 
 interface AllocationsSectionProps {
   allocations: Allocation[];
+  hoveredIndex?: number | null;
+  onHoverChange?: (index: number | null) => void;
 }
 
-export const AllocationsSection = ({ allocations }: AllocationsSectionProps) => {
+export const AllocationsSection = ({ 
+  allocations, 
+  hoveredIndex = null,
+  onHoverChange = () => {}
+}: AllocationsSectionProps) => {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">Allocations</h2>
-      {allocations.length > 0 ? (
-        <AllocationTable 
-          data={allocations} 
-          hoveredIndex={null} 
-          onHoverChange={() => {}}
-        />
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          No allocations found.
+    <div className="p-6 space-y-6">
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="w-full bg-white/5 rounded-lg backdrop-blur-sm p-4 border border-white/10">
+          <DashboardChart 
+            data={allocations} 
+            hoveredIndex={hoveredIndex}
+            onHoverChange={onHoverChange}
+          />
         </div>
-      )}
+        <div className="w-full">
+          <AllocationTable 
+            data={allocations} 
+            hoveredIndex={hoveredIndex}
+            onHoverChange={onHoverChange}
+          />
+        </div>
+      </div>
     </div>
   );
 };
