@@ -1,13 +1,14 @@
+
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
 export const COLORS = [
-  '#40B8B8', // Oddogo Teal
-  '#33A3A3', // Slightly darker teal
-  '#5ECBCB', // Slightly lighter teal
-  '#2D9494', // Darker teal
-  '#7AD5D5', // Lighter teal
-  '#266B6B', // Darkest teal
+  '#8B5CF6', // Purple
+  '#D946EF', // Pink
+  '#F97316', // Orange
+  '#0EA5E9', // Blue
+  '#14B8A6', // Teal
+  '#F43F5E', // Red
 ];
 
 interface DashboardChartProps {
@@ -41,9 +42,10 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
 
   return (
     <div className="relative w-full h-[300px]">
+      {/* Center Stats */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center">
-          <p className="text-3xl font-bold text-[#40B8B8]">{totalPercentage.toFixed(1)}%</p>
+          <p className="text-3xl font-bold text-white">{totalPercentage.toFixed(1)}%</p>
           <p className="text-sm text-gray-400">Total Allocation</p>
         </div>
       </div>
@@ -67,7 +69,7 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]}
                 strokeWidth={hoveredIndex === index ? 2 : 0}
-                stroke="#40B8B8"
+                stroke={hoveredIndex === index ? "#F1F0FB" : undefined}
                 style={{
                   filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
                   opacity: hoveredIndex === null || hoveredIndex === index ? 1 : 0.5,
