@@ -1,14 +1,13 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { DashboardChart } from "@/components/DashboardChart";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Logo } from "@/components/Logo";
-import { AllocationTable } from "@/components/AllocationTable";
 import { Allocation, AllocationType } from "@/types/allocation";
 import { UserInfo } from "@/components/UserInfo";
 import { User } from "@supabase/supabase-js";
+import { ModernDashboard } from "@/components/ModernDashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,6 +16,9 @@ const Dashboard = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isModernLayout, setIsModernLayout] = useState(() => {
+    return localStorage.getItem("dashboardLayout") === "modern";
+  });
 
   useEffect(() => {
     checkUser();
@@ -79,14 +81,42 @@ const Dashboard = () => {
     }
   };
 
+  const toggleLayout = () => {
+    const newLayout = !isModernLayout;
+    setIsModernLayout(newLayout);
+    localStorage.setItem("dashboardLayout", newLayout ? "modern" : "classic");
+  };
+
   if (loading) return null;
+
+  if (isModernLayout) {
+    return (
+      <>
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-black/20 backdrop-blur-xl p-2 rounded-full">
+          <span className="text-sm text-white/60">Modern Layout</span>
+          <Switch checked={isModernLayout} onCheckedChange={toggleLayout} />
+        </div>
+        <ModernDashboard
+          user={user}
+          allocations={allocations}
+          hoveredIndex={hoveredIndex}
+          onHoverChange={setHoveredIndex}
+          onSignOut={handleSignOut}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#008080] text-white">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <Logo />
-          <div className="space-x-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Modern Layout</span>
+              <Switch checked={isModernLayout} onCheckedChange={toggleLayout} />
+            </div>
             <Button onClick={() => navigate("/profile")} variant="outline">
               Profile
             </Button>
