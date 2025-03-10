@@ -16,13 +16,15 @@ const PublicProfile = () => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    loadPublicProfile();
+    if (id) loadPublicProfile();
   }, [id]);
 
   const loadPublicProfile = async () => {
     try {
+      if (!id) return;
       console.log('Loading profile for user ID:', id);
       
+      // Get user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -39,25 +41,40 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Try to get allocations directly from v_fingerprints_live view first
-      const { data: viewData, error: viewError } = await supabase
-        .from('v_fingerprints_live')
-        .select('*')
+      // Get fingerprint allocations
+      const { data: fingerprintData, error: fingerprintError } = await supabase
+        .from('fingerprints_users')
+        .select(`
+          fingerprint_id,
+          fingerprints!inner(
+            fingerprints_allocations(
+              id,
+              allocation_percentage,
+              allocation_charity_id,
+              charities_charities(charity_name)
+            )
+          )
+        `)
         .eq('user_id', id);
 
-      console.log('View fingerprint data:', viewData);
+      console.log('Fingerprint data:', fingerprintData);
       
-      if (viewError) {
-        console.error('Error fetching from view:', viewError);
+      if (fingerprintError) {
+        console.error('Error fetching fingerprint:', fingerprintError);
       }
       
-      if (viewData && viewData.length > 0) {
-        const formattedAllocations: Allocation[] = viewData.map(item => ({
+      if (fingerprintData && fingerprintData.length > 0) {
+        // Flatten and format the allocations data
+        const allAllocations = fingerprintData.flatMap(fp => 
+          fp.fingerprints?.fingerprints_allocations || []
+        );
+        
+        const formattedAllocations: Allocation[] = allAllocations.map(item => ({
           id: Number(item.id),
-          allocation_name: item.allocation_name || 'Unknown',
-          allocation_type: (item.allocation_type || 'None - Error') as AllocationType,
-          allocation_percentage: Number(item.allocation_percentage),
-          cause_name: item.allocation_name || 'Unknown'
+          allocation_name: item.charities_charities?.charity_name || 'Unknown',
+          allocation_type: 'Charity' as AllocationType,
+          allocation_percentage: Number(item.allocation_percentage || 0),
+          cause_name: item.charities_charities?.charity_name || 'Unknown'
         }));
         
         console.log('Formatted allocations:', formattedAllocations);
@@ -132,7 +149,7 @@ const PublicProfile = () => {
           </button>
         </div>
 
-        {allocations.length > 0 && (
+        {allocations.length > 0 ? (
           <div className="mb-12 w-full px-4 sm:px-0">
             <div className="flex flex-col md:grid md:grid-cols-12 gap-8">
               <div className="w-full md:col-span-4">
@@ -155,6 +172,10 @@ const PublicProfile = () => {
               </div>
             </div>
           </div>
+        ) : !loading && (
+          <div className="text-center py-8 text-gray-500">
+            No allocations found for this profile.
+          </div>
         )}
 
         <div className="text-center px-4 sm:px-0">
@@ -174,3 +195,4 @@ const PublicProfile = () => {
 };
 
 export default PublicProfile;
+
