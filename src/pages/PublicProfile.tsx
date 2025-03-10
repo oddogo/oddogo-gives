@@ -41,23 +41,11 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Update the allocations query to join with the base tables
+      // Try using the view directly
       const { data: allocationsData, error: allocationsError } = await supabase
-        .from('fingerprints_allocations')
-        .select(`
-          id,
-          allocation_percentage,
-          allocation_charity_id,
-          allocation_subcause_id,
-          allocation_meta_id,
-          allocation_daf,
-          allocation_spotlight,
-          fingerprints_users!inner (
-            fingerprint_id,
-            user_id
-          )
-        `)
-        .eq('fingerprints_users.user_id', id)
+        .from('v_fingerprints_live')
+        .select('*')
+        .eq('user_id', id)
         .is('deleted_at', null);
 
       if (allocationsError) {
@@ -65,15 +53,15 @@ const PublicProfile = () => {
         return;
       }
 
-      console.log('Allocations data:', allocationsData);
+      console.log('Raw allocations data:', allocationsData);
       
       if (allocationsData && allocationsData.length > 0) {
         const formattedAllocations: Allocation[] = allocationsData.map(item => ({
           id: Number(item.id),
-          allocation_name: determineName(item),
-          allocation_type: determineType(item) as AllocationType,
+          allocation_name: item.allocation_name || 'Unknown',
+          allocation_type: item.allocation_type as AllocationType || 'None - Error',
           allocation_percentage: Number(item.allocation_percentage),
-          cause_name: determineName(item)
+          cause_name: item.allocation_name || 'Unknown'
         }));
         
         console.log('Formatted allocations:', formattedAllocations);
