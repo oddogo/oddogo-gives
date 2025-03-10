@@ -7,7 +7,11 @@ const Auth = () => {
     <div className="min-h-screen bg-[#008080] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center">
-          <Logo />
+          <img 
+            src="/lovable-uploads/b7702484-a438-4044-b5ef-cc6fbc31513f.png"
+            alt="Oddogo Logo"
+            className="h-12 md:h-16"
+          />
           <h2 className="mt-6 text-3xl font-bold text-white">
             Welcome to Oddogo
           </h2>
