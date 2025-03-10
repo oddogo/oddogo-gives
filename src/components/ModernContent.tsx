@@ -54,7 +54,7 @@ export const ModernContent = ({
       {/* Main Content Card */}
       <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-4">Your Charitable Fingerprint™</h2>
+          <h2 className="text-2xl font-semibold mb-6">Charitable Fingerprint™</h2>
           
           {/* Filter Bar */}
           <div className="flex gap-3 mb-6">
