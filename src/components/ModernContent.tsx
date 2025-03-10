@@ -1,5 +1,3 @@
-
-import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
 import { AllocationTable } from "./AllocationTable";
@@ -10,7 +8,6 @@ import { Button } from "./ui/button";
 import { useState } from "react";
 
 interface ModernContentProps {
-  user: User | null;
   allocations: Allocation[];
   hoveredIndex: number | null;
   onHoverChange: (index: number | null) => void;
