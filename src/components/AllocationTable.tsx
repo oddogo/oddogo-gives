@@ -18,15 +18,15 @@ const toSentenceCase = (str: string) => {
 const getTypeColor = (type: string): string => {
   switch (type) {
     case 'Charity':
-      return 'bg-rose-500/20 text-rose-300';
+      return 'bg-teal-500/20 text-teal-300';
     case 'Region':
-      return 'bg-amber-500/20 text-amber-300';
+      return 'bg-teal-600/20 text-teal-200';
     case 'Subcause':
-      return 'bg-lime-500/20 text-lime-300';
+      return 'bg-teal-700/20 text-teal-100';
     case 'Meta':
-      return 'bg-indigo-500/20 text-indigo-300';
+      return 'bg-teal-800/20 text-teal-50';
     default:
-      return 'bg-slate-500/20 text-slate-300';
+      return 'bg-teal-900/20 text-teal-100';
   }
 };
 

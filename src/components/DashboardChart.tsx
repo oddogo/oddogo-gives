@@ -1,3 +1,4 @@
+
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
@@ -37,8 +38,18 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
     type: allocation.allocation_type
   }));
 
+  const totalPercentage = chartData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="relative w-full h-[300px]">
+      {/* Center Stats */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="text-center">
+          <p className="text-3xl font-bold text-white">{totalPercentage.toFixed(1)}%</p>
+          <p className="text-sm text-gray-400">Total Allocation</p>
+        </div>
+      </div>
+
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

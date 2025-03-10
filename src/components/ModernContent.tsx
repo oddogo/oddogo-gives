@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
@@ -24,6 +25,7 @@ export const ModernContent = ({
   const totalAllocation = allocations.reduce((sum, a) => sum + a.allocation_percentage, 0);
   const uniqueTypes = new Set(allocations.map(a => a.allocation_type)).size;
   
+  // Filter allocations based on search query
   const filteredAllocations = allocations.filter(allocation => 
     allocation.allocation_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     allocation.allocation_type.toLowerCase().includes(searchQuery.toLowerCase())
@@ -35,7 +37,7 @@ export const ModernContent = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-purple-500/10 backdrop-blur-sm border-purple-500/20 p-4">
           <h3 className="text-sm font-medium text-purple-200">Total Allocation</h3>
-          <p className="text-2xl font-bold text-white">{(totalAllocation * 100).toFixed(1)}%</p>
+          <p className="text-2xl font-bold text-white">{(totalAllocation * 100).toFixed(0)}%</p>
         </Card>
         
         <Card className="bg-blue-500/10 backdrop-blur-sm border-blue-500/20 p-4">
@@ -73,12 +75,6 @@ export const ModernContent = ({
               <Download className="h-4 w-4" />
               Export
             </Button>
-          </div>
-
-          {/* Total Above Chart */}
-          <div className="text-center mb-6">
-            <p className="text-3xl font-bold text-white">{(totalAllocation * 100).toFixed(1)}%</p>
-            <p className="text-sm text-gray-400">Total Allocation</p>
           </div>
 
           {/* Chart and Table Grid */}
