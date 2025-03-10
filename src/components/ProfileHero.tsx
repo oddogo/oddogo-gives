@@ -1,4 +1,3 @@
-
 import { Profile } from "@/hooks/usePublicProfile";
 import { Avatar } from "@/components/Avatar";
 import { MapPin, Trophy, Coins, Flag } from "lucide-react";
@@ -31,14 +30,10 @@ export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
             <span>{profile.location || "London, UK"}</span>
           </div>
 
-          <h1 className="text-4xl font-bold mb-4 text-white">
-            {profile.display_name}'s Charitable Fingerprint™
+          <h1 className="text-4xl font-bold mb-12 text-white">
+            {profile.display_name}
           </h1>
           
-          <p className="text-lg text-gray-200 max-w-2xl mb-12 leading-relaxed">
-            {profile.bio}
-          </p>
-
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <div className="bg-amber-500/20 text-amber-200 px-4 py-2 rounded-full flex items-center gap-2 text-sm">
               <Trophy size={16} />
