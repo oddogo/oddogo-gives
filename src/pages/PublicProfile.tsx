@@ -41,11 +41,23 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Get allocations directly from the view
+      // Update the allocations query to join with the base tables
       const { data: allocationsData, error: allocationsError } = await supabase
-        .from('v_fingerprints_live')
-        .select('*')
-        .eq('user_id', id)
+        .from('fingerprints_allocations')
+        .select(`
+          id,
+          allocation_percentage,
+          allocation_charity_id,
+          allocation_subcause_id,
+          allocation_meta_id,
+          allocation_daf,
+          allocation_spotlight,
+          fingerprints_users!inner (
+            fingerprint_id,
+            user_id
+          )
+        `)
+        .eq('fingerprints_users.user_id', id)
         .is('deleted_at', null);
 
       if (allocationsError) {
@@ -58,10 +70,10 @@ const PublicProfile = () => {
       if (allocationsData && allocationsData.length > 0) {
         const formattedAllocations: Allocation[] = allocationsData.map(item => ({
           id: Number(item.id),
-          allocation_name: item.allocation_name,
-          allocation_type: item.allocation_type as AllocationType,
+          allocation_name: determineName(item),
+          allocation_type: determineType(item) as AllocationType,
           allocation_percentage: Number(item.allocation_percentage),
-          cause_name: item.allocation_name
+          cause_name: determineName(item)
         }));
         
         console.log('Formatted allocations:', formattedAllocations);
@@ -72,6 +84,21 @@ const PublicProfile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const determineName = (item: any): string => {
+    if (item.allocation_spotlight) return 'Spotlight';
+    if (item.allocation_daf) return 'DAF';
+    return 'Unknown';
+  };
+
+  const determineType = (item: any): AllocationType => {
+    if (item.allocation_spotlight) return 'Spotlight';
+    if (item.allocation_daf) return 'DAF';
+    if (item.allocation_charity_id) return 'Charity';
+    if (item.allocation_subcause_id) return 'Subcause';
+    if (item.allocation_meta_id) return 'Meta';
+    return 'None - Error';
   };
 
   if (loading) return (
