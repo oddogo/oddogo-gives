@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -70,9 +71,12 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                         alt=""
                         className="w-4 h-4"
                         onError={(e) => {
-                          e.currentTarget.src = '';
-                          e.currentTarget.className = 'hidden';
-                          e.currentTarget.nextSibling?.classList.remove('hidden');
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const nextElement = target.nextElementSibling;
+                          if (nextElement instanceof HTMLElement) {
+                            nextElement.classList.remove('hidden');
+                          }
                         }}
                       />
                     ) : null}
