@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,76 +39,31 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // First, get the fingerprint user using select()
-      const { data: fingerprintUsers, error: fingerprintUserError } = await supabase
-        .from('fingerprints_users')
-        .select('id')
-        .eq('user_id', id);
-
-      if (fingerprintUserError) {
-        console.log('Error fetching fingerprint user:', fingerprintUserError);
-        throw fingerprintUserError;
-      }
-
-      if (fingerprintUsers && fingerprintUsers.length > 0) {
-        const fingerprintUserId = fingerprintUsers[0].id;
-        
-        // Now use the numeric ID for the allocations query
-        const { data: allocationsData, error: allocationsError } = await supabase
-          .from('fingerprints_allocations')
-          .select(`
-            id,
-            allocation_percentage,
-            allocation_charity_id,
-            charities_charities (
-              charity_name
-            )
-          `)
-          .eq('fingerprints_users_id', fingerprintUserId);
-
-        console.log('Raw allocations data:', allocationsData);
-        console.log('Allocations error:', allocationsError);
-
-        if (allocationsData && allocationsData.length > 0) {
-          const formattedAllocations: Allocation[] = allocationsData.map(item => ({
-            id: Number(item.id),
-            allocation_name: item.charities_charities?.charity_name || 'Unknown',
-            allocation_type: 'Charity',
-            allocation_percentage: Number(item.allocation_percentage),
-            cause_name: item.charities_charities?.charity_name || 'Unknown'
-          }));
-          
-          console.log('Formatted allocations from direct query:', formattedAllocations);
-          setAllocations(formattedAllocations);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fallback to v_fingerprints_live view if no direct allocations found
-      console.log('No direct allocations found, trying v_fingerprints_live view');
-      
-      const { data: fingerprintData, error: fingerprintError } = await supabase
+      // Try to get allocations directly from v_fingerprints_live view first
+      const { data: viewData, error: viewError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
         .eq('user_id', id);
 
-      console.log('View fingerprint data:', fingerprintData);
-      console.log('View error:', fingerprintError);
+      console.log('View fingerprint data:', viewData);
       
-      if (fingerprintError) throw fingerprintError;
+      if (viewError) {
+        console.error('Error fetching from view:', viewError);
+      }
       
-      if (fingerprintData && fingerprintData.length > 0) {
-        const formattedAllocations: Allocation[] = fingerprintData.map(item => ({
+      if (viewData && viewData.length > 0) {
+        const formattedAllocations: Allocation[] = viewData.map(item => ({
           id: Number(item.id),
           allocation_name: item.allocation_name || 'Unknown',
-          allocation_type: (item.allocation_type || 'Unknown') as AllocationType,
+          allocation_type: (item.allocation_type || 'None - Error') as AllocationType,
           allocation_percentage: Number(item.allocation_percentage),
           cause_name: item.allocation_name || 'Unknown'
         }));
         
-        console.log('Formatted allocations from view:', formattedAllocations);
+        console.log('Formatted allocations:', formattedAllocations);
         setAllocations(formattedAllocations);
+      } else {
+        console.log('No allocations found for user');
       }
     } catch (error) {
       console.error('Error loading public profile:', error);
@@ -220,4 +174,3 @@ const PublicProfile = () => {
 };
 
 export default PublicProfile;
-
