@@ -1,14 +1,17 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileForm } from "@/components/ProfileForm";
-import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/Logo";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { ModernHeader } from "@/components/ModernHeader";
+import { Card } from "@/components/ui/card";
+import { User } from "@supabase/supabase-js";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -21,7 +24,7 @@ const Profile = () => {
         navigate("/auth");
         return;
       }
-      setUserId(user.id);
+      setUser(user);
     } catch (error) {
       navigate("/auth");
     } finally {
@@ -29,26 +32,28 @@ const Profile = () => {
     }
   };
 
-  const handleGoBack = () => {
-    navigate("/dashboard");
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } catch (error: any) {
+      console.error("Error signing out:", error.message);
+    }
   };
 
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-[#008080] text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <Logo />
-          <Button onClick={handleGoBack} variant="outline">
-            Cancel
-          </Button>
-        </div>
-        
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Your Profile</h1>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <ProfileForm onSuccess={() => navigate('/dashboard')} />
+    <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] to-[#2C1F3C] text-white">
+      <div className="flex">
+        <DashboardSidebar user={user} onSignOut={handleSignOut} />
+        <div className="flex-1">
+          <ModernHeader user={user} />
+          <div className="p-6 space-y-6">
+            <h1 className="text-3xl font-bold">Your Profile</h1>
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
+              <ProfileForm onSuccess={() => navigate('/dashboard')} />
+            </Card>
           </div>
         </div>
       </div>
