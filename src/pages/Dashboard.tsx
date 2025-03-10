@@ -8,6 +8,8 @@ import { Allocation, AllocationType } from "@/types/allocation";
 import { UserInfo } from "@/components/UserInfo";
 import { User } from "@supabase/supabase-js";
 import { ModernDashboard } from "@/components/ModernDashboard";
+import { DashboardChart } from "@/components/DashboardChart";
+import { AllocationTable } from "@/components/AllocationTable";
 
 const Dashboard = () => {
   const navigate = useNavigate();
