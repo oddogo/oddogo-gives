@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,18 +40,20 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // First, get the fingerprint user ID
-      const { data: fingerprintUser, error: fingerprintUserError } = await supabase
+      // First, get the fingerprint user using select()
+      const { data: fingerprintUsers, error: fingerprintUserError } = await supabase
         .from('fingerprints_users')
         .select('id')
-        .eq('user_id', id)
-        .single();
+        .eq('user_id', id);
 
       if (fingerprintUserError) {
         console.log('Error fetching fingerprint user:', fingerprintUserError);
+        throw fingerprintUserError;
       }
 
-      if (fingerprintUser) {
+      if (fingerprintUsers && fingerprintUsers.length > 0) {
+        const fingerprintUserId = fingerprintUsers[0].id;
+        
         // Now use the numeric ID for the allocations query
         const { data: allocationsData, error: allocationsError } = await supabase
           .from('fingerprints_allocations')
@@ -62,7 +65,7 @@ const PublicProfile = () => {
               charity_name
             )
           `)
-          .eq('fingerprints_users_id', fingerprintUser.id);
+          .eq('fingerprints_users_id', fingerprintUserId);
 
         console.log('Raw allocations data:', allocationsData);
         console.log('Allocations error:', allocationsError);
@@ -78,6 +81,7 @@ const PublicProfile = () => {
           
           console.log('Formatted allocations from direct query:', formattedAllocations);
           setAllocations(formattedAllocations);
+          setLoading(false);
           return;
         }
       }
@@ -216,3 +220,4 @@ const PublicProfile = () => {
 };
 
 export default PublicProfile;
+
