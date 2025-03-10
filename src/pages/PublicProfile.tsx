@@ -41,46 +41,31 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Get fingerprint allocations
-      const { data: fingerprintData, error: fingerprintError } = await supabase
-        .from('fingerprints_users')
-        .select(`
-          fingerprint_id,
-          fingerprints!inner(
-            fingerprints_allocations(
-              id,
-              allocation_percentage,
-              allocation_charity_id,
-              charities_charities(charity_name)
-            )
-          )
-        `)
-        .eq('user_id', id);
+      // Get allocations directly from the view
+      const { data: allocationsData, error: allocationsError } = await supabase
+        .from('v_fingerprints_live')
+        .select('*')
+        .eq('user_id', id)
+        .is('deleted_at', null);
 
-      console.log('Fingerprint data:', fingerprintData);
-      
-      if (fingerprintError) {
-        console.error('Error fetching fingerprint:', fingerprintError);
+      if (allocationsError) {
+        console.error('Error fetching allocations:', allocationsError);
+        return;
       }
+
+      console.log('Allocations data:', allocationsData);
       
-      if (fingerprintData && fingerprintData.length > 0) {
-        // Flatten and format the allocations data
-        const allAllocations = fingerprintData.flatMap(fp => 
-          fp.fingerprints?.fingerprints_allocations || []
-        );
-        
-        const formattedAllocations: Allocation[] = allAllocations.map(item => ({
+      if (allocationsData && allocationsData.length > 0) {
+        const formattedAllocations: Allocation[] = allocationsData.map(item => ({
           id: Number(item.id),
-          allocation_name: item.charities_charities?.charity_name || 'Unknown',
-          allocation_type: 'Charity' as AllocationType,
-          allocation_percentage: Number(item.allocation_percentage || 0),
-          cause_name: item.charities_charities?.charity_name || 'Unknown'
+          allocation_name: item.allocation_name,
+          allocation_type: item.allocation_type as AllocationType,
+          allocation_percentage: Number(item.allocation_percentage),
+          cause_name: item.allocation_name
         }));
         
         console.log('Formatted allocations:', formattedAllocations);
         setAllocations(formattedAllocations);
-      } else {
-        console.log('No allocations found for user');
       }
     } catch (error) {
       console.error('Error loading public profile:', error);
@@ -195,4 +180,3 @@ const PublicProfile = () => {
 };
 
 export default PublicProfile;
-
