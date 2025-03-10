@@ -2,7 +2,8 @@
 import { User } from "@supabase/supabase-js";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
-import { Home, PieChart, Settings, LogOut } from "lucide-react";
+import { Home, PieChart, Settings, LogOut, UserCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardSidebarProps {
   user: User | null;
@@ -10,6 +11,8 @@ interface DashboardSidebarProps {
 }
 
 export const DashboardSidebar = ({ user, onSignOut }: DashboardSidebarProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="w-64 h-screen bg-black/20 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col">
       <div className="mb-12">
@@ -18,9 +21,21 @@ export const DashboardSidebar = ({ user, onSignOut }: DashboardSidebarProps) => 
       
       <nav className="flex-1">
         <div className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+            onClick={() => navigate('/dashboard')}
+          >
             <Home className="mr-2 h-4 w-4" />
             Dashboard
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+            onClick={() => navigate('/profile')}
+          >
+            <UserCircle className="mr-2 h-4 w-4" />
+            Profile
           </Button>
           <Button variant="ghost" className="w-full justify-start">
             <PieChart className="mr-2 h-4 w-4" />
@@ -44,3 +59,4 @@ export const DashboardSidebar = ({ user, onSignOut }: DashboardSidebarProps) => 
     </div>
   );
 };
+
