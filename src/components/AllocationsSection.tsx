@@ -13,10 +13,10 @@ export const AllocationsSection = ({ allocations }: AllocationsSectionProps) => 
 
   return (
     <div className="w-full">
-      <div className="w-full bg-[#1A1F2C] py-8">
+      <div className="w-full bg-[#1A1F2C] py-4">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-semibold text-white mb-4">
-            Charitable Fingerprint™
+          <h2 className="text-3xl font-manrope text-center text-white mb-2">
+            My Charitable Fingerprint™
           </h2>
         </div>
       </div>

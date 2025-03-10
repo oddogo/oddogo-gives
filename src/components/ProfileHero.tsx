@@ -1,3 +1,4 @@
+
 import { Profile } from "@/hooks/usePublicProfile";
 import { Avatar } from "@/components/Avatar";
 import { MapPin, Trophy, Coins, Flag } from "lucide-react";
@@ -30,9 +31,24 @@ export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
             <span>{profile.location || "London, UK"}</span>
           </div>
 
-          <h1 className="text-4xl font-bold mb-12 text-white">
+          <h1 className="text-4xl font-bold mb-8 text-white">
             {profile.display_name}
           </h1>
+
+          <div className="flex flex-col md:flex-row gap-8 max-w-4xl mb-12">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white/90 mb-2">About</h3>
+              <p className="text-white/80 leading-relaxed">
+                {profile.bio || "No bio provided"}
+              </p>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white/90 mb-2">Important Causes</h3>
+              <p className="text-white/80 leading-relaxed">
+                {profile.causes_description || "No causes specified"}
+              </p>
+            </div>
+          </div>
           
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <div className="bg-amber-500/20 text-amber-200 px-4 py-2 rounded-full flex items-center gap-2 text-sm">
