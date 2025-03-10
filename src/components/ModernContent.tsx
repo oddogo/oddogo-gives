@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
@@ -54,7 +53,10 @@ export const ModernContent = ({
       {/* Main Content Card */}
       <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-6">Charitable Fingerprint™</h2>
+          {/* Section Header with Dark Purple Background */}
+          <div className="bg-purple-900/50 backdrop-blur-sm rounded-lg p-4 mb-6">
+            <h2 className="text-2xl font-semibold text-white">My Charitable Fingerprint™</h2>
+          </div>
           
           {/* Filter Bar */}
           <div className="flex gap-3 mb-6">
