@@ -1,7 +1,7 @@
 
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
-import { ProfileHeader } from "@/components/ProfileHeader";
+import { ProfileHero } from "@/components/ProfileHero";
 import { AllocationsSection } from "@/components/AllocationsSection";
 import { ActiveCampaign } from "@/components/ActiveCampaign";
 
@@ -23,17 +23,17 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProfileHeader profile={profile} userId={id || ''} />
+      <ProfileHero profile={profile} userId={id || ''} />
 
-        {allocations.length > 0 ? (
-          <AllocationsSection allocations={allocations} />
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            No allocations found for this profile.
-          </div>
-        )}
+      {allocations.length > 0 ? (
+        <AllocationsSection allocations={allocations} />
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          No allocations found for this profile.
+        </div>
+      )}
 
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <ActiveCampaign />
       </div>
     </div>
