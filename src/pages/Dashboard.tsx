@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Allocation } from "@/types/allocation";
+import { Allocation, AllocationType } from "@/types/allocation";
 import { User } from "@supabase/supabase-js";
 import { ModernDashboard } from "@/components/ModernDashboard";
 
