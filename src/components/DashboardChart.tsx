@@ -67,7 +67,7 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]}
                 strokeWidth={hoveredIndex === index ? 2 : 0}
-                stroke={hoveredIndex === index ? "#40B8B8" : undefined}
+                stroke="#40B8B8"
                 style={{
                   filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
                   opacity: hoveredIndex === null || hoveredIndex === index ? 1 : 0.5,
