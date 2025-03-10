@@ -14,10 +14,11 @@ export const ModernHeader = ({ user }: ModernHeaderProps) => {
   const avatarUrl = user.user_metadata.avatar_url;
   const name = user.user_metadata.full_name || user.email?.split('@')[0];
   
-  // Only capitalize the username
+  // Capitalize the name
   const capitalizedName = name
-    ?.split(' ')[0]
-    ?.charAt(0).toUpperCase() + name?.split(' ')[0]?.slice(1).toLowerCase();
+    ?.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 
   return (
     <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl p-4">
@@ -33,7 +34,7 @@ export const ModernHeader = ({ user }: ModernHeaderProps) => {
             )}
           </Avatar>
           <h1 className="text-xl font-semibold">
-            Welcome, <span className="text-purple-400">{capitalizedName}</span>
+            Welcome back, <span className="text-purple-400">{capitalizedName}</span>
           </h1>
         </div>
         
