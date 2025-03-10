@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -13,6 +12,13 @@ import { COLORS } from "./DashboardChart";
 
 const toSentenceCase = (str: string) => {
   return str.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
+};
+
+const typeWidths: Record<string, string> = {
+  'Charity': 'w-24',
+  'Region': 'w-20',
+  'Subcause': 'w-24',
+  'Meta': 'w-20',
 };
 
 const getTypeColor = (type: string): string => {
@@ -85,7 +91,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                       <span className="text-white font-medium">{toSentenceCase(allocation.allocation_name)}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(allocation.allocation_type)}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full inline-flex justify-center items-center ${getTypeColor(allocation.allocation_type)} ${typeWidths[allocation.allocation_type] || 'w-24'}`}>
                         {allocation.allocation_type}
                       </span>
                     </div>

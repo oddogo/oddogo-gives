@@ -1,4 +1,3 @@
-
 import { Profile } from "@/hooks/usePublicProfile";
 import { Avatar } from "@/components/Avatar";
 import { MapPin, Trophy, Coins, Flag } from "lucide-react";
@@ -11,7 +10,6 @@ interface ProfileHeroProps {
 export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
   return (
     <div className="relative w-full bg-gradient-to-b from-teal-950 to-teal-900 py-20">
-      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,13 +36,13 @@ export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
           <div className="flex flex-col md:flex-row gap-8 max-w-4xl mb-12">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white/90 mb-2">About</h3>
-              <p className="text-white/80 leading-relaxed">
+              <p className={`text-white/80 leading-relaxed ${profile.bio?.length > 100 ? 'text-justify' : 'text-center'}`}>
                 {profile.bio || "No bio provided"}
               </p>
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white/90 mb-2">Important Causes</h3>
-              <p className="text-white/80 leading-relaxed">
+              <p className={`text-white/80 leading-relaxed ${profile.causes_description?.length > 100 ? 'text-justify' : 'text-center'}`}>
                 {profile.causes_description || "No causes specified"}
               </p>
             </div>
