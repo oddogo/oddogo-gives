@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,6 @@ const PublicProfile = () => {
       console.log('Profile data:', profileData);
       setProfile(profileData);
 
-      // Debug query to check data in fingerprints table
       const { data: fingerprintsDebug, error: fingerprintsError } = await supabase
         .from('fingerprints')
         .select('*');
@@ -45,7 +43,6 @@ const PublicProfile = () => {
       console.log('All fingerprints:', fingerprintsDebug);
       console.log('Fingerprints error:', fingerprintsError);
 
-      // Debug query to check data in fingerprints_allocations table
       const { data: allocationsDebug, error: allocationsError } = await supabase
         .from('fingerprints_allocations')
         .select('*');
@@ -53,7 +50,6 @@ const PublicProfile = () => {
       console.log('All allocations:', allocationsDebug);
       console.log('Allocations error:', allocationsError);
 
-      // Debug query to check view data
       const { data: viewDebug, error: viewError } = await supabase
         .from('v_fingerprints_live')
         .select('*');
@@ -61,7 +57,6 @@ const PublicProfile = () => {
       console.log('All view data:', viewDebug);
       console.log('View error:', viewError);
 
-      // Query v_fingerprints_live with user_id
       const { data: fingerprintData, error: fingerprintError } = await supabase
         .from('v_fingerprints_live')
         .select('*')
@@ -107,7 +102,7 @@ const PublicProfile = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col items-center mb-12 text-center">
           <div className="mb-8">
-            <Logo />
+            <Logo className="text-[#008080]" />
           </div>
           <div className="mb-4">
             <Avatar uid={id || ''} size="lg" url={profile?.avatar_url} />
@@ -154,7 +149,7 @@ const PublicProfile = () => {
           <div className="mb-12 w-full px-4 sm:px-0">
             <div className="flex flex-col md:grid md:grid-cols-12 gap-8">
               <div className="w-full md:col-span-4">
-                <div className="aspect-square relative w-full">
+                <div className="aspect-square relative w-full bg-white/5 rounded-lg backdrop-blur-sm p-4 border border-gray-200/10">
                   <DashboardChart 
                     data={allocations} 
                     hoveredIndex={hoveredIndex}
@@ -163,11 +158,13 @@ const PublicProfile = () => {
                 </div>
               </div>
               <div className="w-full md:col-span-8">
-                <AllocationTable 
-                  data={allocations} 
-                  hoveredIndex={hoveredIndex}
-                  onHoverChange={setHoveredIndex}
-                />
+                <div className="bg-white/5 rounded-lg backdrop-blur-sm border border-gray-200/10">
+                  <AllocationTable 
+                    data={allocations} 
+                    hoveredIndex={hoveredIndex}
+                    onHoverChange={setHoveredIndex}
+                  />
+                </div>
               </div>
             </div>
           </div>
