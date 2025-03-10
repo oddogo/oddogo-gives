@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const RegisterInterestForm = () => {
-  const [type, setType] = useState<'Charity' | 'Donor'>('Donor');
+interface RegisterInterestFormProps {
+  initialType: 'Charity' | 'Donor';
+}
+
+export const RegisterInterestForm = ({ initialType }: RegisterInterestFormProps) => {
+  const [type, setType] = useState<'Charity' | 'Donor'>(initialType);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',

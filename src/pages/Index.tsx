@@ -1,13 +1,23 @@
 
+import { useState } from "react";
 import { NotifyForm } from "@/components/NotifyForm";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { RegisterInterestForm } from "@/components/RegisterInterestForm";
 
 const Index = () => {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedType, setSelectedType] = useState<'Charity' | 'Donor' | null>(null);
+
   return (
     <div className="min-h-screen bg-[#008080] text-white">
-      <div className="container mx-auto px-4 py-20">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-8">
+          <Button onClick={() => window.location.href = "/auth"} variant="outline">
+            Sign In / Sign Up
+          </Button>
+        </div>
+
         <div className="flex flex-col items-center justify-center space-y-12 text-center">
           <div className="animate-float">
             <img 
@@ -33,14 +43,30 @@ const Index = () => {
               <p className="text-gray-100 mb-6">
                 Register your interest to be notified when we launch our platform for supporting and creating fundraising campaigns.
               </p>
-              <RegisterInterestForm />
+              
+              {!showForm ? (
+                <div className="flex gap-4 justify-center">
+                  <Button 
+                    onClick={() => {
+                      setSelectedType('Donor');
+                      setShowForm(true);
+                    }}
+                  >
+                    Register as a Person
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setSelectedType('Charity');
+                      setShowForm(true);
+                    }}
+                  >
+                    Register as a Charity
+                  </Button>
+                </div>
+              ) : (
+                <RegisterInterestForm initialType={selectedType || 'Donor'} />
+              )}
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <Button onClick={() => window.location.href = "/auth"} variant="outline">
-              Sign In / Sign Up
-            </Button>
           </div>
 
           <div className="pt-12">
