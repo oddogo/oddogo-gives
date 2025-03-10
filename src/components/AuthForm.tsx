@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,12 +44,22 @@ export const AuthForm = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+        },
       });
       if (error) throw error;
     } catch (error: any) {
       toast.error(error.message);
     }
   };
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      toast.success('Successfully logged in!');
+      navigate('/dashboard');
+    }
+  });
 
   return (
     <div className="space-y-6">
