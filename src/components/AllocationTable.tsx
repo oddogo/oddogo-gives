@@ -44,18 +44,16 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
               onMouseLeave={() => onHoverChange(null)}
             >
               <TableCell>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <ImageIcon className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <span className="text-white font-medium">{toSentenceCase(allocation.allocation_name)}</span>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="w-4 h-4 text-gray-400" />
                   </div>
-                  <div className="pl-13">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-medium">{toSentenceCase(allocation.allocation_name)}</span>
                     <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
                       {allocation.allocation_type}
                     </span>

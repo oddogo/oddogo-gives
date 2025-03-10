@@ -13,29 +13,34 @@ export const ModernHeader = ({ user }: ModernHeaderProps) => {
   const provider = user.app_metadata.provider || 'email';
   const avatarUrl = user.user_metadata.avatar_url;
   const name = user.user_metadata.full_name || user.email?.split('@')[0];
+  
+  // Capitalize the name
+  const capitalizedName = name
+    ?.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 
   return (
     <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          Welcome back, <span className="text-purple-400">{name}</span>
-        </h1>
-        
         <div className="flex items-center space-x-4">
-          <div className="flex items-center text-sm text-white/60">
-            <Mail className="h-4 w-4 mr-1" />
-            via {provider}
-          </div>
-          
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-10 w-10">
             {avatarUrl ? (
-              <AvatarImage src={avatarUrl} alt={name} />
+              <AvatarImage src={avatarUrl} alt={capitalizedName || ''} />
             ) : (
               <AvatarFallback className="bg-purple-600 text-white">
                 {name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             )}
           </Avatar>
+          <h1 className="text-xl font-semibold">
+            Welcome back, <span className="text-purple-400">{capitalizedName}</span>
+          </h1>
+        </div>
+        
+        <div className="flex items-center text-sm text-white/60">
+          <Mail className="h-4 w-4 mr-1" />
+          via {provider}
         </div>
       </div>
     </header>
