@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -28,7 +27,6 @@ export function usePublicProfile(id: string | undefined) {
     try {
       if (!id) return;
       
-      // Get user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -43,10 +41,14 @@ export function usePublicProfile(id: string | undefined) {
 
       setProfile(profileData);
 
-      // Get allocations from the view
       const { data: allocationsData, error: allocationsError } = await supabase
         .from('v_fingerprints_live')
-        .select('*')
+        .select(`
+          *,
+          charities:allocation_charity_id (
+            website
+          )
+        `)
         .eq('user_id', id)
         .is('deleted_at', null);
 
@@ -54,7 +56,6 @@ export function usePublicProfile(id: string | undefined) {
       
       if (allocationsData) {
         const formattedAllocations: Allocation[] = allocationsData.map(item => {
-          // Ensure allocation_type is valid, fallback to 'None - Error' if not
           const allocationType = isValidAllocationType(item.allocation_type) 
             ? item.allocation_type 
             : 'None - Error';
@@ -64,7 +65,8 @@ export function usePublicProfile(id: string | undefined) {
             allocation_name: item.allocation_name || 'Unknown',
             allocation_type: allocationType,
             allocation_percentage: Number(item.allocation_percentage),
-            cause_name: item.allocation_name || 'Unknown'
+            cause_name: item.allocation_name || 'Unknown',
+            website_favicon: item.charities?.website || null
           };
         });
         setAllocations(formattedAllocations);

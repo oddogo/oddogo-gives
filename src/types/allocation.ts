@@ -7,4 +7,5 @@ export interface Allocation {
   allocation_type: AllocationType;
   allocation_percentage: number;
   cause_name?: string | null;
+  website_favicon?: string | null;
 }
