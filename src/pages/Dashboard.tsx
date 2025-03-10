@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { AllocationTable } from "@/components/AllocationTable";
 import { Allocation, AllocationType } from "@/types/allocation";
+import { UserInfo } from "@/components/UserInfo";
+import { User } from "@supabase/supabase-js";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -25,7 +29,8 @@ const Dashboard = () => {
         navigate("/auth");
         return;
       }
-      console.log('Current authenticated user ID:', user.id);
+      console.log('Current authenticated user:', user);
+      setUser(user);
       setUserId(user.id);
       await loadFingerprints(user.id);
     } catch (error) {
@@ -92,12 +97,12 @@ const Dashboard = () => {
         </div>
         
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Your Charitable Fingerprint™</h1>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
-            <p className="text-sm">Current User ID: {userId}</p>
+          <div className="mb-8">
+            {user && <UserInfo user={user} />}
           </div>
 
+          <h1 className="text-3xl font-bold mb-8">Your Charitable Fingerprint™</h1>
+          
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
             {allocations.length > 0 ? (
