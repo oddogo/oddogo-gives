@@ -23,42 +23,61 @@ interface AllocationTableProps {
 
 export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: AllocationTableProps) => {
   return (
-    <div className="bg-white rounded-lg p-4 max-w-2xl">
+    <div className="rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="text-black text-sm">Name</TableHead>
-            <TableHead className="text-black text-sm text-right w-24">Percentage</TableHead>
+          <TableRow className="hover:bg-white/5 border-white/10">
+            <TableHead className="text-gray-400 font-medium">Name</TableHead>
+            <TableHead className="text-gray-400 font-medium text-right w-24">Allocation</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((allocation, index) => (
             <TableRow 
               key={index}
-              className={`transition-colors ${hoveredIndex === index ? 'bg-gray-100' : ''}`}
+              className={`
+                transition-colors cursor-pointer
+                ${hoveredIndex === index ? 'bg-white/10' : 'hover:bg-white/5'}
+                border-white/10
+              `}
               onMouseEnter={() => onHoverChange(index)}
               onMouseLeave={() => onHoverChange(null)}
             >
-              <TableCell className="text-black">
+              <TableCell>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-3 h-3 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <ImageIcon className="w-5 h-5 text-gray-400" />
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <ImageIcon className="w-4 h-4 text-gray-400" />
                     </div>
-                    <span className="break-words font-medium">{toSentenceCase(allocation.allocation_name)}</span>
+                    <span className="text-white font-medium">{toSentenceCase(allocation.allocation_name)}</span>
                   </div>
                   <div className="pl-13">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
                       {allocation.allocation_type}
                     </span>
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="text-black text-sm text-right">{allocation.allocation_percentage * 100}%</TableCell>
+              <TableCell className="text-right">
+                <div className="space-y-1">
+                  <span className="text-white font-medium">
+                    {(allocation.allocation_percentage * 100).toFixed(1)}%
+                  </span>
+                  <div className="w-full bg-white/10 rounded-full h-1">
+                    <div 
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${allocation.allocation_percentage * 100}%`,
+                        backgroundColor: COLORS[index % COLORS.length]
+                      }}
+                    />
+                  </div>
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

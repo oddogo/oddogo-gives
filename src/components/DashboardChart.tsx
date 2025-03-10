@@ -1,14 +1,35 @@
 
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Allocation } from "@/types/allocation";
 
-export const COLORS = ['#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#14B8A6', '#F43F5E'];
+export const COLORS = [
+  '#8B5CF6', // Purple
+  '#D946EF', // Pink
+  '#F97316', // Orange
+  '#0EA5E9', // Blue
+  '#14B8A6', // Teal
+  '#F43F5E', // Red
+];
 
 interface DashboardChartProps {
   data: Allocation[];
   hoveredIndex: number | null;
   onHoverChange: (index: number | null) => void;
 }
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-black/90 backdrop-blur-lg px-4 py-2 rounded-lg border border-white/10">
+        <p className="text-white font-medium">{data.name}</p>
+        <p className="text-gray-300 text-sm">{data.type}</p>
+        <p className="text-white font-bold">{(data.value).toFixed(1)}%</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardChartProps) => {
   const chartData = data.map(allocation => ({
@@ -17,8 +38,18 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
     type: allocation.allocation_type
   }));
 
+  const totalPercentage = chartData.reduce((sum, item) => sum + item.value, 0);
+
   return (
-    <div className="w-full h-[300px] bg-white rounded-lg p-4 text-black">
+    <div className="relative w-full h-[300px]">
+      {/* Center Stats */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="text-center">
+          <p className="text-3xl font-bold text-white">{totalPercentage.toFixed(1)}%</p>
+          <p className="text-sm text-gray-400">Total Allocation</p>
+        </div>
+      </div>
+
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -42,42 +73,12 @@ export const DashboardChart = ({ data, hoveredIndex, onHoverChange }: DashboardC
                 style={{
                   filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
                   opacity: hoveredIndex === null || hoveredIndex === index ? 1 : 0.5,
+                  transition: 'all 0.2s ease-in-out',
                 }}
               />
             ))}
           </Pie>
-          {/* Separate layer for labels to ensure they're always visible */}
-          <Pie
-            data={chartData}
-            innerRadius="70%"
-            outerRadius="90%"
-            paddingAngle={4}
-            dataKey="value"
-            nameKey="name"
-            startAngle={90}
-            endAngle={-270}
-            fill="none"
-            stroke="none"
-            label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
-              const RADIAN = Math.PI / 180;
-              const radius = 25 + innerRadius + (outerRadius - innerRadius);
-              const x = cx + radius * Math.cos(-midAngle * RADIAN);
-              const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-              return (
-                <text
-                  x={x}
-                  y={y}
-                  fill={COLORS[index % COLORS.length]}
-                  textAnchor={x > cx ? 'start' : 'end'}
-                  dominantBaseline="central"
-                  className="font-semibold select-none pointer-events-none"
-                >
-                  {`${value.toFixed(0)}%`}
-                </text>
-              );
-            }}
-          />
+          <Tooltip content={<CustomTooltip />} />
         </PieChart>
       </ResponsiveContainer>
     </div>
