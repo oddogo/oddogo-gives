@@ -8,6 +8,7 @@ export interface Profile {
   bio: string;
   location?: string;
   avatar_url?: string;
+  causes_description?: string;
 }
 
 export function usePublicProfile(id: string | undefined) {
