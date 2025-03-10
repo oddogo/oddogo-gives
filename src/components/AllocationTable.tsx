@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -51,7 +50,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
             <TableRow 
               key={index}
               className={`
-                transition-colors cursor-pointer
+                transition-colors cursor-pointer bg-transparent
                 ${hoveredIndex === index ? 'bg-white/10' : 'hover:bg-white/5'}
                 border-white/10
               `}
@@ -64,12 +63,12 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                     className="w-3 h-3 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
                     {allocation.website_favicon ? (
                       <img 
-                        src={`https://www.google.com/s2/favicons?domain=${allocation.website_favicon}&sz=32`}
+                        src={`https://www.google.com/s2/favicons?domain=${allocation.website_favicon}&sz=64`}
                         alt=""
-                        className="w-4 h-4"
+                        className="w-8 h-8"
                         onError={(e) => {
                           const target = e.currentTarget;
                           target.style.display = 'none';
@@ -80,7 +79,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                         }}
                       />
                     ) : null}
-                    <ImageIcon className={`w-4 h-4 text-gray-400 ${allocation.website_favicon ? 'hidden' : ''}`} />
+                    <ImageIcon className={`w-6 h-6 text-gray-400 ${allocation.website_favicon ? 'hidden' : ''}`} />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-medium">{toSentenceCase(allocation.allocation_name)}</span>
