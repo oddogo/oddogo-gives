@@ -4,9 +4,10 @@ import React from 'react';
 export const Logo = () => {
   return (
     <img 
-      src="/lovable-uploads/84d2bfc5-f954-419b-bc27-5208fd6f2676.png"
+      src="/lovable-uploads/73c9c40f-6400-4389-aec9-42268145ca00.png"
       alt="Oddogo Logo"
       className="h-12 md:h-16"
     />
   );
 };
+
