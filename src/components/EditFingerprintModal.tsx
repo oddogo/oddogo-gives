@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Allocation } from "@/types/allocation";
+import { Allocation, AllocationType } from "@/types/allocation";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllocationOptions } from "@/hooks/useAllocationOptions";
@@ -25,7 +26,8 @@ export const EditFingerprintModal = ({
   const [loading, setLoading] = useState(false);
   const [totalPercentage, setTotalPercentage] = useState(100);
   const [error, setError] = useState<string | null>(null);
-  const [allocationType, setAllocationType] = useState<'Charity' | 'Subcause' | 'Meta' | 'Region' | 'DAF' | 'Spotlight'>('Charity');
+  // Update the type to match the valid allocation types we want to support
+  const [allocationType, setAllocationType] = useState<Exclude<AllocationType, 'None - Error'>>('Charity');
   const { options, isLoading } = useAllocationOptions();
 
   useEffect(() => {

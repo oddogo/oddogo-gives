@@ -5,8 +5,8 @@ import { Plus } from "lucide-react";
 import { AllocationType } from "@/types/allocation";
 
 interface AllocationTypeSelectorProps {
-  allocationType: AllocationType;
-  onTypeChange: (type: AllocationType) => void;
+  allocationType: Exclude<AllocationType, 'None - Error'>;
+  onTypeChange: (type: Exclude<AllocationType, 'None - Error'>) => void;
   onAdd: () => void;
 }
 
