@@ -29,19 +29,20 @@ export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) =>
     e.preventDefault();
     setLoading(true);
     
-    console.log('Starting payment process...', { amount, recipientId });
-
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Please enter a valid amount");
-      setLoading(false);
-      return;
-    }
-
     try {
+      const numericAmount = parseFloat(amount);
+      console.log('Starting payment process...', { amount: numericAmount, recipientId });
+
+      if (!numericAmount || numericAmount <= 0) {
+        toast.error("Please enter a valid amount");
+        setLoading(false);
+        return;
+      }
+
       console.log('Invoking create-payment function...');
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { 
-          amount: parseFloat(amount), // Send as regular amount, not in cents
+          amount: numericAmount,
           recipientId 
         }
       });
@@ -50,7 +51,7 @@ export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) =>
 
       if (error) {
         console.error('Payment error:', error);
-        toast.error("Failed to process payment. Please try again.");
+        toast.error(error.message || "Failed to process payment. Please try again.");
         throw error;
       }
 

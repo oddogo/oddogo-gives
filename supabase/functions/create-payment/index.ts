@@ -16,44 +16,50 @@ serve(async (req) => {
   try {
     // Initialize Stripe
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    console.log('Checking Stripe key:', !!stripeKey);
+    
     if (!stripeKey) {
-      console.error('Missing Stripe secret key');
-      throw new Error('Configuration error');
+      throw new Error('Missing Stripe configuration');
     }
 
-    const stripe = Stripe(stripeKey);
+    const stripe = new Stripe(stripeKey);
+    console.log('Stripe initialized');
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase configuration');
-      throw new Error('Configuration error');
-    }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Parse request body
+    // Parse request data
     const requestData = await req.json();
-    const { amount, recipientId } = requestData;
-    
-    console.log('Received request data:', { amount, recipientId });
+    console.log('Received request data:', requestData);
 
-    if (!amount || isNaN(amount) || amount <= 0) {
-      throw new Error('Invalid amount');
+    const { amount, recipientId } = requestData;
+    const numericAmount = Number(amount);
+
+    // Validate amount
+    if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
+      throw new Error('Invalid amount provided');
     }
 
+    // Validate recipient
     if (!recipientId) {
       throw new Error('Missing recipient ID');
     }
 
-    // Get user from auth header
+    // Get auth user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
+    // Initialize Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('Supabase initialized');
+
+    // Get user
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
@@ -63,7 +69,7 @@ serve(async (req) => {
       throw new Error('Authentication failed');
     }
 
-    console.log('Authenticated user:', user.id);
+    console.log('User authenticated:', user.id);
 
     // Get recipient's fingerprint
     const { data: fingerprint, error: fingerprintError } = await supabaseClient
@@ -82,8 +88,13 @@ serve(async (req) => {
       throw new Error('Recipient not found');
     }
 
+    console.log('Found fingerprint:', fingerprint.fingerprint_id);
+
+    // Convert amount to cents for Stripe
+    const amountInCents = Math.round(numericAmount * 100);
+    console.log('Amount in cents:', amountInCents);
+
     // Create payment record
-    const amountInCents = Math.round(amount * 100);
     const paymentData = {
       amount: amountInCents,
       currency: 'gbp',
@@ -103,12 +114,15 @@ serve(async (req) => {
       throw new Error('Failed to create payment record');
     }
 
-    // Create Stripe checkout session
+    console.log('Payment record created:', payment.id);
+
+    // Get origin for redirect URLs
     const origin = req.headers.get('origin');
     if (!origin) {
       throw new Error('Missing origin header');
     }
 
+    // Create Stripe session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -134,11 +148,7 @@ serve(async (req) => {
       },
     });
 
-    console.log('Created Stripe session:', { 
-      sessionId: session.id, 
-      amount: amountInCents,
-      currency: 'gbp'
-    });
+    console.log('Stripe session created:', session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -148,9 +158,12 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Error creating payment:', error);
+    console.error('Payment error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to create payment session' }),
+      JSON.stringify({ 
+        error: error.message || 'Failed to process payment',
+        details: error.toString()
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
