@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Allocation } from "@/types/allocation";
 import { toast } from "sonner";
@@ -48,12 +47,16 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
   };
 
   const handleAddAllocation = (newAllocation: Allocation) => {
-    // For subcauses, allow multiple entries
+    // For subcauses, allow multiple entries but check for duplicates
     if (newAllocation.allocation_type === 'Subcause') {
-      // Check if this exact subcause ID has already been added
+      // Ensure allocation_subcause_id is a number
+      const subcauseId = typeof newAllocation.allocation_subcause_id === 'string' 
+        ? parseInt(newAllocation.allocation_subcause_id) 
+        : newAllocation.allocation_subcause_id;
+
       const isDuplicate = allocations.some(allocation => 
         allocation.allocation_type === 'Subcause' && 
-        allocation.allocation_subcause_id === newAllocation.allocation_subcause_id
+        allocation.allocation_subcause_id === subcauseId
       );
 
       if (isDuplicate) {
@@ -61,7 +64,10 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
         return;
       }
 
-      setAllocations([...allocations, newAllocation]);
+      setAllocations([...allocations, {
+        ...newAllocation,
+        allocation_subcause_id: subcauseId
+      }]);
       return;
     }
 

@@ -35,10 +35,9 @@ export const CauseSelector = ({
       allocation_name: subcauseName,
       allocation_type: 'Subcause',
       allocation_percentage: 0,
-      allocation_subcause_id: subcauseId
+      allocation_subcause_id: subcauseId  // Ensure we're setting the correct ID
     });
     toast.success(`Added ${subcauseName} to your fingerprint`);
-    // Reset to cause selection after adding a subcause
     setSelectedCauseId(null);
   };
 
