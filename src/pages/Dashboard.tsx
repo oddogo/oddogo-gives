@@ -110,7 +110,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#008080] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] to-[#2C1F3C] text-white">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <Logo />
@@ -133,30 +133,36 @@ const Dashboard = () => {
             {user && <UserInfo user={user} />}
           </div>
 
-          <h1 className="text-3xl font-bold mb-8">Your Charitable Fingerprint™</h1>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
-            {allocations.length > 0 ? (
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="w-full">
-                  <DashboardChart 
-                    data={allocations} 
-                    hoveredIndex={hoveredIndex}
-                    onHoverChange={setHoveredIndex}
-                  />
+          <div className="space-y-8">
+            <h1 className="text-3xl font-bold">Your Charitable Fingerprint™</h1>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+              <FingerPrintList />
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Allocation Overview</h2>
+              {allocations.length > 0 ? (
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="w-full">
+                    <DashboardChart 
+                      data={allocations} 
+                      hoveredIndex={hoveredIndex}
+                      onHoverChange={setHoveredIndex}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <AllocationTable 
+                      data={allocations} 
+                      hoveredIndex={hoveredIndex}
+                      onHoverChange={setHoveredIndex}
+                    />
+                  </div>
                 </div>
-                <div className="w-full">
-                  <AllocationTable 
-                    data={allocations} 
-                    hoveredIndex={hoveredIndex}
-                    onHoverChange={setHoveredIndex}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="text-center text-gray-300">No allocations found</p>
-            )}
+              ) : (
+                <p className="text-center text-gray-300">No allocations found</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
