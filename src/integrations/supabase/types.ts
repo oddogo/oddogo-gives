@@ -1472,7 +1472,6 @@ export type Database = {
           id: string
           status: string
           stripe_charge_id: string | null
-          stripe_client_secret: string | null
           stripe_customer_id: string | null
           stripe_payment_email: string | null
           stripe_payment_intent_id: string | null
@@ -1487,7 +1486,6 @@ export type Database = {
           id?: string
           status?: string
           stripe_charge_id?: string | null
-          stripe_client_secret?: string | null
           stripe_customer_id?: string | null
           stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null
@@ -1502,7 +1500,6 @@ export type Database = {
           id?: string
           status?: string
           stripe_charge_id?: string | null
-          stripe_client_secret?: string | null
           stripe_customer_id?: string | null
           stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null

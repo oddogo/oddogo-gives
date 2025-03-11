@@ -84,17 +84,13 @@ const createStripeSession = async (
     },
   });
 
-  // Store the payment intent ID immediately after session creation
   const { error: updateError } = await supabase
     .from('stripe_payments')
-    .update({ 
-      stripe_payment_intent_id: session.payment_intent,
-      stripe_client_secret: session.client_secret
-    })
+    .update({ stripe_payment_intent_id: session.payment_intent })
     .eq('id', payment.id);
 
   if (updateError) {
-    console.error('Error updating payment record with Stripe IDs:', updateError);
+    console.error('Error updating payment record with Stripe ID:', updateError);
     throw new Error('Failed to update payment record with Stripe session details');
   }
 
@@ -136,7 +132,6 @@ serve(async (req) => {
     const userId = authHeader ? (await supabase.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : null;
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    // Get recipient's fingerprint
     const { data: fingerprint, error: fingerprintError } = await supabase
       .from('fingerprints_users')
       .select('fingerprint_id')
@@ -156,7 +151,6 @@ serve(async (req) => {
     const fingerprintId = fingerprint.fingerprint_id;
     console.log('Found fingerprint:', fingerprintId);
 
-    // Create initial payment record
     const payment = await createPaymentRecord(supabase, {
       amount: amountInCents,
       currency: 'gbp',
@@ -171,7 +165,6 @@ serve(async (req) => {
       throw new Error('Missing origin header');
     }
 
-    // Create Stripe session with updated payment record
     const session = await createStripeSession(
       stripe,
       amountInCents,
