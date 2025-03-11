@@ -35,59 +35,6 @@ const validatePaymentRequest = (data: any): { isValid: boolean; error?: string }
   return { isValid: true };
 };
 
-const initializeSupabase = () => {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase configuration');
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey);
-};
-
-const initializeStripe = () => {
-  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!stripeKey) {
-    throw new Error('Missing Stripe configuration');
-  }
-  return new Stripe(stripeKey);
-};
-
-const getUserIdFromAuth = async (authHeader: string | null, supabase: any) => {
-  if (!authHeader) return null;
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-    return user?.id || null;
-  } catch (error) {
-    console.log('Auth error, continuing as anonymous donation:', error.message);
-    return null;
-  }
-};
-
-const getRecipientFingerprint = async (supabase: any, recipientId: string) => {
-  const { data: fingerprint, error: fingerprintError } = await supabase
-    .from('fingerprints_users')
-    .select('fingerprint_id')
-    .eq('user_id', recipientId)
-    .maybeSingle();
-
-  if (fingerprintError) {
-    console.error('Error fetching fingerprint:', fingerprintError);
-    throw new Error('Failed to fetch recipient fingerprint');
-  }
-
-  if (!fingerprint?.fingerprint_id) {
-    console.error('No fingerprint found for recipient:', recipientId);
-    throw new Error('Recipient not found');
-  }
-
-  return fingerprint.fingerprint_id;
-};
-
 const createPaymentRecord = async (supabase: any, paymentData: PaymentData) => {
   const { data: payment, error: paymentError } = await supabase
     .from('stripe_payments')
@@ -137,6 +84,7 @@ const createStripeSession = async (
     },
   });
 
+  // Store the payment intent ID immediately after session creation
   const { error: updateError } = await supabase
     .from('stripe_payments')
     .update({ 
@@ -147,6 +95,7 @@ const createStripeSession = async (
 
   if (updateError) {
     console.error('Error updating payment record with Stripe IDs:', updateError);
+    throw new Error('Failed to update payment record with Stripe session details');
   }
 
   return session;
@@ -158,8 +107,15 @@ serve(async (req) => {
   }
 
   try {
-    const stripe = initializeStripe();
-    const supabase = initializeSupabase();
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    });
+    
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
+
     console.log('Services initialized');
 
     const requestData = await req.json();
@@ -176,12 +132,31 @@ serve(async (req) => {
     const { amount, recipientId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
-    const userId = await getUserIdFromAuth(req.headers.get('Authorization'), supabase);
+    const authHeader = req.headers.get('Authorization');
+    const userId = authHeader ? (await supabase.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : null;
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    const fingerprintId = await getRecipientFingerprint(supabase, recipientId);
+    // Get recipient's fingerprint
+    const { data: fingerprint, error: fingerprintError } = await supabase
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', recipientId)
+      .maybeSingle();
+
+    if (fingerprintError) {
+      console.error('Error fetching fingerprint:', fingerprintError);
+      throw new Error('Failed to fetch recipient fingerprint');
+    }
+
+    if (!fingerprint?.fingerprint_id) {
+      console.error('No fingerprint found for recipient:', recipientId);
+      throw new Error('Recipient not found');
+    }
+
+    const fingerprintId = fingerprint.fingerprint_id;
     console.log('Found fingerprint:', fingerprintId);
 
+    // Create initial payment record
     const payment = await createPaymentRecord(supabase, {
       amount: amountInCents,
       currency: 'gbp',
@@ -193,12 +168,10 @@ serve(async (req) => {
 
     const origin = req.headers.get('origin');
     if (!origin) {
-      return new Response(
-        JSON.stringify({ error: 'Missing origin header' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+      throw new Error('Missing origin header');
     }
 
+    // Create Stripe session with updated payment record
     const session = await createStripeSession(
       stripe,
       amountInCents,
