@@ -42,13 +42,15 @@ serve(async (req) => {
       throw new Error('Missing recipient ID');
     }
 
-    // Get auth user
+    // Get auth user using the Authorization header
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
-    // Initialize Supabase
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -57,9 +59,9 @@ serve(async (req) => {
     }
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    console.log('Supabase initialized');
+    console.log('Supabase client initialized');
 
-    // Get user
+    // Get user from auth token
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
