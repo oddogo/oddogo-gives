@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Allocation } from "@/types/allocation";
-import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllocationOptions } from "@/hooks/useAllocationOptions";
+import { AllocationTypeSelector } from './fingerprint/AllocationTypeSelector';
+import { AllocationList } from './fingerprint/AllocationList';
+import { SaveSection } from './fingerprint/SaveSection';
 
 interface EditFingerprintModalProps {
   isOpen: boolean;
@@ -166,82 +163,25 @@ export const EditFingerprintModal = ({
             </div>
           )}
 
-          <div className="flex gap-2 items-center">
-            <Select
-              value={allocationType}
-              onValueChange={(value: any) => setAllocationType(value)}
-            >
-              <SelectTrigger className="w-[200px] bg-white/5 border-white/10">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Charity">Partner Charity</SelectItem>
-                <SelectItem value="Subcause">Sub Cause</SelectItem>
-                <SelectItem value="Region">Region</SelectItem>
-                <SelectItem value="Meta">Tag</SelectItem>
-                <SelectItem value="DAF">Donor Advised Fund</SelectItem>
-                <SelectItem value="Spotlight">Spotlight Charity</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              onClick={handleAddAllocation}
-              className="gap-2"
-              variant="outline"
-            >
-              <Plus className="h-4 w-4" />
-              Add Allocation
-            </Button>
-          </div>
+          <AllocationTypeSelector
+            allocationType={allocationType}
+            onTypeChange={(value) => setAllocationType(value)}
+            onAdd={handleAddAllocation}
+          />
 
-          <div className="space-y-4">
-            {allocations.map((allocation, index) => (
-              <div key={index} className="flex items-center gap-4 p-4 rounded-lg bg-white/5">
-                <div className="flex-1">
-                  <Label htmlFor={`allocation-${index}`} className="text-white/60">
-                    {allocation.allocation_name}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id={`allocation-${index}`}
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={Math.round(allocation.allocation_percentage * 100)}
-                      onChange={(e) => handlePercentageChange(index, Number(e.target.value))}
-                      className="bg-white/5 border-white/10"
-                    />
-                    <span className="text-white/60">%</span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(index)}
-                  className="hover:bg-white/10"
-                >
-                  <Trash2 className="h-4 w-4 text-white/60" />
-                </Button>
-              </div>
-            ))}
-          </div>
+          <AllocationList
+            allocations={allocations}
+            onPercentageChange={handlePercentageChange}
+            onDelete={handleDelete}
+          />
 
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-white/60">
-              Total: {totalPercentage.toFixed(1)}%
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose} className="border-white/10">
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={loading || !!error}
-                className={error ? "opacity-50 cursor-not-allowed" : ""}
-              >
-                {loading ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </div>
+          <SaveSection
+            totalPercentage={totalPercentage}
+            error={error}
+            loading={loading}
+            onSave={handleSave}
+            onCancel={onClose}
+          />
         </div>
       </DialogContent>
     </Dialog>
