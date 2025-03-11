@@ -7,6 +7,7 @@ import { ActiveCampaign } from "@/components/ActiveCampaign";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
+import { HandHeart } from "lucide-react";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -43,7 +44,19 @@ const PublicProfile = () => {
       )}
 
       {showPaymentForm && (
-        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 text-primary mb-2">
+              <HandHeart className="w-5 h-5" />
+              <span className="font-medium">Make a Difference</span>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Support {profile.display_name}'s Causes
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Your donation will help fund the causes and charities that {profile.display_name} supports
+            </p>
+          </div>
           <PaymentForm 
             recipientId={id || ''} 
             recipientName={profile.display_name}
