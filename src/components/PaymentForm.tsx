@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { HandHeart, Coins, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PaymentFormProps {
   recipientId: string;
@@ -27,19 +27,42 @@ export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) =>
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    console.log('Starting payment process...', { amount, recipientId });
+
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Please enter a valid amount");
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Invoking create-payment function...');
       const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { amount: parseFloat(amount) * 100, recipientId }
+        body: { 
+          amount: parseFloat(amount) * 100, // Convert to cents
+          recipientId 
+        }
       });
 
-      if (error) throw error;
+      console.log('Payment function response:', { data, error });
+
+      if (error) {
+        console.error('Payment error:', error);
+        toast.error("Failed to process payment. Please try again.");
+        throw error;
+      }
 
       if (data?.url) {
+        console.log('Redirecting to payment URL:', data.url);
         window.location.href = data.url;
+      } else {
+        toast.error("Invalid response from payment service");
+        console.error('No URL in response:', data);
       }
     } catch (error) {
       console.error('Payment error:', error);
+      toast.error("Failed to process payment. Please try again.");
     } finally {
       setLoading(false);
     }

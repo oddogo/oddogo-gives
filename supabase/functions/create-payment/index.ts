@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-const stripe = Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '');
+import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,12 +8,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const stripe = Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '');
+    console.log('Stripe initialized');
+
     const { amount, recipientId } = await req.json();
+    console.log('Received payment request:', { amount, recipientId });
+
+    if (!amount || amount <= 0) {
+      throw new Error('Invalid amount');
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -38,6 +46,8 @@ serve(async (req) => {
       },
     });
 
+    console.log('Stripe session created:', { sessionId: session.id });
+
     return new Response(
       JSON.stringify({ url: session.url }),
       { 
@@ -46,8 +56,11 @@ serve(async (req) => {
       },
     );
   } catch (error) {
+    console.error('Error creating payment:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Failed to create payment session' 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
