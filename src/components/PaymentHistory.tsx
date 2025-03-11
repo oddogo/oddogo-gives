@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -28,6 +29,9 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const [pendingAmount, setPendingAmount] = useState(0);
 
   const fetchPayments = async () => {
+    console.log('Fetching payments for fingerprint:', fingerprintId);
+
+    // First, get the user_id for this fingerprint
     const { data: fingerprint, error: fingerprintError } = await supabase
       .from('fingerprints_users')
       .select('user_id')
@@ -39,10 +43,18 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
       return;
     }
 
-    const { data: userFingerprints } = await supabase
+    console.log('Found user_id:', fingerprint?.user_id);
+
+    // Then get all fingerprints for this user
+    const { data: userFingerprints, error: fingerprintsError } = await supabase
       .from('fingerprints_users')
       .select('fingerprint_id')
       .eq('user_id', fingerprint.user_id);
+
+    if (fingerprintsError) {
+      console.error('Error fetching user fingerprints:', fingerprintsError);
+      return;
+    }
 
     if (!userFingerprints?.length) {
       console.error('No fingerprints found for user');
@@ -50,31 +62,40 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
     }
 
     const fingerprintIds = userFingerprints.map(f => f.fingerprint_id);
+    console.log('All fingerprint IDs for user:', fingerprintIds);
 
-    const { data, error } = await supabase
+    // Finally get all payments for these fingerprints
+    const { data: paymentsData, error: paymentsError } = await supabase
       .from('stripe_payments')
       .select('*')
       .in('fingerprint_id', fingerprintIds)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching payments:', error);
+    if (paymentsError) {
+      console.error('Error fetching payments:', paymentsError);
       return;
     }
 
-    setPayments(data || []);
+    console.log('Fetched payments:', paymentsData);
 
-    const completed = data?.filter(p => p.status === 'completed')
+    setPayments(paymentsData || []);
+
+    const completed = paymentsData?.filter(p => p.status === 'completed')
       .reduce((sum, p) => sum + p.amount, 0) || 0;
-    const pending = data?.filter(p => p.status === 'pending')
+    const pending = paymentsData?.filter(p => p.status === 'pending')
       .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+    console.log('Completed amount:', completed, 'Pending amount:', pending);
 
     setTotalReceived(completed);
     setPendingAmount(pending);
   };
 
   useEffect(() => {
-    fetchPayments();
+    if (fingerprintId) {
+      console.log('Component mounted with fingerprint ID:', fingerprintId);
+      fetchPayments();
+    }
 
     const channel = supabase
       .channel('stripe_payments_changes')
