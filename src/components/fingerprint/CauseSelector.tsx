@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useCausesAndSubcauses } from "@/hooks/useCausesAndSubcauses";
 import { Allocation } from "@/types/allocation";
 import { Search, ArrowLeft, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface CauseSelectorProps {
   isOpen: boolean;
@@ -37,6 +37,7 @@ export const CauseSelector = ({
       allocation_percentage: 0,
       allocation_subcause_id: subcauseId
     });
+    toast.success(`Added ${subcauseName} to your fingerprint`);
     // Reset to cause selection after adding a subcause
     setSelectedCauseId(null);
   };
@@ -94,7 +95,6 @@ export const CauseSelector = ({
           ) : (
             <div className="space-y-4">
               {!selectedCauseId ? (
-                // Show causes as tags with subcause counts
                 <div className="flex flex-wrap gap-2">
                   {filteredCauses.map((cause) => (
                     <Button
@@ -109,7 +109,6 @@ export const CauseSelector = ({
                   ))}
                 </div>
               ) : (
-                // Show subcauses for selected cause
                 <div className="space-y-4">
                   <Button
                     variant="ghost"
