@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ interface AllocationTableRowProps {
   index: number;
   hoveredIndex: number | null;
   onHoverChange: (index: number | null) => void;
+  readOnly?: boolean;
 }
 
 const toSentenceCase = (str: string) => {
@@ -35,11 +35,12 @@ const getTypeColor = (type: string): string => {
   }
 };
 
-export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverChange }: AllocationTableRowProps) => {
+export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverChange, readOnly = false }: AllocationTableRowProps) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedPercentage, setEditedPercentage] = useState<string>("");
 
   const handleEdit = () => {
+    if (readOnly) return;
     setEditingId(allocation.id);
     setEditedPercentage(String(allocation.allocation_percentage * 100));
   };
@@ -113,20 +114,9 @@ export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverCha
       </TableCell>
       <TableCell className="text-right">
         <div className="space-y-1">
-          {editingId === allocation.id ? (
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              value={editedPercentage}
-              onChange={(e) => setEditedPercentage(e.target.value)}
-              className="w-24 bg-white/5 border-white/10 text-white"
-            />
-          ) : (
-            <span className="text-white font-medium">
-              {(allocation.allocation_percentage * 100).toFixed(1)}%
-            </span>
-          )}
+          <span className="text-white font-medium">
+            {(allocation.allocation_percentage * 100).toFixed(1)}%
+          </span>
           <div className="w-full bg-white/10 rounded-full h-1">
             <div 
               className="h-full rounded-full transition-all duration-300"
@@ -139,24 +129,7 @@ export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverCha
         </div>
       </TableCell>
       <TableCell>
-        {editingId === allocation.id ? (
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleSave}
-            >
-              Save
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleCancel}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
+        {!readOnly && (
           <Button 
             size="sm"
             variant="outline"

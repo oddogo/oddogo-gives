@@ -30,7 +30,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
           className="gap-2 border-white/10"
         >
           <Settings2 className="h-4 w-4" />
-          Edit All
+          Update my Fingerprint
         </Button>
       </div>
 
@@ -45,6 +45,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                 index={index}
                 hoveredIndex={hoveredIndex}
                 onHoverChange={onHoverChange}
+                readOnly={true}
               />
             ))}
           </TableBody>
