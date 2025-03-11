@@ -26,7 +26,7 @@ export const AllocationTypeSelector = ({
           onTypeChange(value as ValidAllocationType)
         }}
       >
-        <SelectTrigger className="w-[200px] bg-white/5 border-white/10">
+        <SelectTrigger className="w-[200px] bg-[#2A2F3C] border-white/10 text-white">
           <SelectValue placeholder="Select type" />
         </SelectTrigger>
         <SelectContent>
