@@ -1468,6 +1468,7 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          fingerprint_id: string | null
           id: string
           status: string
           stripe_client_secret: string | null
@@ -1479,6 +1480,7 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
+          fingerprint_id?: string | null
           id?: string
           status?: string
           stripe_client_secret?: string | null
@@ -1490,6 +1492,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          fingerprint_id?: string | null
           id?: string
           status?: string
           stripe_client_secret?: string | null
@@ -1497,7 +1500,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stripe_payments_fingerprint_id_fkey"
+            columns: ["fingerprint_id"]
+            isOneToOne: false
+            referencedRelation: "fingerprints"
+            referencedColumns: ["fingerprint"]
+          },
+        ]
       }
       users: {
         Row: {
