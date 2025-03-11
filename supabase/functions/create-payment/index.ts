@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -122,9 +123,6 @@ serve(async (req) => {
       user_id: userId, // This can be null for anonymous donations
       fingerprint_id: fingerprint.fingerprint_id,
       status: 'pending',
-      stripe_payment_email: null, // Will be updated when payment is completed
-      stripe_customer_id: null, // Will be updated when payment is completed
-      stripe_charge_id: null // Will be updated when payment is completed
     };
 
     const { data: payment, error: paymentError } = await supabaseClient
