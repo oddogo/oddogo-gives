@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -15,6 +14,8 @@ import { useState } from "react";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { EditAllocationsModal } from "./EditAllocationsModal";
+import { Settings2 } from "lucide-react";
 
 const toSentenceCase = (str: string) => {
   return str.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
@@ -49,6 +50,7 @@ interface AllocationTableProps {
 }
 
 export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: AllocationTableProps) => {
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedPercentage, setEditedPercentage] = useState<string>("");
 
@@ -85,6 +87,18 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
 
   return (
     <div className="rounded-lg bg-[#1A1F2C]/95 border border-white/10 backdrop-blur-sm overflow-hidden w-full">
+      <div className="p-4 border-b border-white/10 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Allocations</h3>
+        <Button 
+          variant="outline" 
+          onClick={() => setShowEditModal(true)}
+          className="gap-2 border-white/10"
+        >
+          <Settings2 className="h-4 w-4" />
+          Edit All
+        </Button>
+      </div>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -198,6 +212,14 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
           </TableBody>
         </Table>
       </div>
+
+      {showEditModal && (
+        <EditAllocationsModal
+          allocations={data}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
     </div>
   );
 };
