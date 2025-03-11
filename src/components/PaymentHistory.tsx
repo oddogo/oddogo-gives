@@ -28,32 +28,54 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const [totalReceived, setTotalReceived] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
 
+  const fetchPayments = async () => {
+    const { data, error } = await supabase
+      .from('stripe_payments')
+      .select('*')
+      .eq('fingerprint_id', fingerprintId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching payments:', error);
+      return;
+    }
+
+    setPayments(data || []);
+
+    // Calculate totals
+    const completed = data?.filter(p => p.status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0) || 0;
+    const pending = data?.filter(p => p.status === 'pending')
+      .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+    setTotalReceived(completed);
+    setPendingAmount(pending);
+  };
+
   useEffect(() => {
-    const fetchPayments = async () => {
-      const { data, error } = await supabase
-        .from('stripe_payments')
-        .select('*')
-        .eq('fingerprint_id', fingerprintId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching payments:', error);
-        return;
-      }
-
-      setPayments(data || []);
-
-      // Calculate totals
-      const completed = data?.filter(p => p.status === 'completed')
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-      const pending = data?.filter(p => p.status === 'pending')
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      setTotalReceived(completed);
-      setPendingAmount(pending);
-    };
-
     fetchPayments();
+
+    // Subscribe to changes in the stripe_payments table
+    const channel = supabase
+      .channel('stripe_payments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stripe_payments',
+          filter: `fingerprint_id=eq.${fingerprintId}`
+        },
+        (payload) => {
+          console.log('Payment update received:', payload);
+          fetchPayments(); // Refresh the payments list when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fingerprintId]);
 
   return (
