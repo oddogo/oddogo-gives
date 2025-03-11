@@ -86,8 +86,13 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
       console.log("Update error:", error); // Debug log
 
       if (error) throw error;
-      toast.success("Profile updated successfully!");
-      if (onSuccess) onSuccess();
+      toast.success("Profile saved successfully!", {
+        duration: 4000,
+        style: {
+          background: 'var(--primary)',
+          color: 'white',
+        },
+      });
     } catch (error: any) {
       console.error("Error updating profile:", error); // Debug log
       toast.error(error.message);

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,7 +51,7 @@ const Profile = () => {
           <div className="p-6 space-y-6">
             <h1 className="text-3xl font-bold">Your Profile</h1>
             <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
-              <ProfileForm onSuccess={() => navigate('/dashboard')} />
+              <ProfileForm />
             </Card>
           </div>
         </div>
