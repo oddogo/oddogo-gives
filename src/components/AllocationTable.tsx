@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -6,9 +7,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Pencil } from "lucide-react";
 import { Allocation } from "@/types/allocation";
 import { COLORS } from "./DashboardChart";
+import { Button } from "./ui/button";
+import { useState } from "react";
+import { Input } from "./ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const toSentenceCase = (str: string) => {
   return str.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
@@ -43,6 +49,40 @@ interface AllocationTableProps {
 }
 
 export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: AllocationTableProps) => {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editedPercentage, setEditedPercentage] = useState<string>("");
+
+  const handleEdit = (allocation: Allocation) => {
+    setEditingId(allocation.id);
+    setEditedPercentage(String(allocation.allocation_percentage * 100));
+  };
+
+  const handleSave = async (allocation: Allocation) => {
+    try {
+      const newPercentage = Number(editedPercentage) / 100;
+      
+      const { error } = await supabase
+        .from('v_fingerprints_live')
+        .update({ allocation_percentage: newPercentage })
+        .eq('id', allocation.id);
+
+      if (error) throw error;
+
+      toast.success("Allocation updated successfully!");
+      setEditingId(null);
+      
+      // Refresh the page to show updated data
+      window.location.reload();
+    } catch (error: any) {
+      toast.error("Error updating allocation: " + error.message);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditedPercentage("");
+  };
+
   return (
     <div className="rounded-lg bg-[#1A1F2C]/95 border border-white/10 backdrop-blur-sm overflow-hidden w-full">
       <div className="overflow-x-auto">
@@ -51,6 +91,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
             <TableRow className="hover:bg-white/5 border-white/10">
               <TableHead className="text-gray-400 font-medium">Name</TableHead>
               <TableHead className="text-gray-400 font-medium text-right w-24">Allocation</TableHead>
+              <TableHead className="text-gray-400 font-medium w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -99,9 +140,20 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="space-y-1">
-                    <span className="text-white font-medium">
-                      {(allocation.allocation_percentage * 100).toFixed(1)}%
-                    </span>
+                    {editingId === allocation.id ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editedPercentage}
+                        onChange={(e) => setEditedPercentage(e.target.value)}
+                        className="w-24 bg-white/5 border-white/10 text-white"
+                      />
+                    ) : (
+                      <span className="text-white font-medium">
+                        {(allocation.allocation_percentage * 100).toFixed(1)}%
+                      </span>
+                    )}
                     <div className="w-full bg-white/10 rounded-full h-1">
                       <div 
                         className="h-full rounded-full transition-all duration-300"
@@ -112,6 +164,34 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
                       />
                     </div>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {editingId === allocation.id ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleSave(allocation)}
+                      >
+                        Save
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(allocation)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
