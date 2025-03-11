@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -62,7 +63,7 @@ export function usePublicProfile(id: string | undefined) {
             : 'None - Error';
 
           return {
-            id: Number(item.id),
+            id: item.allocation_charity_id, // Use the UUID directly
             allocation_name: item.allocation_name || 'Unknown',
             allocation_type: allocationType,
             allocation_percentage: Number(item.allocation_percentage),
@@ -81,3 +82,4 @@ export function usePublicProfile(id: string | undefined) {
 
   return { profile, allocations, loading };
 }
+
