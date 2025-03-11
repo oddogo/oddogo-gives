@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
@@ -6,8 +7,8 @@ import { ActiveCampaign } from "@/components/ActiveCampaign";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
+import { PaymentHistory } from "@/components/PaymentHistory";
 import { HandHeart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -62,7 +63,8 @@ const PublicProfile = () => {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <PaymentHistory fingerprintId={id || ''} />
         <ActiveCampaign />
       </div>
     </div>

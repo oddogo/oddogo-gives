@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -113,7 +112,7 @@ const createStripeSession = async (
   fingerprintId: string,
   userId: string | null
 ) => {
-  return await stripe.checkout.sessions.create({
+  const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
       {
@@ -128,7 +127,7 @@ const createStripeSession = async (
       },
     ],
     mode: 'payment',
-    success_url: `${origin}/payment-success?payment_id=${payment.id}`,
+    success_url: `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
     metadata: {
       payment_id: payment.id,
@@ -137,21 +136,32 @@ const createStripeSession = async (
       userId: userId || 'anonymous'
     },
   });
+
+  const { error: updateError } = await supabase
+    .from('stripe_payments')
+    .update({ 
+      stripe_payment_intent_id: session.payment_intent,
+      stripe_client_secret: session.client_secret
+    })
+    .eq('id', payment.id);
+
+  if (updateError) {
+    console.error('Error updating payment record with Stripe IDs:', updateError);
+  }
+
+  return session;
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize services
     const stripe = initializeStripe();
     const supabase = initializeSupabase();
     console.log('Services initialized');
 
-    // Validate request data
     const requestData = await req.json();
     console.log('Received request data:', requestData);
     
@@ -166,15 +176,12 @@ serve(async (req) => {
     const { amount, recipientId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
-    // Get user ID if authenticated
     const userId = await getUserIdFromAuth(req.headers.get('Authorization'), supabase);
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    // Get recipient's fingerprint
     const fingerprintId = await getRecipientFingerprint(supabase, recipientId);
     console.log('Found fingerprint:', fingerprintId);
 
-    // Create payment record
     const payment = await createPaymentRecord(supabase, {
       amount: amountInCents,
       currency: 'gbp',
@@ -184,7 +191,6 @@ serve(async (req) => {
     });
     console.log('Payment record created:', payment.id);
 
-    // Validate origin header
     const origin = req.headers.get('origin');
     if (!origin) {
       return new Response(
@@ -193,7 +199,6 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe session
     const session = await createStripeSession(
       stripe,
       amountInCents,
