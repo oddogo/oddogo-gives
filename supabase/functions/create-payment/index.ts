@@ -59,7 +59,7 @@ const createStripeSession = async (
   recipientId: string,
   fingerprintId: string,
   userId: string | null
-) => {
+): Promise<Stripe.Checkout.Session> => {
   console.log('Creating Stripe session with amount:', amount);
   
   const session = await stripe.checkout.sessions.create({
@@ -89,14 +89,19 @@ const createStripeSession = async (
 
   console.log('Stripe session created:', session.id);
 
-  const { error: updateError } = await supabase
-    .from('stripe_payments')
-    .update({ stripe_payment_intent_id: session.payment_intent })
-    .eq('id', payment.id);
+  try {
+    const { error: updateError } = await supabase
+      .from('stripe_payments')
+      .update({ stripe_payment_intent_id: session.payment_intent })
+      .eq('id', payment.id);
 
-  if (updateError) {
-    console.error('Error updating payment record with Stripe ID:', updateError);
-    throw new Error('Failed to update payment record with Stripe session details');
+    if (updateError) {
+      console.error('Error updating payment record with Stripe ID:', updateError);
+      throw new Error('Failed to update payment record with Stripe session details');
+    }
+  } catch (error) {
+    console.error('Database update error:', error);
+    throw error;
   }
 
   return session;
@@ -133,8 +138,15 @@ serve(async (req) => {
     const { amount, recipientId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
+    const origin = req.headers.get('origin');
+    if (!origin) {
+      throw new Error('Missing origin header');
+    }
+
     const authHeader = req.headers.get('Authorization');
-    const userId = authHeader ? (await supabase.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : null;
+    const userId = authHeader ? 
+      (await supabase.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : 
+      null;
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
     const { data: fingerprint, error: fingerprintError } = await supabase
@@ -165,11 +177,6 @@ serve(async (req) => {
     });
     console.log('Payment record created:', payment.id);
 
-    const origin = req.headers.get('origin');
-    if (!origin) {
-      throw new Error('Missing origin header');
-    }
-
     const session = await createStripeSession(
       stripe,
       amountInCents,
@@ -188,11 +195,10 @@ serve(async (req) => {
     console.error('Payment error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to process payment',
+        error: error instanceof Error ? error.message : 'Failed to process payment',
         details: error.toString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
-
