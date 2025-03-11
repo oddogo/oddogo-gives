@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -8,13 +9,11 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Stripe
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     console.log('Checking Stripe key:', !!stripeKey);
     
@@ -25,14 +24,12 @@ serve(async (req) => {
     const stripe = new Stripe(stripeKey);
     console.log('Stripe initialized');
 
-    // Parse request data
     const requestData = await req.json();
     console.log('Received request data:', requestData);
 
     const { amount, recipientId } = requestData;
     const numericAmount = Number(amount);
 
-    // Validate amount
     if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
       return new Response(
         JSON.stringify({ error: 'Invalid amount provided' }),
@@ -40,7 +37,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate recipient
     if (!recipientId) {
       return new Response(
         JSON.stringify({ error: 'Missing recipient ID' }),
@@ -49,7 +45,6 @@ serve(async (req) => {
     }
 
     let userId = null;
-    // Try to get authenticated user if available, but don't require it
     const authHeader = req.headers.get('Authorization');
     if (authHeader) {
       try {
@@ -86,7 +81,6 @@ serve(async (req) => {
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get recipient's fingerprint
     const { data: fingerprint, error: fingerprintError } = await supabaseClient
       .from('fingerprints_users')
       .select('fingerprint_id')
@@ -111,7 +105,6 @@ serve(async (req) => {
 
     console.log('Found fingerprint:', fingerprint.fingerprint_id);
 
-    // Convert amount to cents for Stripe
     const amountInCents = Math.round(numericAmount * 100);
     console.log('Amount in cents:', amountInCents);
 
@@ -119,7 +112,7 @@ serve(async (req) => {
     const paymentData = {
       amount: amountInCents,
       currency: 'gbp',
-      user_id: userId, // This can be null for anonymous donations
+      user_id: userId,
       fingerprint_id: fingerprint.fingerprint_id,
       status: 'pending'
     };
@@ -140,7 +133,6 @@ serve(async (req) => {
 
     console.log('Payment record created:', payment.id);
 
-    // Get origin for redirect URLs
     const origin = req.headers.get('origin');
     if (!origin) {
       return new Response(
@@ -149,7 +141,7 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe session
+    // Create Stripe session with payment_id in success_url
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -165,7 +157,7 @@ serve(async (req) => {
         },
       ],
       mode: 'payment',
-      success_url: `${origin}/payment-success`,
+      success_url: `${origin}/payment-success?payment_id=${payment.id}`,
       cancel_url: `${origin}/payment-cancelled`,
       metadata: {
         payment_id: payment.id,
