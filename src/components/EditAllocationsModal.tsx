@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +11,10 @@ interface EditAllocationsModalProps {
   allocations: Allocation[];
   onClose: () => void;
   onSuccess: () => void;
+  open: boolean;
 }
 
-export const EditAllocationsModal = ({ allocations: initialAllocations, onClose, onSuccess }: EditAllocationsModalProps) => {
+export const EditAllocationsModal = ({ allocations: initialAllocations, onClose, onSuccess, open }: EditAllocationsModalProps) => {
   const [allocations, setAllocations] = useState<Allocation[]>(initialAllocations);
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +37,6 @@ export const EditAllocationsModal = ({ allocations: initialAllocations, onClose,
         throw new Error("Total percentage must equal 100%");
       }
 
-      // Update all allocations in a single batch
       const { error } = await supabase
         .from('fingerprints_allocations')
         .upsert(allocations.map(a => ({
@@ -58,6 +57,8 @@ export const EditAllocationsModal = ({ allocations: initialAllocations, onClose,
   };
 
   const totalPercentage = allocations.reduce((sum, a) => sum + a.allocation_percentage, 0) * 100;
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">

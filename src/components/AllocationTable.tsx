@@ -52,13 +52,12 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
         </Table>
       </div>
 
-      {showEditModal && (
-        <EditAllocationsModal
-          allocations={data}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={() => window.location.reload()}
-        />
-      )}
+      <EditAllocationsModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        allocations={data}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   );
 };
