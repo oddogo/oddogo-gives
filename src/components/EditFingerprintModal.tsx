@@ -116,6 +116,18 @@ export const EditFingerprintModal = ({
 
       console.log('Using fingerprints_users:', fingerprintsUsers);
 
+      // Get the next version number
+      const { data: versionData, error: versionError } = await supabase
+        .from('fingerprints_allocations')
+        .select('version')
+        .eq('fingerprints_users_id', fingerprintsUsers.id)
+        .order('version', { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextVersion = (versionData?.version || 0) + 1;
+      console.log('Next version will be:', nextVersion);
+
       // Mark existing allocations as deleted
       const { data: deleteResult, error: deleteError } = await supabase
         .rpc('mark_fingerprint_allocations_as_deleted', {
@@ -129,7 +141,7 @@ export const EditFingerprintModal = ({
 
       console.log('Successfully marked old allocations as deleted, affected rows:', deleteResult?.[0]?.rows_affected);
 
-      // Insert new allocations
+      // Insert new allocations with the next version number
       const allocationsToInsert = allocations.map(a => ({
         fingerprints_users_id: fingerprintsUsers.id,
         allocation_percentage: a.allocation_percentage,
@@ -138,7 +150,8 @@ export const EditFingerprintModal = ({
         allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
         allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
         allocation_daf: a.allocation_type === 'DAF',
-        allocation_spotlight: a.allocation_type === 'Spotlight'
+        allocation_spotlight: a.allocation_type === 'Spotlight',
+        version: nextVersion
       }));
 
       console.log('Preparing to insert new allocations:', allocationsToInsert);
@@ -150,6 +163,20 @@ export const EditFingerprintModal = ({
       if (insertError) {
         console.error('Error inserting new allocations:', insertError);
         throw insertError;
+      }
+
+      // Update the fingerprint version
+      const { error: updateError } = await supabase
+        .from('fingerprints')
+        .update({ 
+          version: nextVersion,
+          updated_at: new Date().toISOString()
+        })
+        .eq('fingerprint', fingerprintsUsers.fingerprint_id);
+
+      if (updateError) {
+        console.error('Error updating fingerprint version:', updateError);
+        throw updateError;
       }
 
       console.log('Successfully inserted new allocations');

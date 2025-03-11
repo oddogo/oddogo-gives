@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
@@ -24,6 +23,7 @@ export const ModernContent = ({
 }: ModernContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // Filter out deleted allocations and calculate total
   const activeAllocations = allocations.filter(a => !a.deleted_at);
@@ -35,6 +35,10 @@ export const ModernContent = ({
     allocation.allocation_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     allocation.allocation_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleEditSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -115,6 +119,7 @@ export const ModernContent = ({
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         allocations={allocations}
+        onSuccess={handleEditSuccess}
       />
     </div>
   );
