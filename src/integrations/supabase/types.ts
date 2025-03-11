@@ -1994,7 +1994,9 @@ export type Database = {
         Args: {
           p_fingerprints_users_id: number
         }
-        Returns: undefined
+        Returns: {
+          rows_affected: number
+        }[]
       }
       sumallocation: {
         Args: {
