@@ -91,11 +91,9 @@ export const EditFingerprintModal = ({
 
       console.log('Starting save process for user:', user.id);
 
-      // Get or initialize fingerprints_users record
       let fingerprintsUsers = await getFingerprintsUser(user.id);
       
       if (!fingerprintsUsers) {
-        // Initialize new fingerprint for user
         const { data: fingerprintId, error: initError } = await supabase
           .rpc('initialize_user_fingerprint', {
             p_user_id: user.id
@@ -103,7 +101,6 @@ export const EditFingerprintModal = ({
 
         if (initError) throw initError;
 
-        // Fetch the newly created fingerprints_users record
         const { data: newFingerprintsUsers, error: fetchError } = await supabase
           .from('fingerprints_users')
           .select('id, fingerprint_id')
@@ -114,27 +111,20 @@ export const EditFingerprintModal = ({
         fingerprintsUsers = newFingerprintsUsers;
       }
 
-      // Get the next version number
-      const { data: versionData, error: versionError } = await supabase
-        .from('fingerprints_allocations')
-        .select('version')
-        .eq('fingerprints_users_id', fingerprintsUsers.id)
-        .order('version', { ascending: false })
-        .limit(1)
-        .single();
+      const { data: currentVersions } = await supabase.rpc('get_current_versions', {
+        p_fingerprints_users_id: fingerprintsUsers.id
+      });
 
-      const nextVersion = (versionData?.version || 0) + 1;
+      const nextVersion = (currentVersions?.max_version || 0) + 1;
       console.log('Next version will be:', nextVersion);
 
-      // Mark existing allocations as deleted
-      const { data: deleteResult, error: deleteError } = await supabase
+      const { error: deleteError } = await supabase
         .rpc('mark_fingerprint_allocations_as_deleted', {
           p_fingerprints_users_id: fingerprintsUsers.id
         });
 
       if (deleteError) throw deleteError;
 
-      // Insert new allocations with the next version number
       const allocationsToInsert = allocations.map(a => ({
         fingerprints_users_id: fingerprintsUsers.id,
         allocation_percentage: a.allocation_percentage,
@@ -153,7 +143,6 @@ export const EditFingerprintModal = ({
 
       if (insertError) throw insertError;
 
-      // Update the fingerprint version
       const { error: updateError } = await supabase
         .from('fingerprints')
         .update({ 
