@@ -100,6 +100,16 @@ export const EditFingerprintModal = ({
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
+      // First, mark all existing allocations as deleted
+      const { error: updateError } = await supabase
+        .from('fingerprints_allocations')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('fingerprints_users_id', fingerprintsUsers.id)
+        .is('deleted_at', null);
+
+      if (updateError) throw updateError;
+
+      // Get current version
       const { data: currentVersionData, error: versionError } = await supabase
         .from('fingerprints_allocations')
         .select('version')
@@ -111,6 +121,7 @@ export const EditFingerprintModal = ({
       if (versionError && versionError.code !== 'PGRST116') throw versionError;
       const newVersion = (currentVersionData?.version || 0) + 1;
 
+      // Then insert new allocations
       const allocationsToInsert = allocations.map(a => {
         const baseAllocation = {
           fingerprints_users_id: fingerprintsUsers.id,
@@ -142,11 +153,23 @@ export const EditFingerprintModal = ({
 
       if (allocationsError) throw allocationsError;
 
+      // Update fingerprint version
+      const { error: fingerprintError } = await supabase
+        .from('fingerprints')
+        .update({ 
+          version: newVersion,
+          updated_at: new Date().toISOString()
+        })
+        .eq('fingerprint', fingerprintsUsers.fingerprint_id);
+
+      if (fingerprintError) throw fingerprintError;
+
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
       toast.error(error.message);
+      console.error('Save error:', error);
     } finally {
       setLoading(false);
     }
