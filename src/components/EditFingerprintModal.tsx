@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -63,19 +62,23 @@ export const EditFingerprintModal = ({
 
       const { data: fingerprintsUsers, error: fingerprintsUsersError } = await supabase
         .from('fingerprints_users')
-        .select('id')
+        .select('id, fingerprint_id')
         .eq('user_id', user.id)
         .single();
 
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      const { error: deleteError } = await supabase
+      const { data: currentVersionData, error: versionError } = await supabase
         .from('fingerprints_allocations')
-        .delete()
-        .eq('fingerprints_users_id', fingerprintsUsers.id);
+        .select('version')
+        .eq('fingerprints_users_id', fingerprintsUsers.id)
+        .order('version', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (deleteError) throw deleteError;
+      if (versionError && versionError.code !== 'PGRST116') throw versionError;
+      const newVersion = (currentVersionData?.version || 0) + 1;
 
       const { error: allocationsError } = await supabase
         .from('fingerprints_allocations')
@@ -83,7 +86,8 @@ export const EditFingerprintModal = ({
           allocations.map(a => ({
             fingerprints_users_id: fingerprintsUsers.id,
             allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.id // Now this is a string UUID
+            allocation_charity_id: a.id,
+            version: newVersion
           }))
         );
 
