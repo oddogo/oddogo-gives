@@ -35,10 +35,20 @@ export const AllocationItem = ({
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
       <Avatar className="h-8 w-8 bg-white/10">
-        <AvatarImage
-          src={allocation.website_favicon || allocation.image_url}
-          alt={allocation.allocation_name}
-        />
+        {allocation.website_favicon && allocation.allocation_type === 'Charity' ? (
+          <AvatarImage
+            src={`https://www.google.com/s2/favicons?domain=${allocation.website_favicon}&sz=64`}
+            alt={allocation.allocation_name}
+            onError={(e) => {
+              const target = e.currentTarget;
+              target.style.display = 'none';
+              const nextElement = target.nextElementSibling;
+              if (nextElement instanceof HTMLElement) {
+                nextElement.classList.remove('hidden');
+              }
+            }}
+          />
+        ) : null}
         <AvatarFallback className="bg-white/10 text-white/60">
           {getFallbackIcon()}
         </AvatarFallback>
