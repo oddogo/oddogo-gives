@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -31,44 +30,11 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const fetchPayments = async () => {
     console.log('Fetching payments for fingerprint:', fingerprintId);
 
-    // First, get the user_id for this fingerprint
-    const { data: fingerprint, error: fingerprintError } = await supabase
-      .from('fingerprints_users')
-      .select('user_id')
-      .eq('fingerprint_id', fingerprintId)
-      .single();
-
-    if (fingerprintError) {
-      console.error('Error fetching fingerprint:', fingerprintError);
-      return;
-    }
-
-    console.log('Found user_id:', fingerprint?.user_id);
-
-    // Then get all fingerprints for this user
-    const { data: userFingerprints, error: fingerprintsError } = await supabase
-      .from('fingerprints_users')
-      .select('fingerprint_id')
-      .eq('user_id', fingerprint.user_id);
-
-    if (fingerprintsError) {
-      console.error('Error fetching user fingerprints:', fingerprintsError);
-      return;
-    }
-
-    if (!userFingerprints?.length) {
-      console.error('No fingerprints found for user');
-      return;
-    }
-
-    const fingerprintIds = userFingerprints.map(f => f.fingerprint_id);
-    console.log('All fingerprint IDs for user:', fingerprintIds);
-
-    // Finally get all payments for these fingerprints
+    // Get payments directly using the fingerprint ID
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('stripe_payments')
       .select('*')
-      .in('fingerprint_id', fingerprintIds)
+      .eq('fingerprint_id', fingerprintId)
       .order('created_at', { ascending: false });
 
     if (paymentsError) {
