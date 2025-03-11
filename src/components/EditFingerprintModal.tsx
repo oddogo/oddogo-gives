@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -92,21 +91,32 @@ export const EditFingerprintModal = ({
 
       console.log('Starting save process for user:', user.id);
 
-      const { data: fingerprintsUsers, error: fingerprintsUsersError } = await supabase
-        .from('fingerprints_users')
-        .select('id, fingerprint_id')
-        .eq('user_id', user.id)
-        .single();
+      // Get or initialize fingerprints_users record
+      let fingerprintsUsers = await getFingerprintsUser(user.id);
+      
+      if (!fingerprintsUsers) {
+        // Initialize new fingerprint for user
+        const { data: fingerprintId, error: initError } = await supabase
+          .rpc('initialize_user_fingerprint', {
+            p_user_id: user.id
+          });
 
-      if (fingerprintsUsersError) {
-        console.error('Error fetching fingerprints user:', fingerprintsUsersError);
-        throw fingerprintsUsersError;
+        if (initError) throw initError;
+
+        // Fetch the newly created fingerprints_users record
+        const { data: newFingerprintsUsers, error: fetchError } = await supabase
+          .from('fingerprints_users')
+          .select('id, fingerprint_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (fetchError) throw fetchError;
+        fingerprintsUsers = newFingerprintsUsers;
       }
-      if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      console.log('Found fingerprints user:', fingerprintsUsers);
+      console.log('Using fingerprints_users:', fingerprintsUsers);
 
-      // First mark existing allocations as deleted
+      // Mark existing allocations as deleted
       const { data: deleteResult, error: deleteError } = await supabase
         .rpc('mark_fingerprint_allocations_as_deleted', {
           p_fingerprints_users_id: fingerprintsUsers.id
@@ -119,7 +129,7 @@ export const EditFingerprintModal = ({
 
       console.log('Successfully marked old allocations as deleted, affected rows:', deleteResult?.[0]?.rows_affected);
 
-      // Then insert new allocations
+      // Insert new allocations
       const allocationsToInsert = allocations.map(a => ({
         fingerprints_users_id: fingerprintsUsers.id,
         allocation_percentage: a.allocation_percentage,
@@ -153,6 +163,21 @@ export const EditFingerprintModal = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFingerprintsUser = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('fingerprints_users')
+      .select('id, fingerprint_id')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw error;
+    }
+
+    return data;
   };
 
   return (

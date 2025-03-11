@@ -1975,6 +1975,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      initialize_user_fingerprint: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: string
+      }
       ledger_donor_balances_report: {
         Args: {
           target_date: string
