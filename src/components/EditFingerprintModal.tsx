@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -82,7 +83,7 @@ export const EditFingerprintModal = ({
           allocations.map(a => ({
             fingerprints_users_id: fingerprintsUsers.id,
             allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.id
+            allocation_charity_id: a.id.toString() // Convert number to string
           }))
         );
 
