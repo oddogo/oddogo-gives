@@ -1990,6 +1990,12 @@ export type Database = {
         }
         Returns: Json
       }
+      mark_fingerprint_allocations_as_deleted: {
+        Args: {
+          p_fingerprints_users_id: number
+        }
+        Returns: undefined
+      }
       sumallocation: {
         Args: {
           puserid: string

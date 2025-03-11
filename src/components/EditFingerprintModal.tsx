@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -26,7 +25,6 @@ export const EditFingerprintModal = ({
   const [loading, setLoading] = useState(false);
   const [totalPercentage, setTotalPercentage] = useState(100);
   const [error, setError] = useState<string | null>(null);
-  // Update the type to match the valid allocation types we want to support
   const [allocationType, setAllocationType] = useState<Exclude<AllocationType, 'None - Error'>>('Charity');
   const { options, isLoading } = useAllocationOptions();
 
@@ -100,33 +98,18 @@ export const EditFingerprintModal = ({
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      // First, mark all existing allocations as deleted
-      const { error: updateError } = await supabase
-        .from('fingerprints_allocations')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('fingerprints_users_id', fingerprintsUsers.id)
-        .is('deleted_at', null);
+      const { error: markDeletedError } = await supabase
+        .rpc('mark_fingerprint_allocations_as_deleted', {
+          p_fingerprints_users_id: fingerprintsUsers.id
+        });
 
-      if (updateError) throw updateError;
+      if (markDeletedError) throw markDeletedError;
 
-      // Get current version
-      const { data: currentVersionData, error: versionError } = await supabase
-        .from('fingerprints_allocations')
-        .select('version')
-        .eq('fingerprints_users_id', fingerprintsUsers.id)
-        .order('version', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (versionError && versionError.code !== 'PGRST116') throw versionError;
-      const newVersion = (currentVersionData?.version || 0) + 1;
-
-      // Then insert new allocations
       const allocationsToInsert = allocations.map(a => {
         const baseAllocation = {
           fingerprints_users_id: fingerprintsUsers.id,
           allocation_percentage: a.allocation_percentage,
-          version: newVersion,
+          version: 1,
         };
 
         switch (a.allocation_type) {
@@ -152,17 +135,6 @@ export const EditFingerprintModal = ({
         .insert(allocationsToInsert);
 
       if (allocationsError) throw allocationsError;
-
-      // Update fingerprint version
-      const { error: fingerprintError } = await supabase
-        .from('fingerprints')
-        .update({ 
-          version: newVersion,
-          updated_at: new Date().toISOString()
-        })
-        .eq('fingerprint', fingerprintsUsers.fingerprint_id);
-
-      if (fingerprintError) throw fingerprintError;
 
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();
