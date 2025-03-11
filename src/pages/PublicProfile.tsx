@@ -4,9 +4,13 @@ import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
 import { AllocationsSection } from "@/components/AllocationsSection";
 import { ActiveCampaign } from "@/components/ActiveCampaign";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
+import { PaymentForm } from "@/components/PaymentForm";
 
 const PublicProfile = () => {
   const { id } = useParams();
+  const { user } = useContext(AuthContext);
   const { profile, allocations, loading } = usePublicProfile(id);
 
   if (loading) return (
@@ -21,6 +25,11 @@ const PublicProfile = () => {
     </div>
   );
 
+  // Show payment form only if:
+  // 1. User is logged in
+  // 2. Viewing someone else's profile
+  const showPaymentForm = user && user.id !== id;
+
   return (
     <div className="min-h-screen bg-white">
       <ProfileHero profile={profile} userId={id || ''} />
@@ -30,6 +39,15 @@ const PublicProfile = () => {
       ) : (
         <div className="text-center py-8 text-gray-500">
           No allocations found for this profile.
+        </div>
+      )}
+
+      {showPaymentForm && (
+        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <PaymentForm 
+            recipientId={id || ''} 
+            recipientName={profile.display_name}
+          />
         </div>
       )}
 
