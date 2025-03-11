@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -9,13 +10,16 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, DollarSign, Clock } from "lucide-react";
+import { Receipt, DollarSign, Clock, CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 interface Payment {
   id: string;
   created_at: string;
   amount: number;
   status: string;
+  stripe_payment_intent_id: string;
+  stripe_payment_email: string;
 }
 
 interface PaymentHistoryProps {
@@ -28,38 +32,37 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const [pendingAmount, setPendingAmount] = useState(0);
 
   const fetchPayments = async () => {
-    console.log('Fetching payments for fingerprint:', fingerprintId);
+    try {
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('stripe_payments')
+        .select('*')
+        .eq('fingerprint_id', fingerprintId)
+        .order('created_at', { ascending: false });
 
-    // Get payments directly using the fingerprint ID
-    const { data: paymentsData, error: paymentsError } = await supabase
-      .from('stripe_payments')
-      .select('*')
-      .eq('fingerprint_id', fingerprintId)
-      .order('created_at', { ascending: false });
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+        toast.error('Failed to load payment history');
+        return;
+      }
 
-    if (paymentsError) {
-      console.error('Error fetching payments:', paymentsError);
-      return;
+      console.log('Fetched payments:', paymentsData);
+      setPayments(paymentsData || []);
+
+      const completed = paymentsData?.filter(p => p.status === 'completed')
+        .reduce((sum, p) => sum + p.amount, 0) || 0;
+      const pending = paymentsData?.filter(p => p.status === 'pending')
+        .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+      setTotalReceived(completed);
+      setPendingAmount(pending);
+    } catch (error) {
+      console.error('Error in fetchPayments:', error);
+      toast.error('Failed to load payment history');
     }
-
-    console.log('Fetched payments:', paymentsData);
-
-    setPayments(paymentsData || []);
-
-    const completed = paymentsData?.filter(p => p.status === 'completed')
-      .reduce((sum, p) => sum + p.amount, 0) || 0;
-    const pending = paymentsData?.filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-    console.log('Completed amount:', completed, 'Pending amount:', pending);
-
-    setTotalReceived(completed);
-    setPendingAmount(pending);
   };
 
   useEffect(() => {
     if (fingerprintId) {
-      console.log('Component mounted with fingerprint ID:', fingerprintId);
       fetchPayments();
     }
 
@@ -73,8 +76,7 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
           table: 'stripe_payments',
           filter: `fingerprint_id=eq.${fingerprintId}`
         },
-        (payload) => {
-          console.log('Payment update received:', payload);
+        () => {
           fetchPayments();
         }
       )
@@ -121,6 +123,8 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Payment ID</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -131,6 +135,16 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
                     {new Date(payment.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>£{(payment.amount / 100).toFixed(2)}</TableCell>
+                  <TableCell>{payment.stripe_payment_email || 'N/A'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <CreditCard className="w-4 h-4" />
+                      {payment.stripe_payment_intent_id ? 
+                        payment.stripe_payment_intent_id.slice(-8) : 
+                        'N/A'
+                      }
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                       ${payment.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`
@@ -142,7 +156,7 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
               ))}
               {payments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     No payments received yet
                   </TableCell>
                 </TableRow>
@@ -154,3 +168,4 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
     </Card>
   );
 };
+
