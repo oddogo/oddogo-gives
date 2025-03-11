@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +29,12 @@ export const AllocationItem = ({
       default:
         return <Image className="h-4 w-4" />;
     }
+  };
+
+  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (value < 0) return;
+    onPercentageChange(index, value);
   };
 
   return (
@@ -65,7 +70,7 @@ export const AllocationItem = ({
             min={0}
             max={100}
             value={Math.round(allocation.allocation_percentage * 100)}
-            onChange={(e) => onPercentageChange(index, Number(e.target.value))}
+            onChange={handlePercentageChange}
             className="h-8 w-20 bg-white/5 border-white/10 text-right"
           />
           <span className="text-white/60 text-sm">%</span>

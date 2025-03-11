@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Allocation } from "@/types/allocation";
+import { toast } from "sonner";
 
 interface UseAllocations {
   allocations: Allocation[];
@@ -21,7 +21,12 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
   useEffect(() => {
     const total = allocations.reduce((sum, a) => sum + (a.allocation_percentage * 100), 0);
     setTotalPercentage(total);
-    if (Math.abs(total - 100) > 0.001) {
+
+    // Check for zero allocations
+    const hasZeroAllocation = allocations.some(a => a.allocation_percentage === 0);
+    if (hasZeroAllocation) {
+      setError('All allocations must be greater than 0%');
+    } else if (Math.abs(total - 100) > 0.001) {
       setError(`Total must equal 100%. Current total: ${total.toFixed(1)}%`);
     } else {
       setError(null);
@@ -42,6 +47,19 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
   };
 
   const handleAddAllocation = (newAllocation: Allocation) => {
+    // Check for duplicates based on type and ID
+    const isDuplicate = allocations.some(allocation => {
+      if (newAllocation.allocation_type === 'Charity') {
+        return allocation.id === newAllocation.id;
+      }
+      return allocation.allocation_type === newAllocation.allocation_type;
+    });
+
+    if (isDuplicate) {
+      toast.error(`This ${newAllocation.allocation_type} has already been added`);
+      return;
+    }
+
     setAllocations([...allocations, newAllocation]);
   };
 
