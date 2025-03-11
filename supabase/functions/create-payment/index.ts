@@ -8,131 +8,183 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface PaymentRequest {
+  amount: number;
+  recipientId: string;
+}
+
+interface PaymentData {
+  amount: number;
+  currency: string;
+  user_id: string | null;
+  fingerprint_id: string;
+  status: string;
+}
+
+const validatePaymentRequest = (data: any): { isValid: boolean; error?: string } => {
+  const { amount, recipientId } = data;
+  const numericAmount = Number(amount);
+
+  if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
+    return { isValid: false, error: 'Invalid amount provided' };
+  }
+
+  if (!recipientId) {
+    return { isValid: false, error: 'Missing recipient ID' };
+  }
+
+  return { isValid: true };
+};
+
+const initializeSupabase = () => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
+
+const initializeStripe = () => {
+  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+  if (!stripeKey) {
+    throw new Error('Missing Stripe configuration');
+  }
+  return new Stripe(stripeKey);
+};
+
+const getUserIdFromAuth = async (authHeader: string | null, supabase: any) => {
+  if (!authHeader) return null;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    return user?.id || null;
+  } catch (error) {
+    console.log('Auth error, continuing as anonymous donation:', error.message);
+    return null;
+  }
+};
+
+const getRecipientFingerprint = async (supabase: any, recipientId: string) => {
+  const { data: fingerprint, error: fingerprintError } = await supabase
+    .from('fingerprints_users')
+    .select('fingerprint_id')
+    .eq('user_id', recipientId)
+    .maybeSingle();
+
+  if (fingerprintError) {
+    console.error('Error fetching fingerprint:', fingerprintError);
+    throw new Error('Failed to fetch recipient fingerprint');
+  }
+
+  if (!fingerprint?.fingerprint_id) {
+    console.error('No fingerprint found for recipient:', recipientId);
+    throw new Error('Recipient not found');
+  }
+
+  return fingerprint.fingerprint_id;
+};
+
+const createPaymentRecord = async (supabase: any, paymentData: PaymentData) => {
+  const { data: payment, error: paymentError } = await supabase
+    .from('stripe_payments')
+    .insert([paymentData])
+    .select()
+    .single();
+
+  if (paymentError) {
+    console.error('Error creating payment record:', paymentError);
+    throw new Error('Failed to create payment record');
+  }
+
+  return payment;
+};
+
+const createStripeSession = async (
+  stripe: Stripe,
+  amount: number,
+  origin: string,
+  payment: any,
+  recipientId: string,
+  fingerprintId: string,
+  userId: string | null
+) => {
+  return await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price_data: {
+          currency: 'gbp',
+          product_data: {
+            name: 'Donation',
+          },
+          unit_amount: amount,
+        },
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: `${origin}/payment-success?payment_id=${payment.id}`,
+    cancel_url: `${origin}/payment-cancelled`,
+    metadata: {
+      payment_id: payment.id,
+      recipientId,
+      fingerprintId,
+      userId: userId || 'anonymous'
+    },
+  });
+};
+
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    console.log('Checking Stripe key:', !!stripeKey);
-    
-    if (!stripeKey) {
-      throw new Error('Missing Stripe configuration');
-    }
+    // Initialize services
+    const stripe = initializeStripe();
+    const supabase = initializeSupabase();
+    console.log('Services initialized');
 
-    const stripe = new Stripe(stripeKey);
-    console.log('Stripe initialized');
-
+    // Validate request data
     const requestData = await req.json();
     console.log('Received request data:', requestData);
+    
+    const validation = validatePaymentRequest(requestData);
+    if (!validation.isValid) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
 
     const { amount, recipientId } = requestData;
-    const numericAmount = Number(amount);
+    const amountInCents = Math.round(Number(amount) * 100);
 
-    if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid amount provided' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    if (!recipientId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing recipient ID' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    let userId = null;
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-        
-        if (!supabaseUrl || !supabaseServiceKey) {
-          console.log('Missing Supabase configuration, continuing as anonymous donation');
-        } else {
-          const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-          const { data: { user } } = await supabaseClient.auth.getUser(
-            authHeader.replace('Bearer ', '')
-          );
-          if (user) {
-            userId = user.id;
-            console.log('Authenticated user:', userId);
-          }
-        }
-      } catch (error) {
-        console.log('Auth error, continuing as anonymous donation:', error.message);
-      }
-    }
+    // Get user ID if authenticated
+    const userId = await getUserIdFromAuth(req.headers.get('Authorization'), supabase);
+    console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
     // Get recipient's fingerprint
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Supabase configuration' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { data: fingerprint, error: fingerprintError } = await supabaseClient
-      .from('fingerprints_users')
-      .select('fingerprint_id')
-      .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (fingerprintError) {
-      console.error('Error fetching fingerprint:', fingerprintError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch recipient fingerprint' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    if (!fingerprint?.fingerprint_id) {
-      console.error('No fingerprint found for recipient:', recipientId);
-      return new Response(
-        JSON.stringify({ error: 'Recipient not found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      );
-    }
-
-    console.log('Found fingerprint:', fingerprint.fingerprint_id);
-
-    const amountInCents = Math.round(numericAmount * 100);
-    console.log('Amount in cents:', amountInCents);
+    const fingerprintId = await getRecipientFingerprint(supabase, recipientId);
+    console.log('Found fingerprint:', fingerprintId);
 
     // Create payment record
-    const paymentData = {
+    const payment = await createPaymentRecord(supabase, {
       amount: amountInCents,
       currency: 'gbp',
       user_id: userId,
-      fingerprint_id: fingerprint.fingerprint_id,
+      fingerprint_id: fingerprintId,
       status: 'pending'
-    };
-
-    const { data: payment, error: paymentError } = await supabaseClient
-      .from('stripe_payments')
-      .insert([paymentData])
-      .select()
-      .single();
-
-    if (paymentError) {
-      console.error('Error creating payment record:', paymentError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create payment record' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
+    });
     console.log('Payment record created:', payment.id);
 
+    // Validate origin header
     const origin = req.headers.get('origin');
     if (!origin) {
       return new Response(
@@ -141,40 +193,21 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe session with payment_id in success_url
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: 'Donation',
-            },
-            unit_amount: amountInCents,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${origin}/payment-success?payment_id=${payment.id}`,
-      cancel_url: `${origin}/payment-cancelled`,
-      metadata: {
-        payment_id: payment.id,
-        recipientId,
-        fingerprintId: fingerprint.fingerprint_id,
-        userId: userId || 'anonymous'
-      },
-    });
-
+    // Create Stripe session
+    const session = await createStripeSession(
+      stripe,
+      amountInCents,
+      origin,
+      payment,
+      recipientId,
+      fingerprintId,
+      userId
+    );
     console.log('Stripe session created:', session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     console.error('Payment error:', error);
@@ -183,10 +216,7 @@ serve(async (req) => {
         error: error.message || 'Failed to process payment',
         details: error.toString()
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
