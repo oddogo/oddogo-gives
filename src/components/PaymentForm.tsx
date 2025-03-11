@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,14 +38,7 @@ export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) =>
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Please sign in to make a donation");
-        setLoading(false);
-        return;
-      }
-
-      console.log('Invoking create-payment function with auth...');
+      console.log('Invoking create-payment function...');
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { 
           amount: numericAmount,

@@ -42,15 +42,32 @@ serve(async (req) => {
       throw new Error('Missing recipient ID');
     }
 
-    // Get auth user using the Authorization header
+    let userId = null;
+    // Try to get authenticated user if available, but don't require it
     const authHeader = req.headers.get('Authorization');
-    console.log('Auth header present:', !!authHeader);
-
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
+    if (authHeader) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        
+        if (!supabaseUrl || !supabaseServiceKey) {
+          console.log('Missing Supabase configuration, continuing as anonymous donation');
+        } else {
+          const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: { user } } = await supabaseClient.auth.getUser(
+            authHeader.replace('Bearer ', '')
+          );
+          if (user) {
+            userId = user.id;
+            console.log('Authenticated user:', userId);
+          }
+        }
+      } catch (error) {
+        console.log('Auth error, continuing as anonymous donation:', error.message);
+      }
     }
 
-    // Initialize Supabase client
+    // Get recipient's fingerprint
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -59,20 +76,7 @@ serve(async (req) => {
     }
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    console.log('Supabase client initialized');
-
-    // Get user from auth token
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error('Authentication failed');
-    }
-
-    console.log('User authenticated:', user.id);
-
+    
     // Get recipient's fingerprint
     const { data: fingerprint, error: fingerprintError } = await supabaseClient
       .from('fingerprints_users')
@@ -100,7 +104,7 @@ serve(async (req) => {
     const paymentData = {
       amount: amountInCents,
       currency: 'gbp',
-      user_id: user.id,
+      user_id: userId, // This can be null for anonymous donations
       fingerprint_id: fingerprint.fingerprint_id,
       status: 'pending'
     };
@@ -146,7 +150,7 @@ serve(async (req) => {
         payment_id: payment.id,
         recipientId,
         fingerprintId: fingerprint.fingerprint_id,
-        userId: user.id
+        userId: userId || 'anonymous'
       },
     });
 
