@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -23,10 +22,10 @@ interface Payment {
 }
 
 interface PaymentHistoryProps {
-  fingerprintId: string;
+  userId: string;
 }
 
-export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
+export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalReceived, setTotalReceived] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
@@ -34,9 +33,9 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const fetchPayments = async () => {
     try {
       const { data: paymentsData, error: paymentsError } = await supabase
-        .from('stripe_payments')
+        .from('v_stripe_payments')
         .select('*')
-        .eq('fingerprint_id', fingerprintId)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (paymentsError) {
@@ -62,7 +61,7 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   };
 
   useEffect(() => {
-    if (fingerprintId) {
+    if (userId) {
       fetchPayments();
     }
 
@@ -73,8 +72,8 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
         {
           event: '*',
           schema: 'public',
-          table: 'stripe_payments',
-          filter: `fingerprint_id=eq.${fingerprintId}`
+          table: 'v_stripe_payments',
+          filter: `user_id=eq.${userId}`
         },
         () => {
           fetchPayments();
@@ -85,7 +84,7 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fingerprintId]);
+  }, [userId]);
 
   return (
     <Card className="w-full mt-8">
@@ -168,4 +167,3 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
     </Card>
   );
 };
-
