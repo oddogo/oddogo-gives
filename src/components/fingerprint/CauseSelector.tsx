@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { useCausesAndSubcauses } from "@/hooks/useCausesAndSubcauses";
 import { Allocation } from "@/types/allocation";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, X } from "lucide-react";
 
 interface CauseSelectorProps {
   isOpen: boolean;
@@ -21,8 +21,13 @@ export const CauseSelector = ({
   const { causes, isLoading } = useCausesAndSubcauses();
   const [selectedCauseId, setSelectedCauseId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   const selectedCause = causes.find(c => c.id === selectedCauseId);
+
+  const handleCauseSelect = (causeId: number) => {
+    setSelectedCauseId(causeId);
+    setSearchTerm(""); // Clear search when cause is selected
+  };
 
   const handleSubcauseSelect = (subcauseId: number, subcauseName: string) => {
     onSelect({
@@ -32,6 +37,12 @@ export const CauseSelector = ({
       allocation_percentage: 0,
       allocation_subcause_id: subcauseId
     });
+    // Don't close the dialog after selection to allow multiple choices
+  };
+
+  const handleClose = () => {
+    setSelectedCauseId(null);
+    setSearchTerm("");
     onClose();
   };
 
@@ -48,10 +59,12 @@ export const CauseSelector = ({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl bg-[#1A1F2C] text-white border-white/10">
         <DialogHeader>
-          <DialogTitle>Select Cause and Sub-cause</DialogTitle>
+          <DialogTitle>
+            {selectedCauseId ? 'Select Sub-causes' : 'Select Cause'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="relative mb-4">
@@ -60,8 +73,18 @@ export const CauseSelector = ({
             placeholder="Search causes and sub-causes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-transparent border-white/10"
+            className="pl-10 pr-10 bg-transparent border-white/10"
           />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              onClick={() => setSearchTerm("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -77,7 +100,7 @@ export const CauseSelector = ({
                       key={cause.id}
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedCauseId(cause.id)}
+                      onClick={() => handleCauseSelect(cause.id)}
                       className="rounded-full border-white/10 hover:bg-white/10 transition-colors"
                     >
                       {cause.name} ({cause.subcauses.length})
@@ -87,15 +110,27 @@ export const CauseSelector = ({
               ) : (
                 // Show subcauses for selected cause
                 <div className="space-y-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mb-2 gap-2"
-                    onClick={() => setSelectedCauseId(null)}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to causes
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        setSelectedCauseId(null);
+                        setSearchTerm("");
+                      }}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to causes
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleClose}
+                    >
+                      Done
+                    </Button>
+                  </div>
                   
                   <div className="flex flex-wrap gap-2">
                     {filteredSubcauses?.map((subcause) => (
