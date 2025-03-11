@@ -10,6 +10,7 @@ import { User } from "@supabase/supabase-js";
 import { ModernDashboard } from "@/components/ModernDashboard";
 import { DashboardChart } from "@/components/DashboardChart";
 import { AllocationTable } from "@/components/AllocationTable";
+import { FingerPrintList } from "@/components/FingerPrintList";
 
 const Dashboard = () => {
   const navigate = useNavigate();

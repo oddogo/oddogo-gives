@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,8 +13,7 @@ export const FingerPrintAllocationForm = ({ onSuccess }: AllocationFormProps) =>
   const [loading, setLoading] = useState(false);
   const [allocation, setAllocation] = useState({
     name: "",
-    percentage: 0,
-    type: "charity"
+    percentage: 0
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +25,10 @@ export const FingerPrintAllocationForm = ({ onSuccess }: AllocationFormProps) =>
       const { data: fingerprint, error: fingerprintError } = await supabase
         .from('fingerprints')
         .insert([
-          { name: allocation.name }
+          { 
+            name: allocation.name,
+            fingerprint: crypto.randomUUID()  // Generate a UUID for the fingerprint
+          }
         ])
         .select()
         .single();

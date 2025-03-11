@@ -62,7 +62,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
       const newPercentage = Number(editedPercentage) / 100;
       
       const { error } = await supabase
-        .from('v_fingerprints_live')
+        .from('fingerprints_allocations')
         .update({ allocation_percentage: newPercentage })
         .eq('id', allocation.id);
 
