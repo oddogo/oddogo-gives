@@ -32,7 +32,6 @@ export const createStripeSession = async (
     cancel_url: `${origin}/payment-cancelled`,
     metadata: {
       payment_id: payment.id,
-      recipientId,
       fingerprintId,
       userId: userId || 'anonymous'
     },
@@ -40,11 +39,15 @@ export const createStripeSession = async (
 
   console.log('Stripe session created:', session.id);
 
-  try {
-    await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
-  } catch (error) {
-    console.error('Database update error:', error);
-    throw error;
+  // Update the payment record with the Stripe payment intent ID
+  if (session.payment_intent) {
+    try {
+      await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
+      console.log('Updated payment record with Stripe payment intent ID:', session.payment_intent);
+    } catch (error) {
+      console.error('Failed to update payment record with Stripe ID:', error);
+      // Don't throw here - we still want to return the session
+    }
   }
 
   return session;

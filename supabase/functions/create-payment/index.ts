@@ -44,6 +44,7 @@ serve(async (req) => {
     const fingerprintId = await getFingerprintId(recipientId);
     console.log('Found fingerprint:', fingerprintId);
 
+    // Create payment record with fingerprint_id
     const payment = await createPaymentRecord({
       amount: amountInCents,
       currency: 'gbp',
