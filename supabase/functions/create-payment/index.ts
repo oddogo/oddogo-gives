@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -59,6 +60,8 @@ const createStripeSession = async (
   fingerprintId: string,
   userId: string | null
 ) => {
+  console.log('Creating Stripe session with amount:', amount);
+  
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -83,6 +86,8 @@ const createStripeSession = async (
       userId: userId || 'anonymous'
     },
   });
+
+  console.log('Stripe session created:', session.id);
 
   const { error: updateError } = await supabase
     .from('stripe_payments')
@@ -174,7 +179,6 @@ serve(async (req) => {
       fingerprintId,
       userId
     );
-    console.log('Stripe session created:', session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -191,3 +195,4 @@ serve(async (req) => {
     );
   }
 });
+
