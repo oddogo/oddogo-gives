@@ -18,6 +18,7 @@ interface Transaction {
   status: string;
   stripe_payment_intent_id: string | null;
   stripe_payment_email: string | null;
+  fingerprint_id: string;
 }
 
 const Transactions = () => {
@@ -51,10 +52,25 @@ const Transactions = () => {
   const loadTransactions = async (userId: string) => {
     try {
       console.log('Loading transactions for user:', userId);
+      
+      // First get the user's fingerprint
+      const { data: fingerprintData, error: fingerprintError } = await supabase
+        .from('fingerprints_users')
+        .select('fingerprint_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (fingerprintError) throw fingerprintError;
+      if (!fingerprintData?.fingerprint_id) {
+        console.log('No fingerprint found for user');
+        setTransactions([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('stripe_payments')
         .select('*')
-        .eq('user_id', userId)
+        .eq('fingerprint_id', fingerprintData.fingerprint_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -104,6 +120,7 @@ const Transactions = () => {
                         <TableHead>Status</TableHead>
                         <TableHead>Payment ID</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Fingerprint ID</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -129,11 +146,14 @@ const Transactions = () => {
                           <TableCell>
                             {transaction.stripe_payment_email || 'N/A'}
                           </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {transaction.fingerprint_id}
+                          </TableCell>
                         </TableRow>
                       ))}
                       {transactions.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                          <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                             <div className="flex flex-col items-center gap-2">
                               <InfoIcon className="w-5 h-5" />
                               No transactions found
