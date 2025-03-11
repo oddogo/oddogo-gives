@@ -10,11 +10,11 @@ export interface Allocation {
   website_favicon?: string | null;
   deleted_at?: string | null;
   
-  // New optional fields for different allocation types
+  // Update types to match database
   allocation_charity_id?: string;
-  allocation_subcause_id?: string;
-  allocation_region_id?: string;
-  allocation_meta_id?: string;
+  allocation_subcause_id?: number;
+  allocation_region_id?: number;
+  allocation_meta_id?: number;
   allocation_daf?: boolean;
   allocation_spotlight?: boolean;
 }

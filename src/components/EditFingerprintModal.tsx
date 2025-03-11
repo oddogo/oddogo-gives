@@ -112,34 +112,34 @@ export const EditFingerprintModal = ({
       if (versionError && versionError.code !== 'PGRST116') throw versionError;
       const newVersion = (currentVersionData?.version || 0) + 1;
 
+      const allocationsToInsert = allocations.map(a => {
+        const baseAllocation = {
+          fingerprints_users_id: fingerprintsUsers.id,
+          allocation_percentage: a.allocation_percentage,
+          version: newVersion,
+        };
+
+        switch (a.allocation_type) {
+          case 'Charity':
+            return { ...baseAllocation, allocation_charity_id: a.id };
+          case 'Subcause':
+            return { ...baseAllocation, allocation_subcause_id: Number(a.id) };
+          case 'Region':
+            return { ...baseAllocation, allocation_region_id: Number(a.id) };
+          case 'Meta':
+            return { ...baseAllocation, allocation_meta_id: Number(a.id) };
+          case 'DAF':
+            return { ...baseAllocation, allocation_daf: true };
+          case 'Spotlight':
+            return { ...baseAllocation, allocation_spotlight: true };
+          default:
+            throw new Error(`Invalid allocation type: ${a.allocation_type}`);
+        }
+      });
+
       const { error: allocationsError } = await supabase
         .from('fingerprints_allocations')
-        .insert(
-          allocations.map(a => {
-            const baseAllocation = {
-              fingerprints_users_id: fingerprintsUsers.id,
-              allocation_percentage: a.allocation_percentage,
-              version: newVersion,
-            };
-
-            switch (a.allocation_type) {
-              case 'Charity':
-                return { ...baseAllocation, allocation_charity_id: a.id };
-              case 'Subcause':
-                return { ...baseAllocation, allocation_subcause_id: a.id };
-              case 'Region':
-                return { ...baseAllocation, allocation_region_id: a.id };
-              case 'Meta':
-                return { ...baseAllocation, allocation_meta_id: a.id };
-              case 'DAF':
-                return { ...baseAllocation, allocation_daf: true };
-              case 'Spotlight':
-                return { ...baseAllocation, allocation_spotlight: true };
-              default:
-                throw new Error(`Invalid allocation type: ${a.allocation_type}`);
-            }
-          })
-        );
+        .insert(allocationsToInsert);
 
       if (allocationsError) throw allocationsError;
 

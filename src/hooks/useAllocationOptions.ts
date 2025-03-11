@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AllocationOption {
-  id: string;
+  id: string | number;
   name: string;
   type: 'Charity' | 'Subcause' | 'Meta' | 'Region';
 }
@@ -38,7 +38,7 @@ export const useAllocationOptions = () => {
     
     if (error) throw error;
     return data.map(item => ({
-      id: item.id.toString(),
+      id: item.id, // Keep as number
       name: item.subcause_name,
       type: 'Subcause' as const
     }));
@@ -52,7 +52,7 @@ export const useAllocationOptions = () => {
     
     if (error) throw error;
     return data.map(item => ({
-      id: item.id.toString(),
+      id: item.id, // Keep as number
       name: item.region_name,
       type: 'Region' as const
     }));
@@ -66,7 +66,7 @@ export const useAllocationOptions = () => {
     
     if (error) throw error;
     return data.map(item => ({
-      id: item.id.toString(),
+      id: item.id, // Keep as number
       name: item.meta_name,
       type: 'Meta' as const
     }));
