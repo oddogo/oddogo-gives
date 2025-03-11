@@ -24,6 +24,35 @@ serve(async (req) => {
       throw new Error('Invalid amount');
     }
 
+    // Create a record in stripe_payments table
+    const { data: { user } } = await supabase.auth.getUser(req.headers.get('Authorization')?.split('Bearer ')[1]);
+    
+    const { data: fingerprint, error: fingerprintError } = await supabase
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', recipientId)
+      .single();
+
+    if (fingerprintError) {
+      console.error('Error fetching fingerprint:', fingerprintError);
+    }
+
+    const paymentData = {
+      amount: amount,
+      currency: 'gbp',
+      user_id: user?.id,
+      fingerprint_id: fingerprint?.fingerprint_id,
+      status: 'pending'
+    };
+
+    const { error: paymentError } = await supabase
+      .from('stripe_payments')
+      .insert([paymentData]);
+
+    if (paymentError) {
+      console.error('Error creating payment record:', paymentError);
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -43,6 +72,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
       metadata: {
         recipientId,
+        fingerprintId: fingerprint?.fingerprint_id
       },
     });
 
