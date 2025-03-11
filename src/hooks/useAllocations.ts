@@ -47,13 +47,27 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
   };
 
   const handleAddAllocation = (newAllocation: Allocation) => {
-    // Check for duplicates based on type and ID
-    const isDuplicate = allocations.some(allocation => {
-      if (newAllocation.allocation_type === 'Charity') {
-        return allocation.id === newAllocation.id;
+    // For subcauses, allow multiple entries
+    if (newAllocation.allocation_type === 'Subcause') {
+      // Check if this exact subcause ID has already been added
+      const isDuplicate = allocations.some(allocation => 
+        allocation.allocation_type === 'Subcause' && 
+        allocation.allocation_subcause_id === newAllocation.allocation_subcause_id
+      );
+
+      if (isDuplicate) {
+        toast.error('This subcause has already been added');
+        return;
       }
-      return allocation.allocation_type === newAllocation.allocation_type;
-    });
+
+      setAllocations([...allocations, newAllocation]);
+      return;
+    }
+
+    // For other types, keep existing validation
+    const isDuplicate = allocations.some(allocation => 
+      allocation.allocation_type === newAllocation.allocation_type
+    );
 
     if (isDuplicate) {
       toast.error(`This ${newAllocation.allocation_type} has already been added`);

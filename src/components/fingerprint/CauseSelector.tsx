@@ -37,7 +37,8 @@ export const CauseSelector = ({
       allocation_percentage: 0,
       allocation_subcause_id: subcauseId
     });
-    // Don't close the dialog after selection to allow multiple choices
+    // Reset to cause selection after adding a subcause
+    setSelectedCauseId(null);
   };
 
   const handleClose = () => {
@@ -110,27 +111,18 @@ export const CauseSelector = ({
               ) : (
                 // Show subcauses for selected cause
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => {
-                        setSelectedCauseId(null);
-                        setSearchTerm("");
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to causes
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleClose}
-                    >
-                      Done
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      setSelectedCauseId(null);
+                      setSearchTerm("");
+                    }}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to causes
+                  </Button>
                   
                   <div className="flex flex-wrap gap-2">
                     {filteredSubcauses?.map((subcause) => (
