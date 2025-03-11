@@ -9,36 +9,37 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Stripe with better error handling
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
-      throw new Error('Missing Stripe secret key');
+      console.error('Missing Stripe secret key');
+      throw new Error('Configuration error');
     }
-    const stripe = Stripe(stripeKey);
-    console.log('Stripe initialized');
 
-    // Initialize Supabase client with better error handling
+    const stripe = Stripe(stripeKey);
+    console.log('Stripe initialized successfully');
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
+      console.error('Missing Supabase configuration');
+      throw new Error('Configuration error');
     }
 
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    });
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
     console.log('Supabase client initialized');
 
-    // Parse request body
-    const { amount, recipientId } = await req.json();
-    console.log('Received payment request:', { amount, recipientId });
+    // Parse and validate request body
+    const requestData = await req.json();
+    const amount = Number(requestData.amount);
+    const recipientId = requestData.recipientId;
+
+    console.log('Request data:', { amount, recipientId });
 
     if (!amount || amount <= 0) {
       throw new Error('Invalid amount');
@@ -48,7 +49,7 @@ serve(async (req) => {
       throw new Error('Missing recipient ID');
     }
 
-    // Get user from auth header with better error handling
+    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
@@ -74,7 +75,7 @@ serve(async (req) => {
       .from('fingerprints_users')
       .select('fingerprint_id')
       .eq('user_id', recipientId)
-      .single();
+      .maybeSingle();
 
     if (fingerprintError) {
       console.error('Error fetching fingerprint:', fingerprintError);
@@ -82,32 +83,35 @@ serve(async (req) => {
     }
 
     if (!fingerprint?.fingerprint_id) {
-      throw new Error('No fingerprint found for recipient');
+      console.error('No fingerprint found for recipient:', recipientId);
+      throw new Error('Recipient not found');
     }
 
     console.log('Found fingerprint:', fingerprint.fingerprint_id);
 
-    // Create payment record with full error handling
+    // Create payment record
     const paymentData = {
-      amount: amount,
+      amount: Math.round(amount), // Ensure amount is an integer
       currency: 'gbp',
       user_id: user.id,
       fingerprint_id: fingerprint.fingerprint_id,
       status: 'pending'
     };
 
-    const { error: paymentError } = await supabaseClient
+    const { data: payment, error: paymentError } = await supabaseClient
       .from('stripe_payments')
-      .insert([paymentData]);
+      .insert([paymentData])
+      .select()
+      .single();
 
     if (paymentError) {
       console.error('Error creating payment record:', paymentError);
       throw new Error('Failed to create payment record');
     }
 
-    console.log('Payment record created');
+    console.log('Created payment record:', payment);
 
-    // Create Stripe checkout session with better error handling
+    // Create Stripe checkout session
     const origin = req.headers.get('origin');
     if (!origin) {
       throw new Error('Missing origin header');
@@ -122,7 +126,7 @@ serve(async (req) => {
             product_data: {
               name: 'Donation',
             },
-            unit_amount: amount,
+            unit_amount: Math.round(amount * 100), // Convert to cents
           },
           quantity: 1,
         },
@@ -131,6 +135,7 @@ serve(async (req) => {
       success_url: `${origin}/payment-success`,
       cancel_url: `${origin}/payment-cancelled`,
       metadata: {
+        payment_id: payment.id,
         recipientId,
         fingerprintId: fingerprint.fingerprint_id,
         userId: user.id
