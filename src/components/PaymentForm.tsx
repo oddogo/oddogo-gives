@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { User } from '@supabase/supabase-js';
+import { Profile } from '@/hooks/usePublicProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface PaymentFormProps {
-  user: User;
+  user: Profile;
 }
 
 const PaymentFormContent = ({ user }: PaymentFormProps) => {
