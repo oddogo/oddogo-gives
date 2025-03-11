@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -26,9 +25,11 @@ export const FingerPrintAllocationForm = ({ onSuccess }: AllocationFormProps) =>
       // First create a new fingerprint
       const { data: fingerprint, error: fingerprintError } = await supabase
         .from('fingerprints')
-        .insert([
-          { name: allocation.name }
-        ])
+        .insert([{
+          fingerprint: crypto.randomUUID(), // Add the required fingerprint field
+          name: allocation.name,
+          version: 1
+        }])
         .select()
         .single();
 
