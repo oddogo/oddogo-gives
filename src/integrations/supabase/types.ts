@@ -1412,6 +1412,31 @@ export type Database = {
       }
     }
     Views: {
+      v_active_partner_charities: {
+        Row: {
+          charity_id: string | null
+          charity_name: string | null
+          end_date: string | null
+          registered_number: string | null
+          start_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charity_partners_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: true
+            referencedRelation: "charities_charities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charity_partners_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: true
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["charity_id"]
+          },
+        ]
+      }
       v_charities_by_subcause: {
         Row: {
           charity_id: string | null

@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Allocation, AllocationType } from "@/types/allocation";
-import { useAllocationOptions } from "@/hooks/useAllocationOptions";
+import { Allocation } from "@/types/allocation";
 import { useFingerprint } from "@/hooks/useFingerprint";
 import { useAllocations } from "@/hooks/useAllocations";
 import { AllocationTypeSelector } from './fingerprint/AllocationTypeSelector';
@@ -22,8 +21,6 @@ export const EditFingerprintModal = ({
   allocations: initialAllocations,
   onSuccess 
 }: EditFingerprintModalProps) => {
-  const [allocationType, setAllocationType] = useState<Exclude<AllocationType, 'None - Error'>>('Charity');
-  const { options, isLoading } = useAllocationOptions();
   const { loading, error: saveError, saveFingerprint } = useFingerprint(onSuccess);
   const {
     allocations,
@@ -33,33 +30,6 @@ export const EditFingerprintModal = ({
     handleDelete,
     handleAddAllocation
   } = useAllocations(initialAllocations);
-
-  const handleAddNew = () => {
-    let newAllocation: Allocation;
-
-    switch (allocationType) {
-      case 'DAF':
-        newAllocation = {
-          id: 'daf',
-          allocation_name: 'Donor Advised Fund',
-          allocation_type: 'DAF',
-          allocation_percentage: 0
-        };
-        break;
-      case 'Spotlight':
-        newAllocation = {
-          id: 'spotlight',
-          allocation_name: 'Spotlight Charity',
-          allocation_type: 'Spotlight',
-          allocation_percentage: 0
-        };
-        break;
-      default:
-        return;
-    }
-
-    handleAddAllocation(newAllocation);
-  };
 
   const handleSave = async () => {
     if (validationError) return;
@@ -79,11 +49,7 @@ export const EditFingerprintModal = ({
             </div>
           )}
 
-          <AllocationTypeSelector
-            allocationType={allocationType}
-            onTypeChange={(value) => setAllocationType(value)}
-            onAdd={handleAddNew}
-          />
+          <AllocationTypeSelector onAddAllocation={handleAddAllocation} />
 
           <AllocationList
             allocations={allocations}

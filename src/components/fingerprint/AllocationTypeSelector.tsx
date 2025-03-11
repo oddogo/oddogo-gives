@@ -1,51 +1,75 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Building2, Globe2, Tags, Sparkles, PiggyBank } from "lucide-react";
 import { AllocationType } from "@/types/allocation";
-
-type ValidAllocationType = Exclude<AllocationType, 'None - Error'>;
+import { useState } from "react";
+import { PartnerCharitySelector } from "./PartnerCharitySelector";
 
 interface AllocationTypeSelectorProps {
-  allocationType: ValidAllocationType;
-  onTypeChange: (type: ValidAllocationType) => void;
-  onAdd: () => void;
+  onAddAllocation: (allocation: any) => void;
 }
 
 export const AllocationTypeSelector = ({ 
-  allocationType, 
-  onTypeChange, 
-  onAdd 
+  onAddAllocation 
 }: AllocationTypeSelectorProps) => {
+  const [showCharitySelector, setShowCharitySelector] = useState(false);
+
+  const handleCharityAdd = (allocation: any) => {
+    onAddAllocation(allocation);
+  };
+
+  const handleDAFAdd = () => {
+    onAddAllocation({
+      id: 'daf',
+      allocation_name: 'Donor Advised Fund',
+      allocation_type: 'DAF',
+      allocation_percentage: 0
+    });
+  };
+
+  const handleSpotlightAdd = () => {
+    onAddAllocation({
+      id: 'spotlight',
+      allocation_name: 'Spotlight Charity',
+      allocation_type: 'Spotlight',
+      allocation_percentage: 0
+    });
+  };
+
   return (
-    <div className="flex gap-2 items-center">
-      <Select
-        value={allocationType}
-        onValueChange={(value) => {
-          // Cast the value as ValidAllocationType since we know it can only be valid values from SelectItem
-          onTypeChange(value as ValidAllocationType)
-        }}
-      >
-        <SelectTrigger className="w-[200px] bg-[#2A2F3C] border-white/10 text-white">
-          <SelectValue placeholder="Select type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="Charity">Partner Charity</SelectItem>
-          <SelectItem value="Subcause">Sub Cause</SelectItem>
-          <SelectItem value="Region">Region</SelectItem>
-          <SelectItem value="Meta">Tag</SelectItem>
-          <SelectItem value="DAF">Donor Advised Fund</SelectItem>
-          <SelectItem value="Spotlight">Spotlight Charity</SelectItem>
-        </SelectContent>
-      </Select>
-      <Button 
-        onClick={onAdd}
-        className="gap-2"
+    <div className="flex flex-wrap gap-2">
+      <Button
+        onClick={() => setShowCharitySelector(true)}
         variant="outline"
+        className="gap-2"
       >
-        <Plus className="h-4 w-4" />
-        Add Allocation
+        <Building2 className="h-4 w-4" />
+        Add Partner Charity
       </Button>
+
+      <Button
+        onClick={handleDAFAdd}
+        variant="outline"
+        className="gap-2"
+      >
+        <PiggyBank className="h-4 w-4" />
+        Add DAF
+      </Button>
+
+      <Button
+        onClick={handleSpotlightAdd}
+        variant="outline"
+        className="gap-2"
+      >
+        <Sparkles className="h-4 w-4" />
+        Add Spotlight
+      </Button>
+
+      <PartnerCharitySelector
+        isOpen={showCharitySelector}
+        onClose={() => setShowCharitySelector(false)}
+        onSelect={handleCharityAdd}
+      />
     </div>
   );
 };
