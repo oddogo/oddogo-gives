@@ -43,12 +43,6 @@ export const EditFingerprintModal = ({
           <DialogTitle>Update Your Fingerprint</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {(validationError || saveError) && (
-            <div className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm">
-              {validationError || saveError}
-            </div>
-          )}
-
           <AllocationTypeSelector onAddAllocation={handleAddAllocation} />
 
           <AllocationList
@@ -56,6 +50,12 @@ export const EditFingerprintModal = ({
             onPercentageChange={handlePercentageChange}
             onDelete={handleDelete}
           />
+
+          {(validationError || saveError) && (
+            <div className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm">
+              {validationError || saveError}
+            </div>
+          )}
 
           <SaveSection
             totalPercentage={totalPercentage}

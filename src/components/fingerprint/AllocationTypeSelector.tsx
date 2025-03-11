@@ -41,28 +41,31 @@ export const AllocationTypeSelector = ({
       <Button
         onClick={() => setShowCharitySelector(true)}
         variant="outline"
-        className="gap-2"
+        size="sm"
+        className="gap-1.5"
       >
         <Building2 className="h-4 w-4" />
-        Add Partner Charity
+        Partner Charity
       </Button>
 
       <Button
         onClick={handleDAFAdd}
         variant="outline"
-        className="gap-2"
+        size="sm"
+        className="gap-1.5"
       >
         <PiggyBank className="h-4 w-4" />
-        Add DAF
+        DAF
       </Button>
 
       <Button
         onClick={handleSpotlightAdd}
         variant="outline"
-        className="gap-2"
+        size="sm"
+        className="gap-1.5"
       >
         <Sparkles className="h-4 w-4" />
-        Add Spotlight
+        Spotlight
       </Button>
 
       <PartnerCharitySelector
