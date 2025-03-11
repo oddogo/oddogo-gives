@@ -12,6 +12,7 @@ interface PartnerCharity {
   charity_id: string;
   charity_name: string;
   registered_number: string;
+  website?: string;
 }
 
 interface PartnerCharitySelectorProps {
@@ -32,10 +33,10 @@ export const PartnerCharitySelector = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_active_partner_charities')
-        .select('*');
+        .select('*, charities:charity_id (website)');
       
       if (error) throw error;
-      return data as PartnerCharity[];
+      return data as (PartnerCharity & { charities: { website: string | null } })[];
     }
   });
 
@@ -44,12 +45,13 @@ export const PartnerCharitySelector = ({
     charity.registered_number?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const handleSelect = (charity: PartnerCharity) => {
+  const handleSelect = (charity: PartnerCharity & { charities: { website: string | null } }) => {
     onSelect({
       id: charity.charity_id,
       allocation_name: charity.charity_name,
       allocation_type: 'Charity',
-      allocation_percentage: 0
+      allocation_percentage: 0,
+      website_favicon: charity.charities?.website || null
     });
     onClose();
   };
@@ -99,3 +101,4 @@ export const PartnerCharitySelector = ({
     </Dialog>
   );
 };
+
