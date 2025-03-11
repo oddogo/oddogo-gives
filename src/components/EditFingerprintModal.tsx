@@ -90,44 +90,64 @@ export const EditFingerprintModal = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
+      console.log('Starting save process for user:', user.id);
+
       const { data: fingerprintsUsers, error: fingerprintsUsersError } = await supabase
         .from('fingerprints_users')
         .select('id, fingerprint_id')
         .eq('user_id', user.id)
         .single();
 
-      if (fingerprintsUsersError) throw fingerprintsUsersError;
+      if (fingerprintsUsersError) {
+        console.error('Error fetching fingerprints user:', fingerprintsUsersError);
+        throw fingerprintsUsersError;
+      }
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      const { error: updateError } = await supabase.rpc('mark_fingerprint_allocations_as_deleted', {
-        p_fingerprints_users_id: fingerprintsUsers.id
-      });
+      console.log('Found fingerprints user:', fingerprintsUsers);
 
-      if (updateError) throw updateError;
+      const { error: deleteError } = await supabase
+        .rpc('mark_fingerprint_allocations_as_deleted', {
+          p_fingerprints_users_id: fingerprintsUsers.id
+        });
+
+      if (deleteError) {
+        console.error('Error marking allocations as deleted:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Successfully marked old allocations as deleted');
+
+      const allocationsToInsert = allocations.map(a => ({
+        fingerprints_users_id: fingerprintsUsers.id,
+        allocation_percentage: a.allocation_percentage,
+        allocation_charity_id: a.allocation_type === 'Charity' ? a.id : null,
+        allocation_subcause_id: a.allocation_type === 'Subcause' ? Number(a.id) : null,
+        allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
+        allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
+        allocation_daf: a.allocation_type === 'DAF',
+        allocation_spotlight: a.allocation_type === 'Spotlight'
+      }));
+
+      console.log('Preparing to insert new allocations:', allocationsToInsert);
 
       const { error: insertError } = await supabase
         .from('fingerprints_allocations')
-        .insert(
-          allocations.map(a => ({
-            fingerprints_users_id: fingerprintsUsers.id,
-            allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.allocation_type === 'Charity' ? a.id : null,
-            allocation_subcause_id: a.allocation_type === 'Subcause' ? Number(a.id) : null,
-            allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
-            allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
-            allocation_daf: a.allocation_type === 'DAF',
-            allocation_spotlight: a.allocation_type === 'Spotlight'
-          }))
-        );
+        .insert(allocationsToInsert);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting new allocations:', insertError);
+        throw insertError;
+      }
 
+      console.log('Successfully inserted new allocations');
+      
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error(error.message);
       console.error('Save error:', error);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
