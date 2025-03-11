@@ -61,4 +61,3 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
     </div>
   );
 };
-

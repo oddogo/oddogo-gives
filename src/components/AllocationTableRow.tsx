@@ -176,4 +176,3 @@ const typeWidths: Record<string, string> = {
   'Subcause': 'w-24',
   'Meta': 'w-20',
 };
-
