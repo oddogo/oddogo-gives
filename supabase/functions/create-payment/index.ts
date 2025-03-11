@@ -1,115 +1,10 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
-
-interface PaymentRequest {
-  amount: number;
-  recipientId: string;
-}
-
-interface PaymentData {
-  amount: number;
-  currency: string;
-  user_id: string | null;
-  fingerprint_id: string;
-  status: string;
-}
-
-const validatePaymentRequest = (data: any): { isValid: boolean; error?: string } => {
-  const { amount, recipientId } = data;
-  const numericAmount = Number(amount);
-
-  if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
-    return { isValid: false, error: 'Invalid amount provided' };
-  }
-
-  if (!recipientId) {
-    return { isValid: false, error: 'Missing recipient ID' };
-  }
-
-  return { isValid: true };
-};
-
-const createPaymentRecord = async (paymentData: PaymentData) => {
-  const { data: payment, error: paymentError } = await supabaseClient
-    .from('stripe_payments')
-    .insert([paymentData])
-    .select()
-    .single();
-
-  if (paymentError) {
-    console.error('Error creating payment record:', paymentError);
-    throw new Error('Failed to create payment record');
-  }
-
-  return payment;
-};
-
-const createStripeSession = async (
-  stripe: Stripe,
-  amount: number,
-  origin: string,
-  payment: any,
-  recipientId: string,
-  fingerprintId: string,
-  userId: string | null
-): Promise<Stripe.Checkout.Session> => {
-  console.log('Creating Stripe session with amount:', amount);
-  
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        price_data: {
-          currency: 'gbp',
-          product_data: {
-            name: 'Donation',
-          },
-          unit_amount: amount,
-        },
-        quantity: 1,
-      },
-    ],
-    mode: 'payment',
-    success_url: `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`,
-    cancel_url: `${origin}/payment-cancelled`,
-    metadata: {
-      payment_id: payment.id,
-      recipientId,
-      fingerprintId,
-      userId: userId || 'anonymous'
-    },
-  });
-
-  console.log('Stripe session created:', session.id);
-
-  try {
-    const { error: updateError } = await supabaseClient
-      .from('stripe_payments')
-      .update({ stripe_payment_intent_id: session.payment_intent })
-      .eq('id', payment.id);
-
-    if (updateError) {
-      console.error('Error updating payment record with Stripe ID:', updateError);
-      throw new Error('Failed to update payment record with Stripe session details');
-    }
-  } catch (error) {
-    console.error('Database update error:', error);
-    throw error;
-  }
-
-  return session;
-};
+import { corsHeaders } from './types.ts';
+import { validatePaymentRequest } from './validators.ts';
+import { createPaymentRecord, getFingerprintId, getUserId } from './db.ts';
+import { createStripeSession } from './stripe.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -143,28 +38,10 @@ serve(async (req) => {
     }
 
     const authHeader = req.headers.get('Authorization');
-    const userId = authHeader ? 
-      (await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : 
-      null;
+    const userId = await getUserId(authHeader);
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    const { data: fingerprint, error: fingerprintError } = await supabaseClient
-      .from('fingerprints_users')
-      .select('fingerprint_id')
-      .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (fingerprintError) {
-      console.error('Error fetching fingerprint:', fingerprintError);
-      throw new Error('Failed to fetch recipient fingerprint');
-    }
-
-    if (!fingerprint?.fingerprint_id) {
-      console.error('No fingerprint found for recipient:', recipientId);
-      throw new Error('Recipient not found');
-    }
-
-    const fingerprintId = fingerprint.fingerprint_id;
+    const fingerprintId = await getFingerprintId(recipientId);
     console.log('Found fingerprint:', fingerprintId);
 
     const payment = await createPaymentRecord({
