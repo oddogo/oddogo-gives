@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -46,43 +45,25 @@ export const EditFingerprintModal = ({
         throw new Error("Total allocation must equal 100%");
       }
 
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // Create new fingerprint with incremented version
-      const { data: fingerprint, error: fingerprintError } = await supabase
-        .from('fingerprints')
-        .insert([{ 
-          fingerprint: crypto.randomUUID(), // Add required fingerprint field
-          name: "My Fingerprint",
-          version: 1
-        }])
-        .select('fingerprint')
-        .single();
-
-      if (fingerprintError) throw fingerprintError;
-
-      // Create fingerprint user association
-      const { data: fingerprintUser, error: userError } = await supabase
+      const { data: fingerprintsUsers, error: fingerprintsUsersError } = await supabase
         .from('fingerprints_users')
-        .insert([{
-          fingerprint_id: fingerprint.fingerprint,
-          user_id: user.id
-        }])
         .select('id')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (userError) throw userError;
+      if (fingerprintsUsersError) throw fingerprintsUsersError;
+      if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      // Create allocations with proper types
       const { error: allocationsError } = await supabase
         .from('fingerprints_allocations')
-        .insert(
+        .upsert(
           allocations.map(a => ({
-            fingerprints_users_id: fingerprintUser.id,
+            fingerprints_users_id: fingerprintsUsers.id,
             allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.id.toString(), // Convert to string
+            allocation_charity_id: a.id.toString(),
           }))
         );
 
