@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -122,7 +121,7 @@ serve(async (req) => {
       currency: 'gbp',
       user_id: userId, // This can be null for anonymous donations
       fingerprint_id: fingerprint.fingerprint_id,
-      status: 'pending',
+      status: 'pending'
     };
 
     const { data: payment, error: paymentError } = await supabaseClient
@@ -150,7 +149,7 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe session with additional information collection
+    // Create Stripe session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -174,15 +173,6 @@ serve(async (req) => {
         fingerprintId: fingerprint.fingerprint_id,
         userId: userId || 'anonymous'
       },
-      payment_intent_data: {
-        metadata: {
-          payment_id: payment.id,
-          fingerprintId: fingerprint.fingerprint_id,
-        }
-      },
-      customer_creation: 'always',
-      collect_shipping_address: false,
-      billing_address_collection: 'required',
     });
 
     console.log('Stripe session created:', session.id);
