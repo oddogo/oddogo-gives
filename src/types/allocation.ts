@@ -9,4 +9,12 @@ export interface Allocation {
   cause_name?: string | null;
   website_favicon?: string | null;
   deleted_at?: string | null;
+  
+  // New optional fields for different allocation types
+  allocation_charity_id?: string;
+  allocation_subcause_id?: string;
+  allocation_region_id?: string;
+  allocation_meta_id?: string;
+  allocation_daf?: boolean;
+  allocation_spotlight?: boolean;
 }
