@@ -1471,7 +1471,10 @@ export type Database = {
           fingerprint_id: string | null
           id: string
           status: string
+          stripe_charge_id: string | null
           stripe_client_secret: string | null
+          stripe_customer_id: string | null
+          stripe_payment_email: string | null
           stripe_payment_intent_id: string | null
           updated_at: string
           user_id: string | null
@@ -1483,7 +1486,10 @@ export type Database = {
           fingerprint_id?: string | null
           id?: string
           status?: string
+          stripe_charge_id?: string | null
           stripe_client_secret?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -1495,7 +1501,10 @@ export type Database = {
           fingerprint_id?: string | null
           id?: string
           status?: string
+          stripe_charge_id?: string | null
           stripe_client_secret?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
           user_id?: string | null

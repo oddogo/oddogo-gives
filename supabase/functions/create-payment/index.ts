@@ -121,7 +121,10 @@ serve(async (req) => {
       currency: 'gbp',
       user_id: userId, // This can be null for anonymous donations
       fingerprint_id: fingerprint.fingerprint_id,
-      status: 'pending'
+      status: 'pending',
+      stripe_payment_email: null, // Will be updated when payment is completed
+      stripe_customer_id: null, // Will be updated when payment is completed
+      stripe_charge_id: null // Will be updated when payment is completed
     };
 
     const { data: payment, error: paymentError } = await supabaseClient
@@ -149,7 +152,7 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe session
+    // Create Stripe session with additional information collection
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -173,6 +176,15 @@ serve(async (req) => {
         fingerprintId: fingerprint.fingerprint_id,
         userId: userId || 'anonymous'
       },
+      payment_intent_data: {
+        metadata: {
+          payment_id: payment.id,
+          fingerprintId: fingerprint.fingerprint_id,
+        }
+      },
+      customer_creation: 'always',
+      collect_shipping_address: false,
+      billing_address_collection: 'required',
     });
 
     console.log('Stripe session created:', session.id);
