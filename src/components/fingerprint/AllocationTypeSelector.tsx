@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AllocationType } from "@/types/allocation";
 
+type ValidAllocationType = Exclude<AllocationType, 'None - Error'>;
+
 interface AllocationTypeSelectorProps {
-  allocationType: Exclude<AllocationType, 'None - Error'>;
-  onTypeChange: (type: Exclude<AllocationType, 'None - Error'>) => void;
+  allocationType: ValidAllocationType;
+  onTypeChange: (type: ValidAllocationType) => void;
   onAdd: () => void;
 }
 
@@ -19,7 +21,10 @@ export const AllocationTypeSelector = ({
     <div className="flex gap-2 items-center">
       <Select
         value={allocationType}
-        onValueChange={(value: AllocationType) => onTypeChange(value)}
+        onValueChange={(value) => {
+          // Cast the value as ValidAllocationType since we know it can only be valid values from SelectItem
+          onTypeChange(value as ValidAllocationType)
+        }}
       >
         <SelectTrigger className="w-[200px] bg-white/5 border-white/10">
           <SelectValue placeholder="Select type" />
