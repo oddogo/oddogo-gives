@@ -9,6 +9,7 @@ export interface Allocation {
   cause_name?: string | null;
   website_favicon?: string | null;
   deleted_at?: string | null;
+  image_url?: string;
   
   // Update types to match database
   allocation_charity_id?: string;

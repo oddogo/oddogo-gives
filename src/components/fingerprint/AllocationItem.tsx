@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Building2, Sparkles, PiggyBank, Image } from "lucide-react";
+import { Building2, Sparkles, PiggyBank, Image, Trash2 } from "lucide-react";
 import { Allocation } from "@/types/allocation";
 
 interface AllocationItemProps {
@@ -21,7 +20,7 @@ export const AllocationItem = ({
 }: AllocationItemProps) => {
   const getFallbackIcon = () => {
     switch (allocation.allocation_type) {
-      case 'Partner':
+      case 'Charity':
         return <Building2 className="h-4 w-4" />;
       case 'Spotlight':
         return <Sparkles className="h-4 w-4" />;
