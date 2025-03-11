@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,24 +52,10 @@ const Transactions = () => {
     try {
       console.log('Loading transactions for user:', userId);
       
-      // First get the user's fingerprint
-      const { data: fingerprintData, error: fingerprintError } = await supabase
-        .from('fingerprints_users')
-        .select('fingerprint_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (fingerprintError) throw fingerprintError;
-      if (!fingerprintData?.fingerprint_id) {
-        console.log('No fingerprint found for user');
-        setTransactions([]);
-        return;
-      }
-
       const { data, error } = await supabase
-        .from('stripe_payments')
+        .from('v_stripe_payments')
         .select('*')
-        .eq('fingerprint_id', fingerprintData.fingerprint_id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
