@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 
 const corsHeaders = {
@@ -17,6 +18,13 @@ serve(async (req) => {
     const stripe = Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '');
     console.log('Stripe initialized');
 
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
     const { amount, recipientId } = await req.json();
     console.log('Received payment request:', { amount, recipientId });
 
@@ -24,10 +32,23 @@ serve(async (req) => {
       throw new Error('Invalid amount');
     }
 
-    // Create a record in stripe_payments table
-    const { data: { user } } = await supabase.auth.getUser(req.headers.get('Authorization')?.split('Bearer ')[1]);
-    
-    const { data: fingerprint, error: fingerprintError } = await supabase
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      throw new Error('Authentication failed');
+    }
+
+    // Get recipient's fingerprint
+    const { data: fingerprint, error: fingerprintError } = await supabaseClient
       .from('fingerprints_users')
       .select('fingerprint_id')
       .eq('user_id', recipientId)
@@ -35,24 +56,28 @@ serve(async (req) => {
 
     if (fingerprintError) {
       console.error('Error fetching fingerprint:', fingerprintError);
+      throw new Error('Failed to fetch recipient fingerprint');
     }
 
+    // Create payment record
     const paymentData = {
       amount: amount,
       currency: 'gbp',
-      user_id: user?.id,
+      user_id: user.id,
       fingerprint_id: fingerprint?.fingerprint_id,
       status: 'pending'
     };
 
-    const { error: paymentError } = await supabase
+    const { error: paymentError } = await supabaseClient
       .from('stripe_payments')
       .insert([paymentData]);
 
     if (paymentError) {
       console.error('Error creating payment record:', paymentError);
+      throw new Error('Failed to create payment record');
     }
 
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -72,7 +97,8 @@ serve(async (req) => {
       cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
       metadata: {
         recipientId,
-        fingerprintId: fingerprint?.fingerprint_id
+        fingerprintId: fingerprint?.fingerprint_id,
+        userId: user.id
       },
     });
 
@@ -98,3 +124,4 @@ serve(async (req) => {
     );
   }
 });
+
