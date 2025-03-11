@@ -36,40 +36,6 @@ const getTypeColor = (type: string): string => {
 };
 
 export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverChange, readOnly = false }: AllocationTableRowProps) => {
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editedPercentage, setEditedPercentage] = useState<string>("");
-
-  const handleEdit = () => {
-    if (readOnly) return;
-    setEditingId(allocation.id);
-    setEditedPercentage(String(allocation.allocation_percentage * 100));
-  };
-
-  const handleSave = async () => {
-    try {
-      const newPercentage = Number(editedPercentage) / 100;
-      
-      const { error } = await supabase
-        .from('fingerprints_allocations')
-        .update({ allocation_percentage: newPercentage })
-        .eq('id', allocation.id);
-
-      if (error) throw error;
-
-      toast.success("Allocation updated successfully!");
-      setEditingId(null);
-      
-      window.location.reload();
-    } catch (error: any) {
-      toast.error("Error updating allocation: " + error.message);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setEditedPercentage("");
-  };
-
   return (
     <TableRow 
       className={`
@@ -129,15 +95,6 @@ export const AllocationTableRow = ({ allocation, index, hoveredIndex, onHoverCha
         </div>
       </TableCell>
       <TableCell>
-        {!readOnly && (
-          <Button 
-            size="sm"
-            variant="outline"
-            onClick={handleEdit}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        )}
       </TableCell>
     </TableRow>
   );

@@ -52,6 +52,7 @@ export const AllocationTable = ({ data, hoveredIndex, onHoverChange }: Allocatio
         </Table>
       </div>
 
+      {/* Make sure modal is rendered regardless of showEditModal state */}
       <EditAllocationsModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
