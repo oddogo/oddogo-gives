@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Allocation } from "@/types/allocation";
 import { toast } from "sonner";
@@ -57,6 +58,22 @@ export const useAllocations = (initialAllocations: Allocation[]): UseAllocations
 
       if (isDuplicate) {
         toast.error('This subcause has already been added');
+        return;
+      }
+
+      setAllocations([...allocations, newAllocation]);
+      return;
+    }
+
+    // For charities, check the specific charity ID
+    if (newAllocation.allocation_type === 'Charity') {
+      const isDuplicate = allocations.some(allocation => 
+        allocation.allocation_type === 'Charity' && 
+        allocation.id === newAllocation.id
+      );
+
+      if (isDuplicate) {
+        toast.error('This charity has already been added');
         return;
       }
 
