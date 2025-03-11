@@ -98,21 +98,29 @@ export const EditFingerprintModal = ({
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      const { error: transactionError } = await supabase.rpc('update_fingerprint_allocations', {
-        p_fingerprints_users_id: fingerprintsUsers.id,
-        p_new_allocations: allocations.map(a => ({
-          fingerprints_users_id: fingerprintsUsers.id,
-          allocation_percentage: a.allocation_percentage,
-          allocation_charity_id: a.allocation_type === 'Charity' ? a.id : null,
-          allocation_subcause_id: a.allocation_type === 'Subcause' ? Number(a.id) : null,
-          allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
-          allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
-          allocation_daf: a.allocation_type === 'DAF',
-          allocation_spotlight: a.allocation_type === 'Spotlight'
-        }))
-      });
+      const { error: deleteError } = await supabase
+        .rpc('mark_fingerprint_allocations_as_deleted', {
+          p_fingerprints_users_id: fingerprintsUsers.id
+        });
 
-      if (transactionError) throw transactionError;
+      if (deleteError) throw deleteError;
+
+      const { error: insertError } = await supabase
+        .from('fingerprints_allocations')
+        .insert(
+          allocations.map(a => ({
+            fingerprints_users_id: fingerprintsUsers.id,
+            allocation_percentage: a.allocation_percentage,
+            allocation_charity_id: a.allocation_type === 'Charity' ? a.id : null,
+            allocation_subcause_id: a.allocation_type === 'Subcause' ? Number(a.id) : null,
+            allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
+            allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
+            allocation_daf: a.allocation_type === 'DAF',
+            allocation_spotlight: a.allocation_type === 'Spotlight'
+          }))
+        );
+
+      if (insertError) throw insertError;
 
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();

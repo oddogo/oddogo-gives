@@ -2002,6 +2002,13 @@ export type Database = {
         }
         Returns: number
       }
+      update_fingerprint_allocations: {
+        Args: {
+          p_fingerprints_users_id: number
+          p_new_allocations: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
