@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -98,12 +99,11 @@ export const EditFingerprintModal = ({
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      const { error: deleteError } = await supabase
-        .rpc('mark_fingerprint_allocations_as_deleted', {
-          p_fingerprints_users_id: fingerprintsUsers.id
-        });
+      const { error: updateError } = await supabase.rpc('mark_fingerprint_allocations_as_deleted', {
+        p_fingerprints_users_id: fingerprintsUsers.id
+      });
 
-      if (deleteError) throw deleteError;
+      if (updateError) throw updateError;
 
       const { error: insertError } = await supabase
         .from('fingerprints_allocations')
