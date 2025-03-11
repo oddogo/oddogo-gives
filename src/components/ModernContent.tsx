@@ -5,9 +5,10 @@ import { DashboardChart } from "./DashboardChart";
 import { AllocationTable } from "./AllocationTable";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
-import { Search, Download, SlidersHorizontal } from "lucide-react";
+import { Search, Download, SlidersHorizontal, PencilLine } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { EditFingerprintModal } from "./EditFingerprintModal";
 
 interface ModernContentProps {
   user: User | null;
@@ -22,6 +23,7 @@ export const ModernContent = ({
   onHoverChange 
 }: ModernContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const totalAllocation = allocations.reduce((sum, a) => sum + a.allocation_percentage, 0);
   const uniqueTypes = new Set(allocations.map(a => a.allocation_type)).size;
   
@@ -54,7 +56,16 @@ export const ModernContent = ({
       {/* Main Content Card */}
       <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-6">Charitable Fingerprint™</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold">Charitable Fingerprint™</h2>
+            <Button 
+              onClick={() => setIsEditModalOpen(true)}
+              className="gap-2"
+            >
+              <PencilLine className="h-4 w-4" />
+              Update My Fingerprint
+            </Button>
+          </div>
           
           {/* Filter Bar */}
           <div className="flex gap-3 mb-6">
@@ -96,6 +107,12 @@ export const ModernContent = ({
           </div>
         </div>
       </Card>
+
+      <EditFingerprintModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        allocations={allocations}
+      />
     </div>
   );
 };
