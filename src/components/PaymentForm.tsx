@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) =>
       console.log('Invoking create-payment function...');
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { 
-          amount: parseFloat(amount) * 100, // Convert to cents
+          amount: parseFloat(amount), // Send as regular amount, not in cents
           recipientId 
         }
       });

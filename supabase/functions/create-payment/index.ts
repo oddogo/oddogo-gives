@@ -14,6 +14,7 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Stripe
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
       console.error('Missing Stripe secret key');
@@ -21,8 +22,8 @@ serve(async (req) => {
     }
 
     const stripe = Stripe(stripeKey);
-    console.log('Stripe initialized successfully');
 
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -32,16 +33,14 @@ serve(async (req) => {
     }
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    console.log('Supabase client initialized');
 
-    // Parse and validate request body
+    // Parse request body
     const requestData = await req.json();
-    const amount = Number(requestData.amount);
-    const recipientId = requestData.recipientId;
+    const { amount, recipientId } = requestData;
+    
+    console.log('Received request data:', { amount, recipientId });
 
-    console.log('Request data:', { amount, recipientId });
-
-    if (!amount || amount <= 0) {
+    if (!amount || isNaN(amount) || amount <= 0) {
       throw new Error('Invalid amount');
     }
 
@@ -59,13 +58,9 @@ serve(async (req) => {
       authHeader.replace('Bearer ', '')
     );
 
-    if (authError) {
+    if (authError || !user) {
       console.error('Auth error:', authError);
       throw new Error('Authentication failed');
-    }
-
-    if (!user) {
-      throw new Error('No user found');
     }
 
     console.log('Authenticated user:', user.id);
@@ -87,11 +82,10 @@ serve(async (req) => {
       throw new Error('Recipient not found');
     }
 
-    console.log('Found fingerprint:', fingerprint.fingerprint_id);
-
     // Create payment record
+    const amountInCents = Math.round(amount * 100);
     const paymentData = {
-      amount: Math.round(amount), // Ensure amount is an integer
+      amount: amountInCents,
       currency: 'gbp',
       user_id: user.id,
       fingerprint_id: fingerprint.fingerprint_id,
@@ -109,8 +103,6 @@ serve(async (req) => {
       throw new Error('Failed to create payment record');
     }
 
-    console.log('Created payment record:', payment);
-
     // Create Stripe checkout session
     const origin = req.headers.get('origin');
     if (!origin) {
@@ -126,7 +118,7 @@ serve(async (req) => {
             product_data: {
               name: 'Donation',
             },
-            unit_amount: Math.round(amount * 100), // Convert to cents
+            unit_amount: amountInCents,
           },
           quantity: 1,
         },
@@ -142,7 +134,11 @@ serve(async (req) => {
       },
     });
 
-    console.log('Stripe session created:', { sessionId: session.id });
+    console.log('Created Stripe session:', { 
+      sessionId: session.id, 
+      amount: amountInCents,
+      currency: 'gbp'
+    });
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -154,9 +150,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating payment:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to create payment session' 
-      }),
+      JSON.stringify({ error: error.message || 'Failed to create payment session' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
