@@ -98,43 +98,21 @@ export const EditFingerprintModal = ({
       if (fingerprintsUsersError) throw fingerprintsUsersError;
       if (!fingerprintsUsers) throw new Error("No fingerprint found for user");
 
-      const { error: markDeletedError } = await supabase
-        .rpc('mark_fingerprint_allocations_as_deleted', {
-          p_fingerprints_users_id: fingerprintsUsers.id
-        });
-
-      if (markDeletedError) throw markDeletedError;
-
-      const allocationsToInsert = allocations.map(a => {
-        const baseAllocation = {
+      const { error: transactionError } = await supabase.rpc('update_fingerprint_allocations', {
+        p_fingerprints_users_id: fingerprintsUsers.id,
+        p_new_allocations: allocations.map(a => ({
           fingerprints_users_id: fingerprintsUsers.id,
           allocation_percentage: a.allocation_percentage,
-          version: 1,
-        };
-
-        switch (a.allocation_type) {
-          case 'Charity':
-            return { ...baseAllocation, allocation_charity_id: a.id };
-          case 'Subcause':
-            return { ...baseAllocation, allocation_subcause_id: Number(a.id) };
-          case 'Region':
-            return { ...baseAllocation, allocation_region_id: Number(a.id) };
-          case 'Meta':
-            return { ...baseAllocation, allocation_meta_id: Number(a.id) };
-          case 'DAF':
-            return { ...baseAllocation, allocation_daf: true };
-          case 'Spotlight':
-            return { ...baseAllocation, allocation_spotlight: true };
-          default:
-            throw new Error(`Invalid allocation type: ${a.allocation_type}`);
-        }
+          allocation_charity_id: a.allocation_type === 'Charity' ? a.id : null,
+          allocation_subcause_id: a.allocation_type === 'Subcause' ? Number(a.id) : null,
+          allocation_region_id: a.allocation_type === 'Region' ? Number(a.id) : null,
+          allocation_meta_id: a.allocation_type === 'Meta' ? Number(a.id) : null,
+          allocation_daf: a.allocation_type === 'DAF',
+          allocation_spotlight: a.allocation_type === 'Spotlight'
+        }))
       });
 
-      const { error: allocationsError } = await supabase
-        .from('fingerprints_allocations')
-        .insert(allocationsToInsert);
-
-      if (allocationsError) throw allocationsError;
+      if (transactionError) throw transactionError;
 
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();
