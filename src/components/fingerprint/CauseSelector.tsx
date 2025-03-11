@@ -26,7 +26,7 @@ export const CauseSelector = ({
 
   const handleCauseSelect = (causeId: number) => {
     setSelectedCauseId(causeId);
-    setSearchTerm(""); // Clear search when cause is selected
+    setSearchTerm("");
   };
 
   const handleSubcauseSelect = (subcauseId: number, subcauseName: string) => {
@@ -37,7 +37,8 @@ export const CauseSelector = ({
       allocation_percentage: 0,
       allocation_subcause_id: subcauseId
     });
-    // Don't close the dialog after selection to allow multiple choices
+    // Reset selection after adding a subcause
+    setSelectedCauseId(null);
   };
 
   const handleClose = () => {
@@ -63,7 +64,7 @@ export const CauseSelector = ({
       <DialogContent className="max-w-2xl bg-[#1A1F2C] text-white border-white/10">
         <DialogHeader>
           <DialogTitle>
-            {selectedCauseId ? 'Select Sub-causes' : 'Select Cause'}
+            {selectedCauseId ? 'Select a Sub-cause' : 'Select Cause'}
           </DialogTitle>
         </DialogHeader>
 
@@ -110,27 +111,18 @@ export const CauseSelector = ({
               ) : (
                 // Show subcauses for selected cause
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => {
-                        setSelectedCauseId(null);
-                        setSearchTerm("");
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to causes
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleClose}
-                    >
-                      Done
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      setSelectedCauseId(null);
+                      setSearchTerm("");
+                    }}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to causes
+                  </Button>
                   
                   <div className="flex flex-wrap gap-2">
                     {filteredSubcauses?.map((subcause) => (
