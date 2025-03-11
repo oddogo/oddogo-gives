@@ -83,7 +83,7 @@ export const EditFingerprintModal = ({
           allocations.map(a => ({
             fingerprints_users_id: fingerprintsUsers.id,
             allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.id.toString() // Convert number to string
+            allocation_charity_id: a.id // This is already a UUID from the Allocation type
           }))
         );
 
