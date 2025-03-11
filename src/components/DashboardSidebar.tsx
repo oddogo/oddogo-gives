@@ -2,7 +2,7 @@
 import { User } from "@supabase/supabase-js";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
-import { Home, PieChart, Settings, LogOut, UserCircle } from "lucide-react";
+import { Home, PieChart, Settings, LogOut, UserCircle, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface DashboardSidebarProps {
@@ -41,6 +41,14 @@ export const DashboardSidebar = ({ user, onSignOut }: DashboardSidebarProps) => 
             <PieChart className="mr-2 h-4 w-4" />
             Allocations
           </Button>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start"
+            onClick={() => navigate('/transactions')}
+          >
+            <Receipt className="mr-2 h-4 w-4" />
+            Transactions
+          </Button>
           <Button variant="ghost" className="w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
             Settings
@@ -59,4 +67,3 @@ export const DashboardSidebar = ({ user, onSignOut }: DashboardSidebarProps) => 
     </div>
   );
 };
-
