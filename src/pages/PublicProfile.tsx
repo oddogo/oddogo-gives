@@ -7,7 +7,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
 import { HandHeart } from "lucide-react";
-import { Button } from "./components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const PublicProfile = () => {
   const { id } = useParams();
