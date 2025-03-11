@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -29,10 +28,33 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   const [pendingAmount, setPendingAmount] = useState(0);
 
   const fetchPayments = async () => {
+    const { data: fingerprint, error: fingerprintError } = await supabase
+      .from('fingerprints_users')
+      .select('user_id')
+      .eq('fingerprint_id', fingerprintId)
+      .single();
+
+    if (fingerprintError) {
+      console.error('Error fetching fingerprint:', fingerprintError);
+      return;
+    }
+
+    const { data: userFingerprints } = await supabase
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', fingerprint.user_id);
+
+    if (!userFingerprints?.length) {
+      console.error('No fingerprints found for user');
+      return;
+    }
+
+    const fingerprintIds = userFingerprints.map(f => f.fingerprint_id);
+
     const { data, error } = await supabase
       .from('stripe_payments')
       .select('*')
-      .eq('fingerprint_id', fingerprintId)
+      .in('fingerprint_id', fingerprintIds)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -42,7 +64,6 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
 
     setPayments(data || []);
 
-    // Calculate totals
     const completed = data?.filter(p => p.status === 'completed')
       .reduce((sum, p) => sum + p.amount, 0) || 0;
     const pending = data?.filter(p => p.status === 'pending')
@@ -55,7 +76,6 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
   useEffect(() => {
     fetchPayments();
 
-    // Subscribe to changes in the stripe_payments table
     const channel = supabase
       .channel('stripe_payments_changes')
       .on(
@@ -68,7 +88,7 @@ export const PaymentHistory = ({ fingerprintId }: PaymentHistoryProps) => {
         },
         (payload) => {
           console.log('Payment update received:', payload);
-          fetchPayments(); // Refresh the payments list when changes occur
+          fetchPayments();
         }
       )
       .subscribe();
