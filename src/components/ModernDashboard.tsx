@@ -11,6 +11,7 @@ interface ModernDashboardProps {
   hoveredIndex: number | null;
   onHoverChange: (index: number | null) => void;
   onSignOut: () => void;
+  onRefresh: () => void;
 }
 
 export const ModernDashboard = ({ 
@@ -18,7 +19,8 @@ export const ModernDashboard = ({
   allocations,
   hoveredIndex,
   onHoverChange,
-  onSignOut
+  onSignOut,
+  onRefresh
 }: ModernDashboardProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] to-[#2C1F3C] text-white">
@@ -31,6 +33,7 @@ export const ModernDashboard = ({
             allocations={allocations}
             hoveredIndex={hoveredIndex}
             onHoverChange={onHoverChange}
+            onRefresh={onRefresh}
           />
         </div>
       </div>

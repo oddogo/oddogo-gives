@@ -18,13 +18,14 @@ const Dashboard = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isModernLayout, setIsModernLayout] = useState(() => {
     return localStorage.getItem("dashboardLayout") === "modern";
   });
 
   useEffect(() => {
     checkUser();
-  }, []);
+  }, [refreshKey]);
 
   const checkUser = async () => {
     try {
@@ -89,6 +90,10 @@ const Dashboard = () => {
     localStorage.setItem("dashboardLayout", newLayout ? "modern" : "classic");
   };
 
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (loading) return null;
 
   if (isModernLayout) {
@@ -104,6 +109,7 @@ const Dashboard = () => {
           hoveredIndex={hoveredIndex}
           onHoverChange={setHoveredIndex}
           onSignOut={handleSignOut}
+          onRefresh={handleRefresh}
         />
       </>
     );

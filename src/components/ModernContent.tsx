@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
@@ -16,13 +15,15 @@ interface ModernContentProps {
   allocations: Allocation[];
   hoveredIndex: number | null;
   onHoverChange: (index: number | null) => void;
+  onRefresh: () => void;
 }
 
 export const ModernContent = ({ 
   user,
   allocations,
   hoveredIndex,
-  onHoverChange 
+  onHoverChange,
+  onRefresh
 }: ModernContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -74,6 +75,8 @@ export const ModernContent = ({
   );
 
   const handleEditSuccess = () => {
+    setIsEditModalOpen(false);
+    onRefresh();
     setRefreshKey(prev => prev + 1);
   };
 

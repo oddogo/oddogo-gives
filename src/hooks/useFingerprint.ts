@@ -106,7 +106,9 @@ export const useFingerprint = (onSuccess?: () => void): UseFingerprint => {
       if (updateError) throw updateError;
 
       toast.success("Fingerprint updated successfully!");
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error('Save error:', error);
       setError(error.message);
