@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,7 @@ export const AllocationItem = ({
     <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
       <Avatar className="h-8 w-8 bg-white/10">
         <AvatarImage
-          src={allocation.image_url}
+          src={allocation.website_favicon || allocation.image_url}
           alt={allocation.allocation_name}
         />
         <AvatarFallback className="bg-white/10 text-white/60">
@@ -43,11 +44,11 @@ export const AllocationItem = ({
         </AvatarFallback>
       </Avatar>
       
-      <div className="flex-1 min-w-0">
-        <Label htmlFor={`allocation-${index}`} className="text-sm text-white/60 truncate block">
+      <div className="flex-1 min-w-0 flex items-center gap-4">
+        <Label htmlFor={`allocation-${index}`} className="text-sm text-white/60 truncate">
           {allocation.allocation_name}
         </Label>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <Input
             id={`allocation-${index}`}
             type="number"
@@ -55,7 +56,7 @@ export const AllocationItem = ({
             max={100}
             value={Math.round(allocation.allocation_percentage * 100)}
             onChange={(e) => onPercentageChange(index, Number(e.target.value))}
-            className="h-8 bg-white/5 border-white/10"
+            className="h-8 w-20 bg-white/5 border-white/10 text-right"
           />
           <span className="text-white/60 text-sm">%</span>
         </div>
