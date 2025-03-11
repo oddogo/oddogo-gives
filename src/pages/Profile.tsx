@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { ModernHeader } from "@/components/ModernHeader";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,13 +20,44 @@ const Profile = () => {
 
   const checkUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
       if (!user) {
         navigate("/auth");
         return;
       }
+
+      // Check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        toast.error("Error fetching profile");
+        console.error("Profile error:", profileError);
+        return;
+      }
+
+      // If no profile exists, create one
+      if (!profile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: user.id }]);
+
+        if (insertError) {
+          toast.error("Error creating profile");
+          console.error("Insert error:", insertError);
+          return;
+        }
+      }
+
       setUser(user);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error checking user:", error);
       navigate("/auth");
     } finally {
       setLoading(false);
