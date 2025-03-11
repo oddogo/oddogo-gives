@@ -43,7 +43,12 @@ const Dashboard = () => {
       
       const { data, error } = await supabase
         .from('v_fingerprints_live')
-        .select('*')
+        .select(`
+          *,
+          charities:allocation_charity_id (
+            website
+          )
+        `)
         .eq('user_id', userId);
 
       console.log('Raw response:', { data, error });
@@ -56,7 +61,8 @@ const Dashboard = () => {
           allocation_name: item.allocation_name,
           allocation_type: item.allocation_type as AllocationType,
           allocation_percentage: Number(item.allocation_percentage),
-          cause_name: item.allocation_name
+          cause_name: item.allocation_name,
+          website_favicon: item.charities?.website || null
         }));
         setAllocations(formattedAllocations);
         console.log('Processed data:', formattedAllocations);
