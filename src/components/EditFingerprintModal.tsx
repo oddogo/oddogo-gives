@@ -111,22 +111,18 @@ export const EditFingerprintModal = ({
         fingerprintsUsers = newFingerprintsUsers;
       }
 
-      const { data: versions, error: versionError } = await supabase
-        .from('fingerprints_allocations')
+      const { data: currentFingerprint, error: fingerprintError } = await supabase
+        .from('fingerprints')
         .select('version')
-        .eq('fingerprints_users_id', fingerprintsUsers.id)
-        .order('version', { ascending: false })
-        .limit(1);
+        .eq('fingerprint', fingerprintsUsers.fingerprint_id)
+        .single();
 
-      if (versionError) throw versionError;
+      if (fingerprintError) throw fingerprintError;
 
-      const currentVersion = Array.isArray(versions) && versions.length > 0 
-        ? versions[0].version 
-        : 0;
+      const currentVersion = currentFingerprint?.version || 0;
+      const nextVersion = Number(currentVersion) + 1;
+      console.log('Current version:', currentVersion, 'Next version:', nextVersion);
       
-      const nextVersion = currentVersion + 1;
-      console.log('Next version will be:', nextVersion);
-
       const { error: deleteError } = await supabase
         .rpc('mark_fingerprint_allocations_as_deleted', {
           p_fingerprints_users_id: fingerprintsUsers.id
