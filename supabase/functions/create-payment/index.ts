@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -34,12 +35,18 @@ serve(async (req) => {
 
     // Validate amount
     if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
-      throw new Error('Invalid amount provided');
+      return new Response(
+        JSON.stringify({ error: 'Invalid amount provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     // Validate recipient
     if (!recipientId) {
-      throw new Error('Missing recipient ID');
+      return new Response(
+        JSON.stringify({ error: 'Missing recipient ID' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     let userId = null;
@@ -72,7 +79,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
+      return new Response(
+        JSON.stringify({ error: 'Missing Supabase configuration' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -86,12 +96,18 @@ serve(async (req) => {
 
     if (fingerprintError) {
       console.error('Error fetching fingerprint:', fingerprintError);
-      throw new Error('Failed to fetch recipient fingerprint');
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch recipient fingerprint' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     if (!fingerprint?.fingerprint_id) {
       console.error('No fingerprint found for recipient:', recipientId);
-      throw new Error('Recipient not found');
+      return new Response(
+        JSON.stringify({ error: 'Recipient not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
     }
 
     console.log('Found fingerprint:', fingerprint.fingerprint_id);
@@ -117,7 +133,10 @@ serve(async (req) => {
 
     if (paymentError) {
       console.error('Error creating payment record:', paymentError);
-      throw new Error('Failed to create payment record');
+      return new Response(
+        JSON.stringify({ error: 'Failed to create payment record' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     console.log('Payment record created:', payment.id);
@@ -125,7 +144,10 @@ serve(async (req) => {
     // Get origin for redirect URLs
     const origin = req.headers.get('origin');
     if (!origin) {
-      throw new Error('Missing origin header');
+      return new Response(
+        JSON.stringify({ error: 'Missing origin header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     // Create Stripe session
