@@ -1,9 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, Globe2, Tags, Sparkles, PiggyBank } from "lucide-react";
 import { AllocationType } from "@/types/allocation";
 import { useState } from "react";
 import { PartnerCharitySelector } from "./PartnerCharitySelector";
+import { CauseSelector } from "./CauseSelector";
 
 interface AllocationTypeSelectorProps {
   onAddAllocation: (allocation: any) => void;
@@ -13,6 +13,7 @@ export const AllocationTypeSelector = ({
   onAddAllocation 
 }: AllocationTypeSelectorProps) => {
   const [showCharitySelector, setShowCharitySelector] = useState(false);
+  const [showCauseSelector, setShowCauseSelector] = useState(false);
 
   const handleCharityAdd = (allocation: any) => {
     onAddAllocation(allocation);
@@ -49,6 +50,16 @@ export const AllocationTypeSelector = ({
       </Button>
 
       <Button
+        onClick={() => setShowCauseSelector(true)}
+        variant="outline"
+        size="sm"
+        className="gap-1.5"
+      >
+        <Tags className="h-4 w-4" />
+        Sub-cause
+      </Button>
+
+      <Button
         onClick={handleDAFAdd}
         variant="outline"
         size="sm"
@@ -71,7 +82,13 @@ export const AllocationTypeSelector = ({
       <PartnerCharitySelector
         isOpen={showCharitySelector}
         onClose={() => setShowCharitySelector(false)}
-        onSelect={handleCharityAdd}
+        onSelect={onAddAllocation}
+      />
+
+      <CauseSelector
+        isOpen={showCauseSelector}
+        onClose={() => setShowCauseSelector(false)}
+        onSelect={onAddAllocation}
       />
     </div>
   );
