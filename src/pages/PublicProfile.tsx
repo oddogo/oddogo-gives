@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
@@ -8,6 +7,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
 import { HandHeart } from "lucide-react";
+import { Button } from "./components/ui/button";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -26,10 +26,7 @@ const PublicProfile = () => {
     </div>
   );
 
-  // Show payment form only if:
-  // 1. User is logged in
-  // 2. Viewing someone else's profile
-  const showPaymentForm = user && user.id !== id;
+  const hidePaymentForm = user?.id === id;
 
   return (
     <div className="min-h-screen bg-white">
@@ -43,7 +40,7 @@ const PublicProfile = () => {
         </div>
       )}
 
-      {showPaymentForm && (
+      {!hidePaymentForm && (
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 text-primary mb-2">
@@ -57,6 +54,7 @@ const PublicProfile = () => {
               Your donation will help fund the causes and charities that {profile.display_name} supports
             </p>
           </div>
+          
           <PaymentForm 
             recipientId={id || ''} 
             recipientName={profile.display_name}
