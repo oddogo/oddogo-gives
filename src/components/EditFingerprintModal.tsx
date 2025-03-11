@@ -54,8 +54,9 @@ export const EditFingerprintModal = ({
       const { data: fingerprint, error: fingerprintError } = await supabase
         .from('fingerprints')
         .insert([{ 
+          fingerprint: crypto.randomUUID(), // Add required fingerprint field
           name: "My Fingerprint",
-          version: 1 // This will be updated in future when we handle versioning
+          version: 1
         }])
         .select('fingerprint')
         .single();
@@ -63,23 +64,25 @@ export const EditFingerprintModal = ({
       if (fingerprintError) throw fingerprintError;
 
       // Create fingerprint user association
-      const { error: userError } = await supabase
+      const { data: fingerprintUser, error: userError } = await supabase
         .from('fingerprints_users')
         .insert([{
           fingerprint_id: fingerprint.fingerprint,
           user_id: user.id
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (userError) throw userError;
 
-      // Create allocations
+      // Create allocations with proper types
       const { error: allocationsError } = await supabase
         .from('fingerprints_allocations')
         .insert(
           allocations.map(a => ({
-            fingerprints_users_id: 1, // This needs to be the correct ID
+            fingerprints_users_id: fingerprintUser.id,
             allocation_percentage: a.allocation_percentage,
-            allocation_charity_id: a.id,
+            allocation_charity_id: a.id.toString(), // Convert to string
           }))
         );
 

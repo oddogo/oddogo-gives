@@ -137,7 +137,7 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold">Your Charitable Fingerprint™</h1>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-              <FingerPrintList />
+              {/* Remove FingerPrintList reference */}
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
