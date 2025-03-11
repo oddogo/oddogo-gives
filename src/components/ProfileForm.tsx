@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,8 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
   const loadProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("Current user:", user); // Debug log
+      
       if (!user) return;
       setUserId(user.id);
 
@@ -37,6 +40,9 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         .select('*')
         .eq('id', user.id)
         .single();
+
+      console.log("Profile data:", data); // Debug log
+      console.log("Profile error:", error); // Debug log
 
       if (error) throw error;
       if (data) {
@@ -49,6 +55,7 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         });
       }
     } catch (error: any) {
+      console.error("Error loading profile:", error); // Debug log
       toast.error(error.message);
     } finally {
       setLoading(false);
@@ -60,21 +67,29 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     setLoading(true);
 
     try {
+      console.log("Submitting profile update:", profile); // Debug log
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const { error } = await supabase
         .from('profiles')
         .update({
-          ...profile,
+          display_name: profile.display_name,
+          bio: profile.bio,
+          causes_description: profile.causes_description,
+          is_published: profile.is_published,
           avatar_url: profile.avatar_url
         })
         .eq('id', user.id);
+
+      console.log("Update error:", error); // Debug log
 
       if (error) throw error;
       toast.success("Profile updated successfully!");
       if (onSuccess) onSuccess();
     } catch (error: any) {
+      console.error("Error updating profile:", error); // Debug log
       toast.error(error.message);
     } finally {
       setLoading(false);
@@ -82,6 +97,7 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
   };
 
   const handleAvatarUpload = (url: string) => {
+    console.log("New avatar URL:", url); // Debug log
     setProfile(prev => ({ ...prev, avatar_url: url }));
   };
 
