@@ -24,11 +24,14 @@ export const ModernContent = ({
 }: ModernContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const totalAllocation = allocations.reduce((sum, a) => sum + a.allocation_percentage, 0);
-  const uniqueTypes = new Set(allocations.map(a => a.allocation_type)).size;
   
-  // Filter allocations based on search query
-  const filteredAllocations = allocations.filter(allocation => 
+  // Filter out deleted allocations and calculate total
+  const activeAllocations = allocations.filter(a => !a.deleted_at);
+  const totalAllocation = activeAllocations.reduce((sum, a) => sum + a.allocation_percentage, 0);
+  const uniqueTypes = new Set(activeAllocations.map(a => a.allocation_type)).size;
+  
+  // Filter active allocations based on search query
+  const filteredAllocations = activeAllocations.filter(allocation => 
     allocation.allocation_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     allocation.allocation_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
