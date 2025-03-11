@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Allocation, AllocationType } from "@/types/allocation";
@@ -111,11 +112,16 @@ export const EditFingerprintModal = ({
         fingerprintsUsers = newFingerprintsUsers;
       }
 
-      const { data: currentVersions } = await supabase.rpc('get_current_versions', {
+      const { data: versions } = await supabase.rpc('get_current_versions', {
         p_fingerprints_users_id: fingerprintsUsers.id
       });
 
-      const nextVersion = (currentVersions?.max_version || 0) + 1;
+      // Handle the response type correctly
+      const currentVersion = Array.isArray(versions) && versions.length > 0 
+        ? versions[0].max_version 
+        : 0;
+      
+      const nextVersion = currentVersion + 1;
       console.log('Next version will be:', nextVersion);
 
       const { error: deleteError } = await supabase

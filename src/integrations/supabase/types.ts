@@ -1975,6 +1975,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_current_versions: {
+        Args: {
+          p_fingerprints_users_id: number
+        }
+        Returns: {
+          max_version: number
+        }[]
+      }
       initialize_user_fingerprint: {
         Args: {
           p_user_id: string
