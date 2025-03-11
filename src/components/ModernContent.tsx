@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { Allocation } from "@/types/allocation";
 import { DashboardChart } from "./DashboardChart";
@@ -6,8 +7,9 @@ import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Search, Download, SlidersHorizontal, PencilLine } from "lucide-react";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditFingerprintModal } from "./EditFingerprintModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ModernContentProps {
   user: User | null;
@@ -17,6 +19,7 @@ interface ModernContentProps {
 }
 
 export const ModernContent = ({ 
+  user,
   allocations,
   hoveredIndex,
   onHoverChange 
@@ -24,6 +27,40 @@ export const ModernContent = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [version, setVersion] = useState<number>(1);
+  
+  useEffect(() => {
+    if (user) {
+      fetchFingerprintVersion();
+    }
+  }, [user, refreshKey]);
+
+  const fetchFingerprintVersion = async () => {
+    try {
+      // Get the user's fingerprint_id first
+      const { data: fingerprintData } = await supabase
+        .from('fingerprints_users')
+        .select('fingerprint_id')
+        .eq('user_id', user?.id)
+        .is('deleted_at', null)
+        .single();
+
+      if (fingerprintData) {
+        // Then get the version from fingerprints table
+        const { data: versionData } = await supabase
+          .from('fingerprints')
+          .select('version')
+          .eq('fingerprint', fingerprintData.fingerprint_id)
+          .single();
+
+        if (versionData) {
+          setVersion(Number(versionData.version));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fingerprint version:', error);
+    }
+  };
   
   // Filter out deleted allocations and calculate total
   const activeAllocations = allocations.filter(a => !a.deleted_at);
@@ -63,8 +100,13 @@ export const ModernContent = ({
       {/* Main Content Card */}
       <Card className="bg-white/5 backdrop-blur-xl border-white/10 p-6">
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Charitable Fingerprint™</h2>
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h2 className="text-2xl font-semibold">Charitable Fingerprint™</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                You have updated your fingerprint {version} {version === 1 ? 'time' : 'times'}!
+              </p>
+            </div>
             <Button 
               onClick={() => setIsEditModalOpen(true)}
               className="gap-2"

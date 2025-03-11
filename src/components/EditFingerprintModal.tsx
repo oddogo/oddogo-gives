@@ -114,8 +114,6 @@ export const EditFingerprintModal = ({
         fingerprintsUsers = newFingerprintsUsers;
       }
 
-      console.log('Using fingerprints_users:', fingerprintsUsers);
-
       // Get the next version number
       const { data: versionData, error: versionError } = await supabase
         .from('fingerprints_allocations')
@@ -134,12 +132,7 @@ export const EditFingerprintModal = ({
           p_fingerprints_users_id: fingerprintsUsers.id
         });
 
-      if (deleteError) {
-        console.error('Error marking allocations as deleted:', deleteError);
-        throw deleteError;
-      }
-
-      console.log('Successfully marked old allocations as deleted, affected rows:', deleteResult?.[0]?.rows_affected);
+      if (deleteError) throw deleteError;
 
       // Insert new allocations with the next version number
       const allocationsToInsert = allocations.map(a => ({
@@ -154,16 +147,11 @@ export const EditFingerprintModal = ({
         version: nextVersion
       }));
 
-      console.log('Preparing to insert new allocations:', allocationsToInsert);
-
       const { error: insertError } = await supabase
         .from('fingerprints_allocations')
         .insert(allocationsToInsert);
 
-      if (insertError) {
-        console.error('Error inserting new allocations:', insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
       // Update the fingerprint version
       const { error: updateError } = await supabase
@@ -174,13 +162,8 @@ export const EditFingerprintModal = ({
         })
         .eq('fingerprint', fingerprintsUsers.fingerprint_id);
 
-      if (updateError) {
-        console.error('Error updating fingerprint version:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      console.log('Successfully inserted new allocations');
-      
       toast.success("Fingerprint updated successfully!");
       if (onSuccess) onSuccess();
       onClose();
