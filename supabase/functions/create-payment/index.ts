@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -7,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const supabaseClient = createClient(
+  Deno.env.get('SUPABASE_URL') || '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+);
 
 interface PaymentRequest {
   amount: number;
@@ -36,8 +40,8 @@ const validatePaymentRequest = (data: any): { isValid: boolean; error?: string }
   return { isValid: true };
 };
 
-const createPaymentRecord = async (supabase: any, paymentData: PaymentData) => {
-  const { data: payment, error: paymentError } = await supabase
+const createPaymentRecord = async (paymentData: PaymentData) => {
+  const { data: payment, error: paymentError } = await supabaseClient
     .from('stripe_payments')
     .insert([paymentData])
     .select()
@@ -90,7 +94,7 @@ const createStripeSession = async (
   console.log('Stripe session created:', session.id);
 
   try {
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseClient
       .from('stripe_payments')
       .update({ stripe_payment_intent_id: session.payment_intent })
       .eq('id', payment.id);
@@ -117,11 +121,6 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
     
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    );
-
     console.log('Services initialized');
 
     const requestData = await req.json();
@@ -145,11 +144,11 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     const userId = authHeader ? 
-      (await supabase.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : 
+      (await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''))).data.user?.id : 
       null;
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    const { data: fingerprint, error: fingerprintError } = await supabase
+    const { data: fingerprint, error: fingerprintError } = await supabaseClient
       .from('fingerprints_users')
       .select('fingerprint_id')
       .eq('user_id', recipientId)
@@ -168,7 +167,7 @@ serve(async (req) => {
     const fingerprintId = fingerprint.fingerprint_id;
     console.log('Found fingerprint:', fingerprintId);
 
-    const payment = await createPaymentRecord(supabase, {
+    const payment = await createPaymentRecord({
       amount: amountInCents,
       currency: 'gbp',
       user_id: userId,
