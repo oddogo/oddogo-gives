@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,7 @@ import { ModernHeader } from "@/components/ModernHeader";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { DebugFooter } from "@/components/DebugFooter";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -89,6 +89,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
+      <DebugFooter user={user} />
     </div>
   );
 };
