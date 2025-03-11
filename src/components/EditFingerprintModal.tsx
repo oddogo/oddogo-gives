@@ -106,7 +106,8 @@ export const EditFingerprintModal = ({
 
       console.log('Found fingerprints user:', fingerprintsUsers);
 
-      const { error: deleteError } = await supabase
+      // First mark existing allocations as deleted
+      const { data: deleteData, error: deleteError } = await supabase
         .rpc('mark_fingerprint_allocations_as_deleted', {
           p_fingerprints_users_id: fingerprintsUsers.id
         });
@@ -116,8 +117,9 @@ export const EditFingerprintModal = ({
         throw deleteError;
       }
 
-      console.log('Successfully marked old allocations as deleted');
+      console.log('Successfully marked old allocations as deleted, response:', deleteData);
 
+      // Then insert new allocations
       const allocationsToInsert = allocations.map(a => ({
         fingerprints_users_id: fingerprintsUsers.id,
         allocation_percentage: a.allocation_percentage,
