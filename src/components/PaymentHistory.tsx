@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -9,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, DollarSign, Clock, CreditCard } from "lucide-react";
+import { Receipt, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface Payment {
@@ -87,60 +88,60 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   }, [userId]);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
+    <Card className="backdrop-blur-xl bg-white/10 border border-white/20">
+      <CardHeader className="border-b border-white/10">
+        <CardTitle className="text-xl font-semibold flex items-center gap-2 text-white/90">
           <Receipt className="w-5 h-5" />
           Donation History
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6 pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-green-50 p-4 rounded-lg flex items-center justify-between">
+          <div className="backdrop-blur-md bg-green-500/10 p-4 rounded-lg flex items-center justify-between border border-green-500/20">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-green-800">Total Given</span>
+              <DollarSign className="w-5 h-5 text-green-400" />
+              <span className="text-sm text-green-100">Total Given</span>
             </div>
-            <span className="text-lg font-bold text-green-700">
+            <span className="text-lg font-bold text-green-100">
               £{(totalReceived / 100).toFixed(2)}
             </span>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg flex items-center justify-between">
+          <div className="backdrop-blur-md bg-yellow-500/10 p-4 rounded-lg flex items-center justify-between border border-yellow-500/20">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="text-sm text-yellow-800">Pending</span>
+              <Clock className="w-5 h-5 text-yellow-400" />
+              <span className="text-sm text-yellow-100">Pending</span>
             </div>
-            <span className="text-lg font-bold text-yellow-700">
+            <span className="text-lg font-bold text-yellow-100">
               £{(pendingAmount / 100).toFixed(2)}
             </span>
           </div>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-md border border-white/10 overflow-hidden backdrop-blur-lg bg-white/5">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow className="border-white/10 hover:bg-white/5">
+                <TableHead className="text-white/70">Date</TableHead>
+                <TableHead className="text-white/70">Amount</TableHead>
+                <TableHead className="text-white/70">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>
+                <TableRow key={payment.id} className="border-white/10 hover:bg-white/5">
+                  <TableCell className="text-white/80">
                     {new Date(payment.created_at).toLocaleDateString('en-GB', {
                       day: '2-digit',
                       month: '2-digit',
                       year: '2-digit'
                     })}
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium text-white/80">
                     £{(payment.amount / 100).toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${payment.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`
+                      ${payment.status === 'completed' ? 'bg-green-500/20 text-green-100' : 'bg-yellow-500/20 text-yellow-100'}`
                     }>
                       {payment.status}
                     </span>
@@ -149,7 +150,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               ))}
               {payments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={3} className="text-center text-white/60 py-8">
                     No donations made yet
                   </TableCell>
                 </TableRow>
@@ -161,3 +162,4 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
     </Card>
   );
 };
+
