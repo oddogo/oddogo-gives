@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -88,28 +87,28 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   }, [userId]);
 
   return (
-    <Card className="backdrop-blur-xl bg-white/10 border border-white/20">
-      <CardHeader className="border-b border-white/10">
-        <CardTitle className="text-xl font-semibold flex items-center gap-2 text-white/90">
+    <Card className="rounded-lg border border-white/20 overflow-hidden backdrop-blur-xl bg-slate-900/30">
+      <CardHeader className="border-b border-white/20 bg-slate-900/50">
+        <CardTitle className="text-xl font-semibold flex items-center gap-2 text-white">
           <Receipt className="w-5 h-5" />
           Donation History
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="backdrop-blur-md bg-green-500/10 p-4 rounded-lg flex items-center justify-between border border-green-500/20">
+          <div className="backdrop-blur-xl bg-green-500/10 p-4 rounded-lg flex items-center justify-between border border-green-500/20">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-green-400" />
-              <span className="text-sm text-green-100">Total Given</span>
+              <span className="text-sm font-medium text-green-200">Total Given</span>
             </div>
             <span className="text-lg font-bold text-green-100">
               £{(totalReceived / 100).toFixed(2)}
             </span>
           </div>
-          <div className="backdrop-blur-md bg-yellow-500/10 p-4 rounded-lg flex items-center justify-between border border-yellow-500/20">
+          <div className="backdrop-blur-xl bg-yellow-500/10 p-4 rounded-lg flex items-center justify-between border border-yellow-500/20">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-yellow-400" />
-              <span className="text-sm text-yellow-100">Pending</span>
+              <span className="text-sm font-medium text-yellow-200">Pending</span>
             </div>
             <span className="text-lg font-bold text-yellow-100">
               £{(pendingAmount / 100).toFixed(2)}
@@ -117,26 +116,26 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
           </div>
         </div>
 
-        <div className="rounded-md border border-white/10 overflow-hidden backdrop-blur-lg bg-white/5">
+        <div className="rounded-md border border-white/20 overflow-hidden backdrop-blur-xl bg-slate-900/30">
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="text-white/70">Date</TableHead>
-                <TableHead className="text-white/70">Amount</TableHead>
-                <TableHead className="text-white/70">Status</TableHead>
+              <TableRow className="border-white/20 hover:bg-white/5">
+                <TableHead className="text-white/90">Date</TableHead>
+                <TableHead className="text-white/90">Amount</TableHead>
+                <TableHead className="text-white/90">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.map((payment) => (
-                <TableRow key={payment.id} className="border-white/10 hover:bg-white/5">
-                  <TableCell className="text-white/80">
+                <TableRow key={payment.id} className="border-white/20 hover:bg-white/5">
+                  <TableCell className="text-white">
                     {new Date(payment.created_at).toLocaleDateString('en-GB', {
                       day: '2-digit',
                       month: '2-digit',
                       year: '2-digit'
                     })}
                   </TableCell>
-                  <TableCell className="font-medium text-white/80">
+                  <TableCell className="font-medium text-white">
                     £{(payment.amount / 100).toFixed(2)}
                   </TableCell>
                   <TableCell>
@@ -150,7 +149,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               ))}
               {payments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-white/60 py-8">
+                  <TableCell colSpan={3} className="text-center text-white/70 py-8">
                     No donations made yet
                   </TableCell>
                 </TableRow>
@@ -162,4 +161,3 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
     </Card>
   );
 };
-
