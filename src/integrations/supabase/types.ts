@@ -1523,6 +1523,54 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          payment_id: string | null
+          processed_at: string | null
+          raw_event: Json | null
+          status: string
+          stripe_event_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          payment_id?: string | null
+          processed_at?: string | null
+          raw_event?: Json | null
+          status: string
+          stripe_event_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          payment_id?: string | null
+          processed_at?: string | null
+          raw_event?: Json | null
+          status?: string
+          stripe_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_webhook_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "stripe_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stripe_webhook_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "v_stripe_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
