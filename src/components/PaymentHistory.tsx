@@ -91,7 +91,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
       <CardHeader>
         <CardTitle className="text-xl font-bold flex items-center gap-2">
           <Receipt className="w-5 h-5" />
-          Payment History
+          Donation History
         </CardTitle>
       </CardHeader>
       <CardContent>

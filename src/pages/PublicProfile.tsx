@@ -46,13 +46,14 @@ const PublicProfile = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 text-primary mb-2">
               <HandHeart className="w-5 h-5" />
-              <span className="font-medium">Make a Difference</span>
+              <span className="font-medium">Make an Impact</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Support {profile.display_name}'s Causes
+              Support These Important Causes
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Your donation will help fund the causes and charities that {profile.display_name} supports
+              Your generous donation will directly support the charities and initiatives that matter most.
+              Join in making a meaningful difference today.
             </p>
           </div>
           
