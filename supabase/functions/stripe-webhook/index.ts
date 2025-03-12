@@ -34,10 +34,10 @@ serve(async (req) => {
   // Validate request method
   if (req.method !== 'POST') {
     console.error('Invalid request method:', req.method);
-    return new Response('Method not allowed', { 
-      headers: corsHeaders,
-      status: 405 
-    });
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 405 }
+    );
   }
 
   try {
@@ -125,7 +125,8 @@ serve(async (req) => {
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId)
-            .select();
+            .select()
+            .single();
 
           if (updateError) {
             console.error('Error updating payment record:', updateError);
@@ -161,7 +162,8 @@ serve(async (req) => {
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId)
-            .select();
+            .select()
+            .single();
 
           if (updateError) {
             console.error('Error updating payment status:', updateError);
@@ -185,8 +187,7 @@ serve(async (req) => {
               },
               status: 'completed',
               message: 'Payment completed successfully'
-            })
-            .select();
+            });
 
           if (logError) {
             console.error('Error logging payment status:', logError);
@@ -214,7 +215,8 @@ serve(async (req) => {
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId)
-            .select();
+            .select()
+            .single();
 
           if (updateError) {
             console.error('Error updating payment status:', updateError);
@@ -233,8 +235,7 @@ serve(async (req) => {
               metadata: event.data.object,
               status: 'failed',
               message: paymentIntent.last_payment_error?.message || 'Payment failed'
-            })
-            .select();
+            });
 
           if (logError) {
             console.error('Error logging payment failure:', logError);
@@ -260,8 +261,7 @@ serve(async (req) => {
         status: 'processed',
         processed_at: new Date().toISOString()
       })
-      .eq('stripe_event_id', event.id)
-      .select();
+      .eq('stripe_event_id', event.id);
 
     if (processedError) {
       console.error('Error marking webhook as processed:', processedError);
