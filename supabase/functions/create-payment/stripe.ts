@@ -1,11 +1,12 @@
 
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
+import { updatePaymentWithStripeId } from './db.ts';
 
 export const createStripeSession = async (
   stripe: Stripe,
   amount: number,
   origin: string,
-  email: string | null,
+  payment: any,
   recipientId: string,
   fingerprintId: string,
   userId: string | null
@@ -27,25 +28,35 @@ export const createStripeSession = async (
       },
     ],
     mode: 'payment',
-    success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&recipient_id=${recipientId}`,
+    success_url: `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
     payment_intent_data: {
       metadata: {
+        payment_id: payment.id,
         fingerprintId,
-        userId: userId || 'anonymous',
-        recipientId
+        userId: userId || 'anonymous'
       }
     },
-    customer_email: email
+    metadata: {
+      payment_id: payment.id,
+      fingerprintId,
+      userId: userId || 'anonymous'
+    },
+    customer_email: payment.email, // Add this to capture email
   });
 
   console.log('Stripe session created:', session.id);
-  console.log('Session:', {
-    id: session.id,
-    payment_intent: session.payment_intent,
-    customer_email: session.customer_email
-  });
+  console.log('Session metadata:', session.metadata);
+  console.log('Payment intent data:', session.payment_intent);
+
+  if (session.payment_intent) {
+    try {
+      await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
+      console.log('Updated payment record with Stripe payment intent ID:', session.payment_intent);
+    } catch (error) {
+      console.error('Failed to update payment record with Stripe ID:', error);
+    }
+  }
 
   return session;
 };
-

@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 import { corsHeaders } from './types.ts';
 import { validatePaymentRequest } from './validators.ts';
-import { getUserId } from './db.ts';
+import { createPaymentRecord, getFingerprintId, getUserId } from './db.ts';
 import { createStripeSession } from './stripe.ts';
 
 serve(async (req) => {
@@ -29,7 +29,7 @@ serve(async (req) => {
       );
     }
 
-    const { amount, recipientId, email } = requestData;
+    const { amount, recipientId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
     const origin = req.headers.get('origin');
@@ -41,12 +41,24 @@ serve(async (req) => {
     const userId = await getUserId(authHeader);
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    // Create Stripe session first
+    const fingerprintId = await getFingerprintId(recipientId);
+    console.log('Found fingerprint:', fingerprintId);
+
+    // Create payment record with fingerprint_id
+    const payment = await createPaymentRecord({
+      amount: amountInCents,
+      currency: 'gbp',
+      user_id: userId,
+      fingerprint_id: fingerprintId,
+      status: 'pending'
+    });
+    console.log('Payment record created:', payment.id);
+
     const session = await createStripeSession(
       stripe,
       amountInCents,
       origin,
-      email,
+      payment,
       recipientId,
       fingerprintId,
       userId
@@ -67,4 +79,3 @@ serve(async (req) => {
     );
   }
 });
-
