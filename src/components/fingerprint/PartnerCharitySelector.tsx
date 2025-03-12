@@ -21,6 +21,10 @@ interface PartnerCharitySelectorProps {
   onSelect: (allocation: Allocation) => void;
 }
 
+const toSentenceCase = (str: string) => {
+  return str.toLowerCase().replace(/(^\w|\.\s+\w)/g, letter => letter.toUpperCase());
+};
+
 export const PartnerCharitySelector = ({
   isOpen,
   onClose,
@@ -36,7 +40,14 @@ export const PartnerCharitySelector = ({
         .select('*, charities:charity_id (website)');
       
       if (error) throw error;
-      return data as (PartnerCharity & { charities: { website: string | null } })[];
+      
+      // Sort charities alphabetically and convert to sentence case
+      return (data as (PartnerCharity & { charities: { website: string | null } })[])
+        .sort((a, b) => a.charity_name.localeCompare(b.charity_name))
+        .map(charity => ({
+          ...charity,
+          charity_name: toSentenceCase(charity.charity_name)
+        }));
     }
   });
 
