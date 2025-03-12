@@ -30,6 +30,13 @@ export const createStripeSession = async (
     mode: 'payment',
     success_url: `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
+    payment_intent_data: {
+      metadata: {
+        payment_id: payment.id,
+        fingerprintId,
+        userId: userId || 'anonymous'
+      }
+    },
     metadata: {
       payment_id: payment.id,
       fingerprintId,
@@ -39,14 +46,12 @@ export const createStripeSession = async (
 
   console.log('Stripe session created:', session.id);
 
-  // Update the payment record with the Stripe payment intent ID
   if (session.payment_intent) {
     try {
       await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
       console.log('Updated payment record with Stripe payment intent ID:', session.payment_intent);
     } catch (error) {
       console.error('Failed to update payment record with Stripe ID:', error);
-      // Don't throw here - we still want to return the session
     }
   }
 

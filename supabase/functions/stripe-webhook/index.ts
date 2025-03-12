@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -40,7 +41,7 @@ serve(async (req) => {
   try {
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
-      console.error('No Stripe signature found in headers:', req.headers);
+      console.error('No Stripe signature found in headers');
       return new Response(
         JSON.stringify({ error: 'No Stripe signature found' }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -89,6 +90,7 @@ serve(async (req) => {
 
     console.log('Processing webhook event:', event.type);
     console.log('Event data:', JSON.stringify(event.data.object));
+    console.log('Event metadata:', JSON.stringify(event.data.object.metadata));
 
     switch (event.type) {
       case 'payment_intent.succeeded': {
@@ -105,7 +107,8 @@ serve(async (req) => {
               stripe_payment_intent_id: paymentIntent.id,
               stripe_payment_email: paymentIntent.receipt_email,
               stripe_customer_id: paymentIntent.customer,
-              stripe_charge_id: paymentIntent.latest_charge
+              stripe_charge_id: paymentIntent.latest_charge,
+              updated_at: new Date().toISOString()
             })
             .eq('id', paymentId);
 
@@ -132,7 +135,7 @@ serve(async (req) => {
 
           console.log('Successfully logged payment completion');
         } else {
-          console.warn('No payment_id found in metadata');
+          console.warn('No payment_id found in metadata:', paymentIntent.metadata);
         }
         break;
       }
@@ -147,7 +150,8 @@ serve(async (req) => {
             .from('stripe_payments')
             .update({ 
               status: 'failed',
-              stripe_payment_intent_id: paymentIntent.id
+              stripe_payment_intent_id: paymentIntent.id,
+              updated_at: new Date().toISOString()
             })
             .eq('id', paymentId);
 
