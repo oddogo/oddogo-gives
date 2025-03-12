@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { DebugFooter } from "@/components/DebugFooter";
 import { PaymentForm } from "@/components/PaymentForm";
 import { HandHeart } from "lucide-react";
+import { PaymentHistory } from "@/components/PaymentHistory";
 
 const Profile = () => {
   const navigate = useNavigate();
