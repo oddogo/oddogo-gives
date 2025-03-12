@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -22,6 +23,7 @@ serve(async (req) => {
   console.log('Method:', req.method);
   console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
@@ -29,6 +31,7 @@ serve(async (req) => {
     });
   }
 
+  // Validate request method
   if (req.method !== 'POST') {
     console.error('Invalid request method:', req.method);
     return new Response('Method not allowed', { 
@@ -71,6 +74,7 @@ serve(async (req) => {
       );
     }
 
+    // Store webhook event first
     const { error: webhookError } = await supabaseClient
       .from('stripe_webhook_events')
       .insert({
@@ -80,11 +84,16 @@ serve(async (req) => {
         status: 'received',
         raw_event: event,
         is_test: !event.livemode
-      });
+      })
+      .select()
+      .single();
 
     if (webhookError) {
       console.error('Error storing webhook event:', webhookError);
-      throw webhookError;
+      return new Response(
+        JSON.stringify({ error: 'Failed to store webhook event' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     console.log('Processing webhook event:', event.type);
@@ -115,11 +124,15 @@ serve(async (req) => {
               stripe_customer_id: session.customer,
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId);
+            .eq('id', paymentId)
+            .select();
 
           if (updateError) {
             console.error('Error updating payment record:', updateError);
-            throw updateError;
+            return new Response(
+              JSON.stringify({ error: 'Failed to update payment record' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            );
           }
 
           console.log('Successfully updated payment with Stripe session details');
@@ -147,11 +160,15 @@ serve(async (req) => {
               stripe_charge_id: paymentIntent.latest_charge,
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId);
+            .eq('id', paymentId)
+            .select();
 
           if (updateError) {
             console.error('Error updating payment status:', updateError);
-            throw updateError;
+            return new Response(
+              JSON.stringify({ error: 'Failed to update payment status' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            );
           }
 
           console.log('Successfully updated payment status to completed');
@@ -168,11 +185,15 @@ serve(async (req) => {
               },
               status: 'completed',
               message: 'Payment completed successfully'
-            });
+            })
+            .select();
 
           if (logError) {
             console.error('Error logging payment status:', logError);
-            throw logError;
+            return new Response(
+              JSON.stringify({ error: 'Failed to log payment status' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            );
           }
 
           console.log('Successfully logged payment completion');
@@ -192,11 +213,15 @@ serve(async (req) => {
               status: 'failed',
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId);
+            .eq('id', paymentId)
+            .select();
 
           if (updateError) {
             console.error('Error updating payment status:', updateError);
-            throw updateError;
+            return new Response(
+              JSON.stringify({ error: 'Failed to update payment status' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            );
           }
 
           console.log('Successfully updated payment status to failed');
@@ -208,11 +233,15 @@ serve(async (req) => {
               metadata: event.data.object,
               status: 'failed',
               message: paymentIntent.last_payment_error?.message || 'Payment failed'
-            });
+            })
+            .select();
 
           if (logError) {
             console.error('Error logging payment failure:', logError);
-            throw logError;
+            return new Response(
+              JSON.stringify({ error: 'Failed to log payment failure' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            );
           }
 
           console.log('Successfully logged payment failure');
@@ -224,17 +253,22 @@ serve(async (req) => {
       }
     }
 
+    // Mark webhook as processed
     const { error: processedError } = await supabaseClient
       .from('stripe_webhook_events')
       .update({ 
         status: 'processed',
         processed_at: new Date().toISOString()
       })
-      .eq('stripe_event_id', event.id);
+      .eq('stripe_event_id', event.id)
+      .select();
 
     if (processedError) {
       console.error('Error marking webhook as processed:', processedError);
-      throw processedError;
+      return new Response(
+        JSON.stringify({ error: 'Failed to mark webhook as processed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     console.log('Successfully marked webhook as processed');
@@ -246,8 +280,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Webhook processing error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      JSON.stringify({ error: error.message || 'Internal server error' }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
