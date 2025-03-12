@@ -5,6 +5,7 @@ import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -21,17 +22,13 @@ serve(async (req) => {
   console.log('Method:', req.method);
   console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Methods': 'POST',
-      }
+      status: 204,
+      headers: corsHeaders
     });
   }
 
-  // Only accept POST requests
   if (req.method !== 'POST') {
     console.error('Invalid request method:', req.method);
     return new Response('Method not allowed', { 
@@ -43,7 +40,7 @@ serve(async (req) => {
   try {
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
-      console.error('No Stripe signature found');
+      console.error('No Stripe signature found in headers:', req.headers);
       return new Response(
         JSON.stringify({ error: 'No Stripe signature found' }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -60,9 +57,8 @@ serve(async (req) => {
     }
 
     const body = await req.text();
-    console.log('Webhook body:', body);
+    console.log('Raw webhook body:', body);
 
-    // Verify the webhook signature
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
@@ -75,10 +71,6 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing webhook event:', event.type);
-    console.log('Event data:', JSON.stringify(event.data.object));
-
-    // Store the webhook event
     const { error: webhookError } = await supabaseClient
       .from('stripe_webhook_events')
       .insert({
@@ -86,7 +78,8 @@ serve(async (req) => {
         stripe_event_id: event.id,
         payment_id: event.data.object.metadata?.payment_id,
         status: 'received',
-        raw_event: event
+        raw_event: event,
+        is_test: !event.livemode
       });
 
     if (webhookError) {
@@ -94,7 +87,9 @@ serve(async (req) => {
       throw webhookError;
     }
 
-    // Handle different event types
+    console.log('Processing webhook event:', event.type);
+    console.log('Event data:', JSON.stringify(event.data.object));
+
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
@@ -103,7 +98,6 @@ serve(async (req) => {
         console.log('Processing successful payment:', paymentId);
         
         if (paymentId) {
-          // Update payment status
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
@@ -122,7 +116,6 @@ serve(async (req) => {
 
           console.log('Successfully updated payment status to completed');
 
-          // Log the status change
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
             .insert({
@@ -150,7 +143,6 @@ serve(async (req) => {
         console.log('Processing failed payment:', paymentId);
         
         if (paymentId) {
-          // Update payment status
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
@@ -166,7 +158,6 @@ serve(async (req) => {
 
           console.log('Successfully updated payment status to failed');
 
-          // Log the failure
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
             .insert({
@@ -192,7 +183,6 @@ serve(async (req) => {
       }
     }
 
-    // Mark webhook as processed
     const { error: processedError } = await supabaseClient
       .from('stripe_webhook_events')
       .update({ 
@@ -213,13 +203,10 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Webhook processing error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
-      }
+      JSON.stringify({ error: error.message }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   }
 });
