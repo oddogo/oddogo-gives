@@ -5,7 +5,7 @@ import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -22,6 +22,17 @@ serve(async (req) => {
   console.log('Received webhook request');
   console.log('Method:', req.method);
   console.log('Headers:', Object.fromEntries(req.headers.entries()));
+
+  // Skip JWT verification if it's a Stripe webhook (identified by custom header)
+  const isStripeWebhook = req.headers.get('x-webhook-key') === Deno.env.get('STRIPE_WEBHOOK_KEY');
+  
+  if (!isStripeWebhook) {
+    console.log('Request missing webhook key - potential unauthorized access');
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+    );
+  }
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
@@ -65,6 +76,7 @@ serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       console.log('Event constructed successfully:', event.type);
       console.log('Event metadata:', event.data.object.metadata);
+      console.log('Full event data:', JSON.stringify(event.data.object, null, 2));
     } catch (err) {
       console.error('Webhook signature verification failed:', err.message);
       return new Response(
@@ -73,6 +85,7 @@ serve(async (req) => {
       );
     }
 
+    // Store webhook event for tracking/retry purposes
     const { error: webhookError } = await supabaseClient
       .from('stripe_webhook_events')
       .insert({
@@ -81,7 +94,8 @@ serve(async (req) => {
         payment_id: event.data.object.metadata?.payment_id,
         status: 'received',
         raw_event: event,
-        is_test: !event.livemode
+        is_test: !event.livemode,
+        attempts: 1
       });
 
     if (webhookError) {
@@ -90,29 +104,40 @@ serve(async (req) => {
     }
 
     console.log('Processing webhook event:', event.type);
-    console.log('Event data:', JSON.stringify(event.data.object));
-
+    
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         console.log('Processing completed checkout session:', session.id);
         console.log('Session metadata:', session.metadata);
+        console.log('Payment intent data:', session.payment_intent_data);
         
-        // Create payment record after successful checkout
+        // Extract metadata from both possible locations
+        const metadata = {
+          ...session.payment_intent_data?.metadata,
+          ...session.metadata
+        };
+
+        console.log('Combined metadata:', metadata);
+        
+        const paymentData = {
+          amount: session.amount_total,
+          currency: session.currency,
+          status: 'completed',
+          user_id: metadata.userId || 'anonymous',
+          fingerprint_id: metadata.fingerprintId,
+          recipient_id: metadata.recipientId,
+          stripe_payment_intent_id: session.payment_intent,
+          stripe_payment_email: session.customer_email,
+          stripe_customer_id: session.customer,
+          stripe_session_id: session.id
+        };
+
+        console.log('Attempting to insert payment record:', paymentData);
+
         const { error: insertError } = await supabaseClient
           .from('stripe_payments')
-          .insert({
-            amount: session.amount_total,
-            currency: session.currency,
-            status: 'completed',
-            user_id: session.metadata?.userId || session.payment_intent_data?.metadata?.userId,
-            fingerprint_id: session.metadata?.fingerprintId || session.payment_intent_data?.metadata?.fingerprintId,
-            recipient_id: session.metadata?.recipientId || session.payment_intent_data?.metadata?.recipientId,
-            stripe_payment_intent_id: session.payment_intent,
-            stripe_payment_email: session.customer_email,
-            stripe_customer_id: session.customer,
-            stripe_session_id: session.id
-          });
+          .insert(paymentData);
 
         if (insertError) {
           console.error('Error creating payment record:', insertError);
@@ -157,9 +182,24 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Webhook processing error:', error);
+    
+    // Log the error and update the webhook event status
+    try {
+      await supabaseClient
+        .from('stripe_webhook_events')
+        .update({ 
+          status: 'failed',
+          error_message: error.message,
+          processed_at: new Date().toISOString()
+        })
+        .eq('stripe_event_id', event?.id);
+    } catch (logError) {
+      console.error('Error logging webhook failure:', logError);
+    }
+
     return new Response(
       JSON.stringify({ error: error.message }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

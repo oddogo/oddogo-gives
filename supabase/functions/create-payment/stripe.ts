@@ -18,6 +18,13 @@ export const createStripeSession = async (
     email
   });
   
+  // Prepare metadata for both session and payment intent
+  const metadata = {
+    fingerprintId,
+    userId: userId || 'anonymous',
+    recipientId
+  };
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -35,10 +42,9 @@ export const createStripeSession = async (
     mode: 'payment',
     success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
-    metadata: {
-      fingerprintId,
-      userId: userId || 'anonymous',
-      recipientId
+    metadata: metadata,
+    payment_intent_data: {
+      metadata: metadata // Include same metadata in payment intent
     },
     customer_email: email
   });
