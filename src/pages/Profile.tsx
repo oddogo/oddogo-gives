@@ -111,6 +111,24 @@ const Profile = () => {
               <ProfileForm />
             </Card>
 
+            {/* Payment History Section */}
+            <div className="mt-12">
+              <div className="bg-white/5 backdrop-blur-xl rounded-lg p-8">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-white mb-2">Your Donations</h2>
+                  <p className="text-gray-300">
+                    Track your giving history and impact
+                  </p>
+                </div>
+
+                {user && (
+                  <PaymentHistory 
+                    userId={user.id}
+                  />
+                )}
+              </div>
+            </div>
+
             {/* Preview Section */}
             <div className="mt-12">
               <div className="bg-white/5 backdrop-blur-xl rounded-lg p-8">

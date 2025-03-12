@@ -87,7 +87,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   }, [userId]);
 
   return (
-    <Card className="w-full mt-8">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-xl font-bold flex items-center gap-2">
           <Receipt className="w-5 h-5" />
@@ -99,7 +99,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
           <div className="bg-green-50 p-4 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-green-800">Total Received</span>
+              <span className="text-sm text-green-800">Total Given</span>
             </div>
             <span className="text-lg font-bold text-green-700">
               £{(totalReceived / 100).toFixed(2)}
@@ -122,8 +122,6 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Payment ID</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -131,18 +129,14 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               {payments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>
-                    {new Date(payment.created_at).toLocaleDateString()}
+                    {new Date(payment.created_at).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: '2-digit'
+                    })}
                   </TableCell>
-                  <TableCell>£{(payment.amount / 100).toFixed(2)}</TableCell>
-                  <TableCell>{payment.stripe_payment_email || 'N/A'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <CreditCard className="w-4 h-4" />
-                      {payment.stripe_payment_intent_id ? 
-                        payment.stripe_payment_intent_id.slice(-8) : 
-                        'N/A'
-                      }
-                    </div>
+                  <TableCell className="font-medium">
+                    £{(payment.amount / 100).toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
@@ -155,8 +149,8 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               ))}
               {payments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No payments received yet
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                    No donations made yet
                   </TableCell>
                 </TableRow>
               )}
