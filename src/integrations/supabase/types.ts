@@ -1528,6 +1528,7 @@ export type Database = {
           created_at: string | null
           event_type: string
           id: string
+          is_test: boolean | null
           payment_id: string | null
           processed_at: string | null
           raw_event: Json | null
@@ -1538,6 +1539,7 @@ export type Database = {
           created_at?: string | null
           event_type: string
           id?: string
+          is_test?: boolean | null
           payment_id?: string | null
           processed_at?: string | null
           raw_event?: Json | null
@@ -1548,6 +1550,7 @@ export type Database = {
           created_at?: string | null
           event_type?: string
           id?: string
+          is_test?: boolean | null
           payment_id?: string | null
           processed_at?: string | null
           raw_event?: Json | null
