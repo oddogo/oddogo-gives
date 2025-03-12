@@ -107,7 +107,7 @@ serve(async (req) => {
         });
         
         if (paymentId) {
-          // Update payment record with Stripe session details
+          // Store both payment_intent and payment_method when available
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
@@ -132,13 +132,18 @@ serve(async (req) => {
         const paymentId = paymentIntent.metadata?.payment_id;
         
         console.log('Processing successful payment:', paymentId);
+        console.log('Payment Intent ID:', paymentIntent.id);
+        console.log('Latest Charge ID:', paymentIntent.latest_charge);
+        console.log('Payment Method:', paymentIntent.payment_method);
         
         if (paymentId) {
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               status: 'completed',
+              stripe_payment_intent_id: paymentIntent.id, // Ensure we store the payment intent ID
               stripe_charge_id: paymentIntent.latest_charge,
+              stripe_payment_method_id: paymentIntent.payment_method, // Add payment method ID
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId);
@@ -154,7 +159,12 @@ serve(async (req) => {
             .from('stripe_payment_logs')
             .insert({
               payment_id: paymentId,
-              metadata: event.data.object,
+              metadata: {
+                ...event.data.object,
+                payment_intent_id: paymentIntent.id,
+                payment_method_id: paymentIntent.payment_method,
+                charge_id: paymentIntent.latest_charge
+              },
               status: 'completed',
               message: 'Payment completed successfully'
             });
