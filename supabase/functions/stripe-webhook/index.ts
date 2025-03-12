@@ -64,6 +64,7 @@ serve(async (req) => {
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       console.log('Event constructed successfully:', event.type);
+      console.log('Event metadata:', event.data.object.metadata);
     } catch (err) {
       console.error('Webhook signature verification failed:', err.message);
       return new Response(
@@ -95,19 +96,22 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object;
         console.log('Processing completed checkout session:', session.id);
+        console.log('Session metadata:', session.metadata);
         
-        // Create payment record only after successful checkout
+        // Create payment record after successful checkout
         const { error: insertError } = await supabaseClient
           .from('stripe_payments')
           .insert({
             amount: session.amount_total,
             currency: session.currency,
             status: 'completed',
-            user_id: session.metadata?.userId,
-            fingerprint_id: session.metadata?.fingerprintId,
+            user_id: session.metadata?.userId || session.payment_intent_data?.metadata?.userId,
+            fingerprint_id: session.metadata?.fingerprintId || session.payment_intent_data?.metadata?.fingerprintId,
+            recipient_id: session.metadata?.recipientId || session.payment_intent_data?.metadata?.recipientId,
             stripe_payment_intent_id: session.payment_intent,
             stripe_payment_email: session.customer_email,
             stripe_customer_id: session.customer,
+            stripe_session_id: session.id
           });
 
         if (insertError) {
