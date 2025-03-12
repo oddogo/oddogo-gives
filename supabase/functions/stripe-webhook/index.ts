@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -72,7 +71,6 @@ serve(async (req) => {
       );
     }
 
-    // Log the webhook event
     const { error: webhookError } = await supabaseClient
       .from('stripe_webhook_events')
       .insert({
@@ -103,15 +101,16 @@ serve(async (req) => {
           id: session.id,
           email: session.customer_email,
           customer: session.customer,
-          payment_intent: session.payment_intent
+          payment_intent: session.payment_intent,
+          payment_method: session.payment_method
         });
         
         if (paymentId) {
-          // Store both payment_intent and payment_method when available
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               stripe_payment_intent_id: session.payment_intent,
+              stripe_payment_method_id: session.payment_method,
               stripe_payment_email: session.customer_email,
               stripe_customer_id: session.customer,
               updated_at: new Date().toISOString()
@@ -132,18 +131,20 @@ serve(async (req) => {
         const paymentId = paymentIntent.metadata?.payment_id;
         
         console.log('Processing successful payment:', paymentId);
-        console.log('Payment Intent ID:', paymentIntent.id);
-        console.log('Latest Charge ID:', paymentIntent.latest_charge);
-        console.log('Payment Method:', paymentIntent.payment_method);
+        console.log('Payment details:', {
+          payment_intent_id: paymentIntent.id,
+          payment_method_id: paymentIntent.payment_method,
+          charge_id: paymentIntent.latest_charge,
+        });
         
         if (paymentId) {
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               status: 'completed',
-              stripe_payment_intent_id: paymentIntent.id, // Ensure we store the payment intent ID
+              stripe_payment_intent_id: paymentIntent.id,
+              stripe_payment_method_id: paymentIntent.payment_method,
               stripe_charge_id: paymentIntent.latest_charge,
-              stripe_payment_method_id: paymentIntent.payment_method, // Add payment method ID
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId);
@@ -223,7 +224,6 @@ serve(async (req) => {
       }
     }
 
-    // Mark webhook as processed
     const { error: processedError } = await supabaseClient
       .from('stripe_webhook_events')
       .update({ 

@@ -1482,6 +1482,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_payment_email: string | null
           stripe_payment_intent_id: string | null
+          stripe_payment_method_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -1496,6 +1497,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_method_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1510,6 +1512,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_email?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_method_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
