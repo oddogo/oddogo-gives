@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -98,6 +97,12 @@ serve(async (req) => {
         const paymentId = paymentIntent.metadata?.payment_id;
         
         console.log('Processing successful payment:', paymentId);
+        console.log('Payment Intent details:', {
+          id: paymentIntent.id,
+          email: paymentIntent.receipt_email,
+          customer: paymentIntent.customer,
+          charge: paymentIntent.latest_charge
+        });
         
         if (paymentId) {
           const { error: updateError } = await supabaseClient

@@ -42,9 +42,12 @@ export const createStripeSession = async (
       fingerprintId,
       userId: userId || 'anonymous'
     },
+    customer_email: payment.email, // Add this to capture email
   });
 
   console.log('Stripe session created:', session.id);
+  console.log('Session metadata:', session.metadata);
+  console.log('Payment intent data:', session.payment_intent);
 
   if (session.payment_intent) {
     try {
