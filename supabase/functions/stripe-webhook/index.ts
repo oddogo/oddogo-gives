@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -71,6 +72,7 @@ serve(async (req) => {
       );
     }
 
+    // Log the webhook event
     const { error: webhookError } = await supabaseClient
       .from('stripe_webhook_events')
       .insert({
@@ -92,26 +94,50 @@ serve(async (req) => {
     console.log('Event metadata:', JSON.stringify(event.data.object.metadata));
 
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const paymentId = session.metadata?.payment_id;
+        
+        console.log('Processing checkout session completed:', paymentId);
+        console.log('Session details:', {
+          id: session.id,
+          email: session.customer_email,
+          customer: session.customer,
+          payment_intent: session.payment_intent
+        });
+        
+        if (paymentId) {
+          // Update payment record with Stripe session details
+          const { error: updateError } = await supabaseClient
+            .from('stripe_payments')
+            .update({ 
+              stripe_payment_intent_id: session.payment_intent,
+              stripe_payment_email: session.customer_email,
+              stripe_customer_id: session.customer,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', paymentId);
+
+          if (updateError) {
+            console.error('Error updating payment record:', updateError);
+            throw updateError;
+          }
+
+          console.log('Successfully updated payment with Stripe session details');
+        }
+        break;
+      }
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
         
         console.log('Processing successful payment:', paymentId);
-        console.log('Payment Intent details:', {
-          id: paymentIntent.id,
-          email: paymentIntent.receipt_email,
-          customer: paymentIntent.customer,
-          charge: paymentIntent.latest_charge
-        });
         
         if (paymentId) {
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               status: 'completed',
-              stripe_payment_intent_id: paymentIntent.id,
-              stripe_payment_email: paymentIntent.receipt_email,
-              stripe_customer_id: paymentIntent.customer,
               stripe_charge_id: paymentIntent.latest_charge,
               updated_at: new Date().toISOString()
             })
@@ -139,8 +165,6 @@ serve(async (req) => {
           }
 
           console.log('Successfully logged payment completion');
-        } else {
-          console.warn('No payment_id found in metadata:', paymentIntent.metadata);
         }
         break;
       }
@@ -155,7 +179,6 @@ serve(async (req) => {
             .from('stripe_payments')
             .update({ 
               status: 'failed',
-              stripe_payment_intent_id: paymentIntent.id,
               updated_at: new Date().toISOString()
             })
             .eq('id', paymentId);
@@ -182,8 +205,6 @@ serve(async (req) => {
           }
 
           console.log('Successfully logged payment failure');
-        } else {
-          console.warn('No payment_id found in metadata for failed payment');
         }
         break;
       }
@@ -192,6 +213,7 @@ serve(async (req) => {
       }
     }
 
+    // Mark webhook as processed
     const { error: processedError } = await supabaseClient
       .from('stripe_webhook_events')
       .update({ 
