@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 import { corsHeaders } from './types.ts';
 import { validatePaymentRequest } from './validators.ts';
-import { getUserId } from './db.ts';
+import { getFingerprintId, getUserId } from './db.ts';
 import { createStripeSession } from './stripe.ts';
 
 serve(async (req) => {
@@ -41,6 +41,17 @@ serve(async (req) => {
     const userId = await getUserId(authHeader);
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
+    // Get fingerprint ID for the recipient
+    const fingerprintId = await getFingerprintId(recipientId);
+    console.log('Retrieved fingerprint ID:', fingerprintId);
+
+    if (!fingerprintId) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid recipient' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Create Stripe session first
     const session = await createStripeSession(
       stripe,
@@ -51,6 +62,8 @@ serve(async (req) => {
       fingerprintId,
       userId
     );
+
+    console.log('Stripe session created successfully:', session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
@@ -67,4 +80,3 @@ serve(async (req) => {
     );
   }
 });
-
