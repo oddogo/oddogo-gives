@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
@@ -46,16 +45,17 @@ const PublicProfile = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 text-primary mb-2">
               <HandHeart className="w-5 h-5" />
-              <span className="font-medium">Make an Impact</span>
+              <span className="font-medium">Support These Important Causes</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Support These Important Causes
+              Make an Impact Today
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               Your generous donation will directly support the charities and initiatives that matter most.
-              Join in making a meaningful difference today.
             </p>
           </div>
+
+          <ActiveCampaign />
           
           <PaymentForm 
             recipientId={id || ''} 
@@ -64,10 +64,7 @@ const PublicProfile = () => {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <PaymentHistory userId={id || ''} />
-        <ActiveCampaign />
-      </div>
+      <PaymentHistory userId={id || ''} />
     </div>
   );
 };
