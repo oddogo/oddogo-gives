@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -102,8 +103,8 @@ serve(async (req) => {
             amount: session.amount_total,
             currency: session.currency,
             status: 'completed',
-            user_id: session.payment_intent_data?.metadata?.userId,
-            fingerprint_id: session.payment_intent_data?.metadata?.fingerprintId,
+            user_id: session.metadata?.userId,
+            fingerprint_id: session.metadata?.fingerprintId,
             stripe_payment_intent_id: session.payment_intent,
             stripe_payment_email: session.customer_email,
             stripe_customer_id: session.customer,

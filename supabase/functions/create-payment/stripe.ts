@@ -29,12 +29,10 @@ export const createStripeSession = async (
     mode: 'payment',
     success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
-    payment_intent_data: {
-      metadata: {
-        fingerprintId,
-        userId: userId || 'anonymous',
-        recipientId
-      }
+    metadata: {
+      fingerprintId,
+      userId: userId || 'anonymous',
+      recipientId
     },
     customer_email: email
   });
@@ -48,4 +46,3 @@ export const createStripeSession = async (
 
   return session;
 };
-
