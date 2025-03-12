@@ -25,18 +25,30 @@ serve(async (req) => {
   try {
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
+      console.error('No Stripe signature found in request headers');
       throw new Error('No Stripe signature found');
     }
 
     const body = await req.text();
+    console.log('Received webhook body:', body); // Log the raw body
+
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
+      console.error('Stripe webhook secret not found in environment variables');
       throw new Error('Stripe webhook secret not configured');
     }
 
     // Verify the webhook signature
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      console.error('Error verifying webhook signature:', err);
+      throw new Error(`Webhook signature verification failed: ${err.message}`);
+    }
+
     console.log('Received Stripe webhook event:', event.type);
+    console.log('Event data:', JSON.stringify(event.data.object));
 
     // Store the webhook event
     const { error: webhookError } = await supabaseClient
@@ -54,11 +66,15 @@ serve(async (req) => {
       throw webhookError;
     }
 
+    console.log('Successfully stored webhook event');
+
     // Handle different event types
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
+        
+        console.log('Processing successful payment:', paymentId);
         
         if (paymentId) {
           // Update payment status
@@ -78,6 +94,8 @@ serve(async (req) => {
             throw updateError;
           }
 
+          console.log('Successfully updated payment status to completed');
+
           // Log the status change
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
@@ -92,12 +110,18 @@ serve(async (req) => {
             console.error('Error logging payment status:', logError);
             throw logError;
           }
+
+          console.log('Successfully logged payment completion');
+        } else {
+          console.warn('No payment_id found in metadata');
         }
         break;
       }
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
+        
+        console.log('Processing failed payment:', paymentId);
         
         if (paymentId) {
           // Update payment status
@@ -114,6 +138,8 @@ serve(async (req) => {
             throw updateError;
           }
 
+          console.log('Successfully updated payment status to failed');
+
           // Log the failure
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
@@ -128,8 +154,15 @@ serve(async (req) => {
             console.error('Error logging payment failure:', logError);
             throw logError;
           }
+
+          console.log('Successfully logged payment failure');
+        } else {
+          console.warn('No payment_id found in metadata for failed payment');
         }
         break;
+      }
+      default: {
+        console.log('Unhandled event type:', event.type);
       }
     }
 
@@ -146,6 +179,8 @@ serve(async (req) => {
       console.error('Error marking webhook as processed:', processedError);
       throw processedError;
     }
+
+    console.log('Successfully marked webhook as processed');
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
