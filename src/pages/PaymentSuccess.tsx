@@ -4,38 +4,21 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const PaymentSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
-  const payment_id = searchParams.get("payment_id");
+  const session_id = searchParams.get("session_id");
   const recipient_id = searchParams.get("recipient_id");
 
   useEffect(() => {
-    const updatePaymentStatus = async () => {
-      if (payment_id) {
-        try {
-          const { error } = await supabase
-            .from('stripe_payments')
-            .update({ status: 'completed' })
-            .eq('id', payment_id);
-
-          if (error) {
-            console.error('Error updating payment status:', error);
-            toast.error("Failed to confirm payment status");
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          toast.error("Failed to confirm payment status");
-        }
-      }
-    };
-
-    updatePaymentStatus();
-  }, [payment_id]);
+    if (!session_id) {
+      toast.error("Invalid payment session");
+      navigate('/');
+    }
+  }, [session_id, navigate]);
 
   const handleReturnClick = () => {
     if (recipient_id) {
@@ -70,3 +53,4 @@ const PaymentSuccess = () => {
 };
 
 export default PaymentSuccess;
+
