@@ -10,21 +10,8 @@ export const createStripeSession = async (
   fingerprintId: string,
   userId: string | null
 ): Promise<Stripe.Checkout.Session> => {
-  console.log('Creating Stripe session with params:', {
-    amount,
-    recipientId,
-    fingerprintId,
-    userId,
-    email
-  });
+  console.log('Creating Stripe session with amount:', amount);
   
-  // Prepare metadata for both session and payment intent
-  const metadata = {
-    fingerprintId,
-    userId: userId || 'anonymous',
-    recipientId
-  };
-
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -42,20 +29,23 @@ export const createStripeSession = async (
     mode: 'payment',
     success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&recipient_id=${recipientId}`,
     cancel_url: `${origin}/payment-cancelled`,
-    metadata: metadata,
     payment_intent_data: {
-      metadata: metadata // Include same metadata in payment intent
+      metadata: {
+        fingerprintId,
+        userId: userId || 'anonymous',
+        recipientId
+      }
     },
     customer_email: email
   });
 
   console.log('Stripe session created:', session.id);
-  console.log('Session details:', {
+  console.log('Session:', {
     id: session.id,
     payment_intent: session.payment_intent,
-    customer_email: session.customer_email,
-    metadata: session.metadata
+    customer_email: session.customer_email
   });
 
   return session;
 };
+
