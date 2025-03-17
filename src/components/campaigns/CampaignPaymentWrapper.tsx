@@ -38,10 +38,8 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
     getCampaign();
   }, [campaignId]);
   
-  // Event handler for successful payment - will be used to associate payment with campaign
   const handlePaymentSuccess = async (paymentId: string) => {
     try {
-      // Associate payment with campaign
       const { error } = await supabase
         .from('campaign_payments')
         .insert({

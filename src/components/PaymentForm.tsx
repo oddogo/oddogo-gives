@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { PaymentAmountSelector } from "./payment/PaymentAmountSelector";
+import { PaymentDetailsFields } from "./payment/PaymentDetailsFields";
+import { PaymentFooter } from "./payment/PaymentFooter";
 
 const paymentFormSchema = z.object({
   amount: z.coerce
@@ -98,9 +102,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           message: values.message || "",
           recipient_id: recipientId,
           recipient_name: recipientName,
-          campaign_id: values.campaign_id || campaignId,
-          success_url: window.location.href,
-          cancel_url: window.location.href,
+          campaign_id: values.campaign_id || campaignId || "",
+          success_url: window.location.origin + "/payment-success",
+          cancel_url: window.location.origin + "/payment-cancelled",
         },
       });
       
@@ -133,125 +137,64 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
+  const formContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Donation Amount (£)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="25"
+                  min={1}
+                  step={1}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <PaymentAmountSelector form={form} />
+        
+        <PaymentDetailsFields form={form} />
+        
+        <input 
+          type="hidden" 
+          {...form.register("campaign_id")} 
+        />
+        
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            `Donate £${form.watch("amount") || 0}`
+          )}
+        </Button>
+        
+        <PaymentFooter 
+          recipientName={recipientName} 
+          hasCampaign={!!campaignId} 
+        />
+      </form>
+    </Form>
+  );
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Donation Amount (£)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="25"
-                    min={1}
-                    step={1}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="flex flex-wrap gap-2 mb-2">
-            {[10, 25, 50, 100].map((amount) => (
-              <Button
-                key={amount}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => form.setValue("amount", amount, { shouldValidate: true })}
-                className={`flex-1 ${
-                  form.watch("amount") === amount ? "bg-primary/10 border-primary" : ""
-                }`}
-              >
-                £{amount}
-              </Button>
-            ))}
-          </div>
-          
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Your Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Message (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Add a personal message..." 
-                    className="resize-none"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <input 
-            type="hidden" 
-            {...form.register("campaign_id")} 
-          />
-          
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Donate £${form.watch("amount") || 0}`
-            )}
-          </Button>
-          
-          <p className="text-xs text-center text-gray-500 mt-4">
-            Your donation will be processed securely via Stripe.
-            <br />
-            All payments support {recipientName}&apos;s giving fingerprint.
-            {campaignId && <br />Your donation will be linked to this campaign.}
-          </p>
-        </form>
-      </Form>
+      {formContent}
     </div>
   );
 };
