@@ -255,7 +255,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <p className="text-xs text-center text-gray-500 mt-4">
             Your donation will be processed securely via Stripe.
             <br />
-            All payments support {recipientName}'s giving fingerprint.
+            All payments support {recipientName}&apos;s giving fingerprint.
             {campaignId && <br />Your donation will be linked to this campaign.}
           </p>
         </form>
