@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,11 +87,9 @@ export const PaymentAssignment = ({ campaign, onAssignmentChange }: PaymentAssig
         .from('stripe_payments')
         .select('*')
         .eq('status', 'completed')
-        .not('id', 'in', `(${
-          campaignPayments.length > 0 
-            ? 'SELECT payment_id FROM campaign_payments' 
-            : 'NULL'
-        })`)
+        .not('id', 'in', campaignPayments && campaignPayments.length > 0 
+            ? `(SELECT payment_id FROM campaign_payments)` 
+            : 'NULL')
         .order('created_at', { ascending: false });
 
       if (availableError) throw availableError;

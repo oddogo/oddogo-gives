@@ -1,8 +1,9 @@
+
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
 import { AllocationsSection } from "@/components/AllocationsSection";
-import { ActiveCampaign } from "@/components/ActiveCampaign";
+import { ActiveCampaignDisplay } from "@/components/ActiveCampaignDisplay";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -40,6 +41,9 @@ const PublicProfile = () => {
         </div>
       )}
 
+      {/* Display active campaign if available */}
+      <ActiveCampaignDisplay userId={id || ''} />
+
       {!hidePaymentForm && (
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-8">
@@ -54,8 +58,6 @@ const PublicProfile = () => {
               Your generous donation will directly support the charities and initiatives that matter most.
             </p>
           </div>
-
-          <ActiveCampaign />
           
           <PaymentForm 
             recipientId={id || ''} 

@@ -56,6 +56,20 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
       const fileName = `${uuidv4()}.${fileExt}`;
       
       console.log("Uploading to campaign-images with filename:", fileName);
+      
+      // Check if the bucket exists, if not create it
+      const { data: bucketExists } = await supabase.storage.getBucket('campaign-images');
+      
+      if (!bucketExists) {
+        const { error: createBucketError } = await supabase.storage.createBucket('campaign-images', {
+          public: true
+        });
+        
+        if (createBucketError) {
+          throw new Error(`Failed to create storage bucket: ${createBucketError.message}`);
+        }
+      }
+      
       const { data, error } = await supabase.storage
         .from('campaign-images')
         .upload(fileName, selectedFile);
