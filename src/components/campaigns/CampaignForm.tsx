@@ -47,14 +47,12 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ campaign, onSuccess 
 
   // For debugging: Log validation errors
   useEffect(() => {
-    const subscription = form.formState.subscribe(state => {
-      if (Object.keys(state.errors).length > 0) {
-        console.log("Form has validation errors:", state.errors);
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form.formState]);
+    // The subscribe method doesn't exist in the current version of react-hook-form
+    // Instead, we can use the useEffect to watch for changes in the form state errors
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log("Form has validation errors:", form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   // Debug form submission attempts
   const handleFormSubmit = form.handleSubmit((values) => {
