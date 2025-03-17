@@ -76,12 +76,12 @@ const CampaignDetail = () => {
         return;
       }
       
-      // Ensure the campaign data has all required fields
-      const typedCampaign: CampaignStatistic = {
+      // Type assertion with proper property handling
+      const typedCampaign = {
         ...data,
-        is_featured: data.is_featured ?? false, // Default to false if not present
+        is_featured: Boolean(data.is_featured),
         status: (data.status as "active" | "completed" | "cancelled") || "active"
-      };
+      } as CampaignStatistic;
       
       setCampaign(typedCampaign);
     } catch (error: any) {

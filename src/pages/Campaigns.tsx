@@ -49,12 +49,12 @@ const CampaignsPage = () => {
 
       if (error) throw error;
       
-      // Ensure each item has the is_featured property
-      const typedData: CampaignStatistic[] = data?.map(item => ({
+      // Type assertion with proper property handling
+      const typedData = data?.map(item => ({
         ...item,
-        is_featured: item.is_featured ?? false, // Default to false if not present
+        is_featured: Boolean(item.is_featured),
         status: (item.status as "active" | "completed" | "cancelled") || "active"
-      })) || [];
+      })) as CampaignStatistic[] || [];
       
       setCampaigns(typedData);
     } catch (error: any) {
