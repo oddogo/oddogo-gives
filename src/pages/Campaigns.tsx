@@ -49,10 +49,10 @@ const CampaignsPage = () => {
 
       if (error) throw error;
       
-      // Type assertion with proper property handling
+      // Add required properties and handle type casting
       const typedData = data?.map(item => ({
         ...item,
-        is_featured: Boolean(item.is_featured),
+        is_featured: false, // Default value since it's missing from the view
         status: (item.status as "active" | "completed" | "cancelled") || "active"
       })) as CampaignStatistic[] || [];
       

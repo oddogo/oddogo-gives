@@ -76,10 +76,10 @@ const CampaignDetail = () => {
         return;
       }
       
-      // Type assertion with proper property handling
+      // Add required properties and handle type casting
       const typedCampaign = {
         ...data,
-        is_featured: Boolean(data.is_featured),
+        is_featured: false, // Default value since it's missing from the view
         status: (data.status as "active" | "completed" | "cancelled") || "active"
       } as CampaignStatistic;
       
