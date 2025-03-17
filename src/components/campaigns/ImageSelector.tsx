@@ -32,7 +32,9 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      console.log("File selected:", file.name, file.size, file.type);
+      setSelectedFile(file);
       // Clear any existing image URL
       if (imageUrl) onImageSelected("");
     }
@@ -40,15 +42,20 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
 
   // Handle file upload to Supabase storage
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      console.error("No file selected for upload");
+      return;
+    }
 
     try {
       setUploading(true);
+      console.log("Starting file upload for:", selectedFile.name);
       
       // Generate a unique filename with original extension
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
       
+      console.log("Uploading to campaign-images with filename:", fileName);
       const { data, error } = await supabase.storage
         .from('campaign-images')
         .upload(fileName, selectedFile);
@@ -56,7 +63,6 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
       if (error) {
         console.error("Error uploading image:", error);
         toast.error(`Upload failed: ${error.message}`);
-        setUploading(false);
         return;
       }
       
@@ -65,6 +71,7 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
         .from('campaign-images')
         .getPublicUrl(fileName);
       
+      console.log("Upload successful, public URL:", publicUrl);
       onImageSelected(publicUrl);
       setSelectedFile(null);
       toast.success("Image uploaded successfully");
@@ -83,10 +90,13 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
     try {
       setSearching(true);
       setSearchResults([]);
+      console.log("Searching Unsplash for:", searchQuery.trim());
       
       const response = await supabase.functions.invoke('unsplash-search', {
         body: { query: searchQuery.trim() },
       });
+      
+      console.log("Unsplash search response:", response);
       
       if (response.error) {
         console.error("Search error:", response.error);
@@ -105,6 +115,7 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
 
   // Handle selecting an image from search results
   const selectSearchResult = (imageUrl: string) => {
+    console.log("Selected search result image:", imageUrl);
     onImageSelected(imageUrl);
     setSearchResults([]);
     setSearchQuery("");
@@ -112,6 +123,7 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
 
   // Clear the current image
   const clearImage = () => {
+    console.log("Clearing image selection");
     onImageSelected("");
     setSelectedFile(null);
   };

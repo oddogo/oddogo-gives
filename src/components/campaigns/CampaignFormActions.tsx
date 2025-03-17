@@ -16,17 +16,25 @@ export const CampaignFormActions: React.FC<CampaignFormActionsProps> = ({
 }) => {
   const navigate = useNavigate();
   
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(-1);
+  };
+  
   return (
     <div className="flex justify-end gap-3">
       <Button
         type="button"
         variant="outline"
-        onClick={() => navigate(-1)}
+        onClick={handleCancel}
         disabled={isSubmitting}
       >
         Cancel
       </Button>
-      <Button type="submit" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        disabled={isSubmitting}
+      >
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
