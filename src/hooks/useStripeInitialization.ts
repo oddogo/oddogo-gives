@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +15,7 @@ export const useStripeInitialization = () => {
       
       try {
         const { data, error } = await supabase.functions.invoke('get-stripe-key', {
+          // Keep the Cache-Control header but don't include any other custom headers
           headers: {
             'Cache-Control': 'no-cache',
           }
