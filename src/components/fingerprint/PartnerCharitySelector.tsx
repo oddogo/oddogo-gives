@@ -36,23 +36,18 @@ export const PartnerCharitySelector = ({
     queryKey: ['partner-charities'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('charities_charity_partners')
-        .select('*, charities:charity_id (website, charity_name, registered_number)');
+        .from('v_active_partner_charities')
+        .select('*, charities:charity_id (website)');
       
       if (error) throw error;
       
-      // Transform the data structure to match what we need
-      const formattedData = data.map(item => ({
-        charity_id: item.charity_id,
-        charity_name: toSentenceCase(item.charities?.charity_name || ''),
-        registered_number: item.charities?.registered_number || '',
-        website: item.charities?.website || null
-      }));
-      
-      // Sort charities alphabetically
-      return formattedData.sort((a, b) => 
-        a.charity_name.localeCompare(b.charity_name)
-      );
+      // Sort charities alphabetically and convert to sentence case
+      return (data as (PartnerCharity & { charities: { website: string | null } })[])
+        .sort((a, b) => a.charity_name.localeCompare(b.charity_name))
+        .map(charity => ({
+          ...charity,
+          charity_name: toSentenceCase(charity.charity_name)
+        }));
     }
   });
 
@@ -61,13 +56,13 @@ export const PartnerCharitySelector = ({
     charity.registered_number?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const handleSelect = (charity: PartnerCharity) => {
+  const handleSelect = (charity: PartnerCharity & { charities: { website: string | null } }) => {
     onSelect({
       id: charity.charity_id,
       allocation_name: charity.charity_name,
       allocation_type: 'Charity',
       allocation_percentage: 0,
-      website_favicon: charity.website || null
+      website_favicon: charity.charities?.website || null
     });
     onClose();
   };
@@ -117,3 +112,4 @@ export const PartnerCharitySelector = ({
     </Dialog>
   );
 };
+

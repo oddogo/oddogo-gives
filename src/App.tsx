@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,9 +13,6 @@ import PublicProfile from "./pages/PublicProfile";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancelled from "./pages/PaymentCancelled";
 import Transactions from "./pages/Transactions";
-import Campaigns from "./pages/Campaigns";
-import CampaignDetail from "./pages/CampaignDetail";
-import CampaignForm from "./pages/CampaignForm";
 
 const queryClient = new QueryClient();
 
@@ -36,10 +32,6 @@ const App = () => (
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-cancelled" element={<PaymentCancelled />} />
             <Route path="/transactions" element={<Transactions />} />
-            <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="/campaigns/create" element={<CampaignForm />} />
-            <Route path="/campaigns/edit/:slug" element={<CampaignForm />} />
-            <Route path="/campaigns/:slug" element={<CampaignDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

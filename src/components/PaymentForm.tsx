@@ -1,101 +1,137 @@
-
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useStripeInitialization } from "@/hooks/useStripeInitialization";
-import { usePaymentSubmit } from "@/hooks/usePaymentSubmit";
-import { PaymentFormContent } from "./payment/PaymentFormContent";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-const paymentFormSchema = z.object({
-  amount: z.coerce
-    .number()
-    .min(1, "Amount must be at least 1")
-    .max(50000, "Amount cannot exceed 50,000"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  message: z.string().optional(),
-  campaign_id: z.string().optional(),
-});
-
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { HandHeart, Coins, Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PaymentFormProps {
   recipientId: string;
   recipientName: string;
-  campaignId?: string;
-  onSuccess?: (paymentId: string) => void;
 }
 
-export const PaymentForm: React.FC<PaymentFormProps> = ({
-  recipientId,
-  recipientName,
-  campaignId,
-  onSuccess,
-}) => {
-  const { stripePromise, isStripeLoading, stripeError } = useStripeInitialization();
-  
-  const form = useForm<PaymentFormValues>({
-    resolver: zodResolver(paymentFormSchema),
-    defaultValues: {
-      amount: 25,
-      name: "",
-      email: "",
-      message: "",
-      campaign_id: campaignId || "",
-    },
-  });
+const PRESET_AMOUNTS = [5, 10, 20, 50, 100];
 
-  const { isSubmitting, submitPayment } = usePaymentSubmit({
-    recipientId,
-    recipientName,
-    campaignId,
-    onSuccess,
-    stripePromise,
-  });
+export const PaymentForm = ({ recipientId, recipientName }: PaymentFormProps) => {
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
 
-  useEffect(() => {
-    form.setValue("campaign_id", campaignId || "");
-  }, [campaignId, form]);
+  const handlePresetClick = (value: number) => {
+    setSelectedPreset(value);
+    setAmount(value.toString());
+  };
 
-  if (isStripeLoading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 text-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-        </div>
-      </div>
-    );
-  }
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const numericAmount = parseFloat(amount);
+      console.log('Starting payment process...', { amount: numericAmount, recipientId });
 
-  if (stripeError) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {stripeError} 
-          </AlertDescription>
-        </Alert>
-        <p className="text-center text-gray-500 mt-2">
-          Our payment system is currently unavailable. Please try again later or contact support for assistance.
-        </p>
-      </div>
-    );
-  }
+      if (!numericAmount || numericAmount <= 0) {
+        toast.error("Please enter a valid amount");
+        setLoading(false);
+        return;
+      }
+
+      console.log('Invoking create-payment function...');
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: { 
+          amount: numericAmount,
+          recipientId 
+        }
+      });
+
+      console.log('Payment function response:', { data, error });
+
+      if (error) {
+        console.error('Payment error:', error);
+        toast.error(error.message || "Failed to process payment. Please try again.");
+        throw error;
+      }
+
+      if (data?.url) {
+        console.log('Redirecting to payment URL:', data.url);
+        window.location.href = data.url;
+      } else {
+        toast.error("Invalid response from payment service");
+        console.error('No URL in response:', data);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error("Failed to process payment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-      <PaymentFormContent
-        form={form}
-        isSubmitting={isSubmitting}
-        recipientName={recipientName}
-        campaignId={campaignId}
-        onSubmit={submitPayment}
-      />
-    </div>
+    <Card className="border-2 border-primary/10">
+      <CardHeader className="text-center space-y-3">
+        <CardTitle className="text-2xl font-bold text-primary flex items-center justify-center gap-2">
+          <HandHeart className="w-6 h-6" />
+          Support {recipientName}
+        </CardTitle>
+        <CardDescription className="text-base">
+          Your donation helps make a real difference in supporting important causes
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {PRESET_AMOUNTS.map((preset) => (
+            <Button
+              key={preset}
+              variant={selectedPreset === preset ? "default" : "outline"}
+              className="relative group transition-all duration-300"
+              onClick={() => handlePresetClick(preset)}
+            >
+              <Coins className="w-4 h-4 mr-1 group-hover:scale-110 transition-transform" />
+              £{preset}
+            </Button>
+          ))}
+        </div>
+
+        <form onSubmit={handlePayment} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="font-medium">
+              Custom Amount
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-muted-foreground">£</span>
+              <Input
+                id="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setSelectedPreset(null);
+                }}
+                className="pl-7"
+                placeholder="Enter amount"
+                required
+              />
+            </div>
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full group" 
+            disabled={loading}
+          >
+            <Trophy className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+            {loading ? "Processing..." : "Make Donation"}
+          </Button>
+        </form>
+
+        <div className="text-center text-sm text-muted-foreground">
+          Secure payment powered by Stripe
+        </div>
+      </CardContent>
+    </Card>
   );
 };
