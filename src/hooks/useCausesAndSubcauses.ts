@@ -17,31 +17,42 @@ export const useCausesAndSubcauses = () => {
   const { data: causesData, isLoading } = useQuery({
     queryKey: ['causes-subcauses'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_active_causes_with_subcauses')
-        .select('*');
+      // Query the actual available tables instead of using the view
+      const { data: causesData, error: causesError } = await supabase
+        .from('charities_charity_causes')
+        .select('id, cause_name, description, img');
       
-      if (error) throw error;
+      if (causesError) throw causesError;
+      
+      const { data: subcausesData, error: subcausesError } = await supabase
+        .from('charities_charity_sub_causes')
+        .select('id, cause_id, subcause_name, description, img');
+      
+      if (subcausesError) throw subcausesError;
       
       // Group subcauses by cause
       const causesMap = new Map();
-      data?.forEach((item: CauseWithSubcauses) => {
-        if (!causesMap.has(item.cause_id)) {
-          causesMap.set(item.cause_id, {
-            id: item.cause_id,
-            name: item.cause_name,
-            description: item.cause_description,
-            img: item.cause_img,
-            subcauses: []
-          });
-        }
-        
-        if (item.subcause_id) {
-          causesMap.get(item.cause_id).subcauses.push({
-            id: item.subcause_id,
-            name: item.subcause_name,
-            description: item.subcause_description,
-            img: item.subcause_img
+      
+      // First, add all causes
+      causesData.forEach((cause) => {
+        causesMap.set(cause.id, {
+          id: cause.id,
+          name: cause.cause_name,
+          description: cause.description,
+          img: cause.img,
+          subcauses: []
+        });
+      });
+      
+      // Then add subcauses to their respective causes
+      subcausesData.forEach((subcause) => {
+        const cause = causesMap.get(subcause.cause_id);
+        if (cause) {
+          cause.subcauses.push({
+            id: subcause.id,
+            name: subcause.subcause_name,
+            description: subcause.description,
+            img: subcause.img
           });
         }
       });

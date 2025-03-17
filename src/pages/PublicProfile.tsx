@@ -1,13 +1,15 @@
+
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
 import { AllocationsSection } from "@/components/AllocationsSection";
-import { ActiveCampaign } from "@/components/ActiveCampaign";
+import { ActiveCampaignDisplay } from "@/components/ActiveCampaignDisplay";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { HandHeart } from "lucide-react";
+import { ProfileNavigation } from "@/components/ProfileNavigation";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -31,40 +33,79 @@ const PublicProfile = () => {
   return (
     <div className="min-h-screen bg-white">
       <ProfileHero profile={profile} userId={id || ''} />
-
-      {allocations.length > 0 ? (
-        <AllocationsSection allocations={allocations} />
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          No allocations found for this profile.
-        </div>
-      )}
-
-      {!hidePaymentForm && (
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <ProfileNavigation />
+      
+      <div id="about" className="py-12 w-full">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 text-primary mb-2">
               <HandHeart className="w-5 h-5" />
-              <span className="font-medium">Support These Important Causes</span>
+              <span className="font-medium">About</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Make an Impact Today
+              {profile.display_name}
             </h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Your generous donation will directly support the charities and initiatives that matter most.
-            </p>
           </div>
-
-          <ActiveCampaign />
           
-          <PaymentForm 
-            recipientId={id || ''} 
-            recipientName={profile.display_name}
-          />
+          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
+                <p className="text-gray-600">
+                  {profile.bio || "No bio provided"}
+                </p>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Important Causes</h3>
+                <p className="text-gray-600">
+                  {profile.causes_description || "No causes specified"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="allocations">
+        {allocations.length > 0 ? (
+          <AllocationsSection allocations={allocations} />
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No allocations found for this profile.
+          </div>
+        )}
+      </div>
+
+      {/* Display active campaign if available */}
+      <ActiveCampaignDisplay userId={id || ''} />
+
+      {!hidePaymentForm && (
+        <div className="w-full py-16 bg-gradient-to-b from-white to-gray-50">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 text-primary mb-2">
+                <HandHeart className="w-5 h-5" />
+                <span className="font-medium">Support These Important Causes</span>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                Donate Today
+              </h2>
+              <p className="mt-4 text-lg text-gray-600">
+                Your generous donation will directly support the charities and initiatives that matter most to {profile.display_name}.
+              </p>
+            </div>
+            
+            <PaymentForm 
+              recipientId={id || ''} 
+              recipientName={profile.display_name}
+            />
+          </div>
         </div>
       )}
 
-      <PaymentHistory userId={id || ''} />
+      <div id="payment-history" className="py-12">
+        <PaymentHistory userId={id || ''} />
+      </div>
     </div>
   );
 };
