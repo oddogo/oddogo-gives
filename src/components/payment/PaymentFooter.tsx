@@ -15,7 +15,12 @@ export const PaymentFooter: React.FC<PaymentFooterProps> = ({
       Your donation will be processed securely via Stripe.
       <br />
       All payments support {recipientName}&apos;s giving fingerprint.
-      {hasCampaign && <br />Your donation will be linked to this campaign.}
+      {hasCampaign && (
+        <>
+          <br />
+          Your donation will be linked to this campaign.
+        </>
+      )}
     </p>
   );
 };
