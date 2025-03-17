@@ -10,35 +10,44 @@ interface CampaignPaymentWrapperProps {
   recipientName: string;
 }
 
-export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({ 
+export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
   campaignId,
   recipientId,
   recipientName
 }) => {
   const [campaign, setCampaign] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getCampaign = async () => {
       if (!campaignId) return;
       
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('id', campaignId)
-        .single();
-        
-      if (error) {
-        console.error("Error fetching campaign:", error);
-        return;
-      }
+      setLoading(true);
       
-      setCampaign(data);
+      try {
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', campaignId)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching campaign:", error);
+          toast.error("Unable to load campaign details");
+          return;
+        }
+        
+        setCampaign(data);
+      } catch (err) {
+        console.error("Unexpected error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     
     getCampaign();
   }, [campaignId]);
   
-  // Event handler for successful payment - will be used to associate payment with campaign
   const handlePaymentSuccess = async (paymentId: string) => {
     try {
       // Associate payment with campaign
@@ -55,19 +64,27 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
         return;
       }
       
-      toast.success("Payment successfully associated with the campaign!");
+      toast.success("Your donation has been successfully processed and linked to the campaign!");
     } catch (err) {
       console.error("Error in payment success handler:", err);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="animate-pulse p-6">
+        <div className="h-10 bg-gray-200 rounded mb-4"></div>
+        <div className="h-20 bg-gray-200 rounded mb-4"></div>
+      </div>
+    );
+  }
+
   return (
     <PaymentForm 
-      recipientId={recipientId} 
+      recipientId={recipientId}
       recipientName={recipientName}
-      // Since we can't modify PaymentForm directly (it's read-only),
-      // we'll need to work with what's available or implement this
-      // association logic elsewhere
+      campaignId={campaignId}
+      onSuccess={handlePaymentSuccess}
     />
   );
 };

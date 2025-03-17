@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,9 +73,14 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       name: "",
       email: "",
       message: "",
-      campaign_id: campaignId,
+      campaign_id: campaignId || "",
     },
   });
+
+  // Update the campaignId if it changes
+  useEffect(() => {
+    form.setValue("campaign_id", campaignId || "");
+  }, [campaignId, form]);
 
   const onSubmit = async (values: PaymentFormValues) => {
     if (!stripePromise) {
@@ -97,9 +103,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           message: values.message || "",
           recipient_id: recipientId,
           recipient_name: recipientName,
-          campaign_id: values.campaign_id || campaignId,
-          success_url: window.location.href,
-          cancel_url: window.location.href,
+          campaign_id: values.campaign_id || campaignId || "", // Use form value or prop
+          success_url: window.location.origin + "/payment-success",
+          cancel_url: window.location.origin + "/payment-cancelled",
         },
       });
       
@@ -229,7 +235,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <input 
             type="hidden" 
             {...form.register("campaign_id")} 
-            value={campaignId || ""} 
           />
           
           <Button 
@@ -251,6 +256,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             Your donation will be processed securely via Stripe.
             <br />
             All payments support {recipientName}'s giving fingerprint.
+            {campaignId && <br />Your donation will be linked to this campaign.}
           </p>
         </form>
       </Form>
