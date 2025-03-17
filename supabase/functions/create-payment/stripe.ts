@@ -50,20 +50,25 @@ export const createStripeSession = async (
     sessionConfig.customer_email = email;
   }
 
-  const session = await stripe.checkout.sessions.create(sessionConfig);
+  try {
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
-  console.log('Stripe session created:', session.id);
-  console.log('Session metadata:', session.metadata);
-  console.log('Payment intent data:', session.payment_intent);
+    console.log('Stripe session created:', session.id);
+    console.log('Session metadata:', session.metadata);
+    console.log('Payment intent data:', session.payment_intent);
 
-  if (session.payment_intent) {
-    try {
-      await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
-      console.log('Updated payment record with Stripe payment intent ID:', session.payment_intent);
-    } catch (error) {
-      console.error('Failed to update payment record with Stripe ID:', error);
+    if (session.payment_intent) {
+      try {
+        await updatePaymentWithStripeId(payment.id, session.payment_intent as string);
+        console.log('Updated payment record with Stripe payment intent ID:', session.payment_intent);
+      } catch (error) {
+        console.error('Failed to update payment record with Stripe ID:', error);
+      }
     }
-  }
 
-  return session;
+    return session;
+  } catch (stripeError) {
+    console.error('Error creating Stripe session:', stripeError);
+    throw new Error(`Stripe error: ${stripeError.message}`);
+  }
 };

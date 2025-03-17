@@ -8,6 +8,8 @@ const supabaseClient = createClient(
 );
 
 export const createPaymentRecord = async (paymentData: PaymentData) => {
+  console.log('Creating payment record with data:', paymentData);
+  
   const { data: payment, error: paymentError } = await supabaseClient
     .from('stripe_payments')
     .insert([paymentData])
@@ -16,13 +18,15 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
 
   if (paymentError) {
     console.error('Error creating payment record:', paymentError);
-    throw new Error('Failed to create payment record');
+    throw new Error(`Failed to create payment record: ${paymentError.message}`);
   }
 
   return payment;
 };
 
 export const updatePaymentWithStripeId = async (paymentId: string, stripePaymentIntentId: string) => {
+  console.log(`Updating payment ${paymentId} with Stripe payment intent ID: ${stripePaymentIntentId}`);
+  
   const { error: updateError } = await supabaseClient
     .from('stripe_payments')
     .update({ stripe_payment_intent_id: stripePaymentIntentId })
@@ -30,33 +34,59 @@ export const updatePaymentWithStripeId = async (paymentId: string, stripePayment
 
   if (updateError) {
     console.error('Error updating payment record with Stripe ID:', updateError);
-    throw new Error('Failed to update payment record with Stripe session details');
+    throw new Error(`Failed to update payment record with Stripe session details: ${updateError.message}`);
   }
+  
+  console.log(`Successfully updated payment ${paymentId} with Stripe payment intent ID`);
 };
 
 export const getFingerprintId = async (recipientId: string) => {
-  const { data: fingerprint, error: fingerprintError } = await supabaseClient
-    .from('fingerprints_users')
-    .select('fingerprint_id')
-    .eq('user_id', recipientId)
-    .maybeSingle();
+  console.log('Getting fingerprint for recipient ID:', recipientId);
+  
+  try {
+    const { data: fingerprint, error: fingerprintError } = await supabaseClient
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', recipientId)
+      .maybeSingle();
 
-  if (fingerprintError) {
-    console.error('Error fetching fingerprint:', fingerprintError);
-    throw new Error('Failed to fetch recipient fingerprint');
+    if (fingerprintError) {
+      console.error('Error fetching fingerprint:', fingerprintError);
+      throw new Error(`Failed to fetch recipient fingerprint: ${fingerprintError.message}`);
+    }
+
+    if (!fingerprint?.fingerprint_id) {
+      console.error('No fingerprint found for recipient:', recipientId);
+      throw new Error(`No fingerprint found for recipient ID: ${recipientId}`);
+    }
+
+    console.log(`Found fingerprint ID ${fingerprint.fingerprint_id} for recipient ${recipientId}`);
+    return fingerprint.fingerprint_id;
+  } catch (error) {
+    console.error(`Error in getFingerprintId for ${recipientId}:`, error);
+    throw error;
   }
-
-  if (!fingerprint?.fingerprint_id) {
-    console.error('No fingerprint found for recipient:', recipientId);
-    throw new Error('Recipient not found');
-  }
-
-  return fingerprint.fingerprint_id;
 };
 
 export const getUserId = async (authHeader: string | null) => {
-  if (!authHeader) return null;
+  if (!authHeader) {
+    console.log('No auth header provided, proceeding as anonymous');
+    return null;
+  }
   
-  const { data: { user } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
-  return user?.id || null;
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabaseClient.auth.getUser(token);
+    
+    if (error) {
+      console.error('Error getting user from token:', error);
+      return null;
+    }
+    
+    console.log('Retrieved user ID:', user?.id || 'none');
+    return user?.id || null;
+  } catch (error) {
+    console.error('Exception in getUserId:', error);
+    return null;
+  }
 };

@@ -7,6 +7,7 @@ import { createPaymentRecord, getFingerprintId, getUserId } from './db.ts';
 import { createStripeSession } from './stripe.ts';
 
 serve(async (req) => {
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -42,38 +43,46 @@ serve(async (req) => {
     const userId = await getUserId(authHeader);
     console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
 
-    const fingerprintId = await getFingerprintId(recipientId);
-    console.log('Found fingerprint:', fingerprintId);
+    try {
+      const fingerprintId = await getFingerprintId(recipientId);
+      console.log('Found fingerprint:', fingerprintId);
 
-    // Create payment record with fingerprint_id and email
-    const payment = await createPaymentRecord({
-      amount: amountInCents,
-      currency: 'gbp',
-      user_id: userId,
-      fingerprint_id: fingerprintId,
-      status: 'pending',
-      email: email
-    });
-    console.log('Payment record created:', payment.id);
+      // Create payment record with fingerprint_id and email
+      const payment = await createPaymentRecord({
+        amount: amountInCents,
+        currency: 'gbp',
+        user_id: userId,
+        fingerprint_id: fingerprintId,
+        status: 'pending',
+        email: email
+      });
+      console.log('Payment record created:', payment.id);
 
-    const session = await createStripeSession(
-      stripe,
-      amountInCents,
-      origin,
-      payment,
-      recipientId,
-      fingerprintId,
-      userId,
-      email
-    );
+      const session = await createStripeSession(
+        stripe,
+        amountInCents,
+        origin,
+        payment,
+        recipientId,
+        fingerprintId,
+        userId,
+        email
+      );
 
-    return new Response(
-      JSON.stringify({ 
-        url: session.url,
-        paymentId: payment.id 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
+      return new Response(
+        JSON.stringify({ 
+          url: session.url,
+          paymentId: payment.id 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    } catch (innerError) {
+      console.error('Error during fingerprint or payment processing:', innerError);
+      return new Response(
+        JSON.stringify({ error: innerError.message || 'Failed to process payment data' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Payment error:', error);
     return new Response(
