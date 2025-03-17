@@ -15,20 +15,28 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Check if this is a GET request
-  if (req.method !== "GET") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
-  }
-
   try {
-    const url = new URL(req.url);
-    const query = url.searchParams.get("query");
+    // Parse request data
+    let query = "";
+    
+    // Check if this is a POST or GET request and get the query parameter accordingly
+    if (req.method === "POST") {
+      // For POST requests, extract query from the request body
+      const body = await req.json();
+      query = body.query || "";
+    } else if (req.method === "GET") {
+      // For GET requests, extract query from URL parameters
+      const url = new URL(req.url);
+      query = url.searchParams.get("query") || "";
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
 
     if (!query) {
       return new Response(
@@ -59,6 +67,9 @@ serve(async (req) => {
     searchUrl.searchParams.append("per_page", "12");
     searchUrl.searchParams.append("orientation", "landscape");
 
+    // Add some debugging logs
+    console.log(`Searching Unsplash for: ${query}`);
+
     // Make the request to Unsplash API
     const response = await fetch(searchUrl.toString(), {
       headers: {
@@ -71,6 +82,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log(`Found ${data.results?.length || 0} results`);
 
     return new Response(
       JSON.stringify(data),

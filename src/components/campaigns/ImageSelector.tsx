@@ -120,8 +120,9 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
       setIsSearching(true);
       
       // Use Supabase Edge Function to proxy the Unsplash API request
+      // Fix: Pass the query parameter using the correct structure for FunctionInvokeOptions
       const { data, error } = await supabase.functions.invoke("unsplash-search", {
-        query: { query: searchTerm }
+        body: { query: searchTerm }
       });
       
       if (error) {
