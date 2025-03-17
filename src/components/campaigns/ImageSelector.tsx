@@ -119,15 +119,16 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
     try {
       setIsSearching(true);
       
-      // We'll use a proxy via edge function since we don't want to expose API keys in the frontend
-      const response = await fetch(`/api/unsplash-search?query=${encodeURIComponent(searchTerm)}`);
+      // Use Supabase Edge Function to proxy the Unsplash API request
+      const { data, error } = await supabase.functions.invoke("unsplash-search", {
+        query: { query: searchTerm }
+      });
       
-      if (!response.ok) {
-        throw new Error("Failed to search for images");
+      if (error) {
+        throw new Error(error.message || "Failed to search for images");
       }
       
-      const data = await response.json();
-      setSearchResults(data.results || []);
+      setSearchResults(data?.results || []);
     } catch (error: any) {
       console.error("Error searching Unsplash:", error);
       toast({
