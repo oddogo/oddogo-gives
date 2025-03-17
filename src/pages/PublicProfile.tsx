@@ -6,7 +6,7 @@ import { AllocationsSection } from "@/components/AllocationsSection";
 import { ActiveCampaignDisplay } from "@/components/ActiveCampaignDisplay";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
-import { CampaignPaymentWrapper } from "@/components/campaigns/CampaignPaymentWrapper"; 
+import { PaymentForm } from "@/components/PaymentForm";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { HandHeart } from "lucide-react";
 
@@ -59,10 +59,9 @@ const PublicProfile = () => {
             </p>
           </div>
           
-          <CampaignPaymentWrapper
-            recipientId={id || ''}
+          <PaymentForm 
+            recipientId={id || ''} 
             recipientName={profile.display_name}
-            campaignId=""
           />
         </div>
       )}
