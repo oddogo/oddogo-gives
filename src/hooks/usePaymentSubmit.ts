@@ -51,7 +51,7 @@ export const usePaymentSubmit = ({
           recipient_id: recipientId,
           recipient_name: recipientName,
           campaign_id: values.campaign_id || campaignId || "",
-          success_url: window.location.origin + "/payment-success",
+          success_url: window.location.origin + "/payment-success?recipient_id=" + recipientId,
           cancel_url: window.location.origin + "/payment-cancelled",
         },
       });
@@ -59,13 +59,15 @@ export const usePaymentSubmit = ({
       if (error) {
         console.error("Payment service error:", error);
         setPaymentError(error.message || "Payment service error");
-        throw new Error(error.message);
+        toast.error("Payment service error");
+        return;
       }
       
       if (!data?.sessionId) {
         console.error("Missing session ID in response");
         setPaymentError("Could not create payment session");
-        throw new Error("Failed to create checkout session");
+        toast.error("Payment session creation failed");
+        return;
       }
       
       const stripe = await stripePromise;
@@ -76,11 +78,11 @@ export const usePaymentSubmit = ({
       if (stripeError) {
         console.error("Stripe redirect error:", stripeError);
         setPaymentError(stripeError.message || "Payment redirect failed");
-        throw new Error(stripeError.message);
+        toast.error("Payment redirect failed");
       }
       
-      if (data.paymentId && onSuccess) {
-        onSuccess(data.paymentId);
+      if (onSuccess) {
+        onSuccess(data.sessionId);
       }
       
     } catch (error: any) {
