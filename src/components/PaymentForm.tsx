@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +48,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const [stripePromise, setStripePromise] = useState<any>(null);
 
   useEffect(() => {
-    // Initialize Stripe
     const initializeStripe = async () => {
       const { data, error } = await supabase.functions.invoke('get-stripe-key');
       
@@ -77,7 +75,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     },
   });
 
-  // Update the campaignId if it changes
   useEffect(() => {
     form.setValue("campaign_id", campaignId || "");
   }, [campaignId, form]);
@@ -91,10 +88,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     try {
       setIsSubmitting(true);
       
-      // Convert amount to cents for Stripe
       const amountInCents = Math.round(values.amount * 100);
       
-      // Create checkout session
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           amount: amountInCents,
@@ -103,7 +98,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           message: values.message || "",
           recipient_id: recipientId,
           recipient_name: recipientName,
-          campaign_id: values.campaign_id || campaignId || "", // Use form value or prop
+          campaign_id: values.campaign_id || campaignId || "",
           success_url: window.location.origin + "/payment-success",
           cancel_url: window.location.origin + "/payment-cancelled",
         },
@@ -117,7 +112,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error("Failed to create checkout session");
       }
       
-      // Redirect to Stripe Checkout
       const stripe = await stripePromise;
       const { error: stripeError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
@@ -127,7 +121,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error(stripeError.message);
       }
       
-      // If payment is successful and we have a payment ID and onSuccess callback
       if (data.paymentId && onSuccess) {
         onSuccess(data.paymentId);
       }
@@ -231,7 +224,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             )}
           />
           
-          {/* Hidden field for campaign_id */}
           <input 
             type="hidden" 
             {...form.register("campaign_id")} 
