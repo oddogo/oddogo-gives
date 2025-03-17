@@ -17,11 +17,10 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Received payment request data:', requestData);
     
-    const { amount, email, name, message, recipient_id, recipient_name, campaign_id, success_url, cancel_url } = requestData;
-    
-    if (!amount || !email || !name || !recipient_id || !success_url || !cancel_url) {
+    const validation = validatePaymentRequest(requestData);
+    if (!validation.isValid) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: validation.error }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -33,33 +32,32 @@ serve(async (req) => {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: campaign_id 
-                ? `Donation to ${recipient_name}'s campaign`
-                : `Donation to ${recipient_name}`,
-              description: message ? `Message: ${message}` : undefined,
+              name: requestData.campaign_id 
+                ? `Donation to ${requestData.recipient_name}'s campaign`
+                : `Donation to ${requestData.recipient_name}`,
+              description: requestData.message ? `Message: ${requestData.message}` : undefined,
             },
-            unit_amount: amount,
+            unit_amount: requestData.amount,
           },
           quantity: 1,
         },
       ],
-      customer_email: email,
-      client_reference_id: recipient_id,
+      customer_email: requestData.email,
+      client_reference_id: requestData.recipient_id,
       metadata: {
-        name,
-        recipient_id,
-        recipient_name,
-        campaign_id: campaign_id || '',
-        message: message || '',
+        name: requestData.name,
+        recipient_id: requestData.recipient_id,
+        recipient_name: requestData.recipient_name,
+        campaign_id: requestData.campaign_id || '',
+        message: requestData.message || '',
       },
       mode: 'payment',
-      success_url: success_url,
-      cancel_url: cancel_url,
+      success_url: requestData.success_url,
+      cancel_url: requestData.cancel_url,
     });
     
     console.log('Created checkout session:', session.id);
 
-    // Return the session ID to the client
     return new Response(
       JSON.stringify({ sessionId: session.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
