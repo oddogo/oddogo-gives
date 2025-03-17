@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      BACKUP_charities_charities: {
+        Row: {
+          address_city: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          address_line_3: string | null
+          address_postcode: string | null
+          charity_base_id: number | null
+          charity_name: string
+          company_id: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          registered_number: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          address_line_3?: string | null
+          address_postcode?: string | null
+          charity_base_id?: number | null
+          charity_name: string
+          company_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          registered_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          address_line_3?: string | null
+          address_postcode?: string | null
+          charity_base_id?: number | null
+          charity_name?: string
+          company_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          registered_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       banking_natwest_bank_statements: {
         Row: {
           account_name: string | null
@@ -45,6 +96,107 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_payments: {
+        Row: {
+          assigned_by: string | null
+          campaign_id: string
+          created_at: string
+          id: string
+          payment_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          campaign_id: string
+          created_at?: string
+          id?: string
+          payment_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_payments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_payments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_campaign_statistics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_payments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "stripe_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_payments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "v_stripe_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          current_amount: number
+          description: string | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          slug: string | null
+          status: string
+          target_amount: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          slug?: string | null
+          status?: string
+          target_amount: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          slug?: string | null
+          status?: string
+          target_amount?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       charities_charities: {
         Row: {
           address_city: string | null
@@ -58,6 +210,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          introduction: string | null
           registered_number: string | null
           updated_at: string | null
           website: string | null
@@ -74,6 +227,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          introduction?: string | null
           registered_number?: string | null
           updated_at?: string | null
           website?: string | null
@@ -90,57 +244,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
-          registered_number?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Relationships: []
-      }
-      charities_charities_BACKUP: {
-        Row: {
-          address_city: string | null
-          address_line_1: string | null
-          address_line_2: string | null
-          address_line_3: string | null
-          address_postcode: string | null
-          charity_base_id: number | null
-          charity_name: string
-          company_id: string | null
-          created_at: string
-          deleted_at: string | null
-          id: string
-          registered_number: string | null
-          updated_at: string | null
-          website: string | null
-        }
-        Insert: {
-          address_city?: string | null
-          address_line_1?: string | null
-          address_line_2?: string | null
-          address_line_3?: string | null
-          address_postcode?: string | null
-          charity_base_id?: number | null
-          charity_name: string
-          company_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          registered_number?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Update: {
-          address_city?: string | null
-          address_line_1?: string | null
-          address_line_2?: string | null
-          address_line_3?: string | null
-          address_postcode?: string | null
-          charity_base_id?: number | null
-          charity_name?: string
-          company_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
+          introduction?: string | null
           registered_number?: string | null
           updated_at?: string | null
           website?: string | null
@@ -229,13 +333,6 @@ export type Database = {
             foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
             columns: ["sub_cause_id"]
             isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
-            columns: ["sub_cause_id"]
-            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["subcause_id"]
           },
@@ -243,7 +340,7 @@ export type Database = {
             foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
             columns: ["sub_cause_id"]
             isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
+            referencedRelation: "v_charities_subcauses_all"
             referencedColumns: ["id"]
           },
           {
@@ -252,13 +349,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "charities_charity_causes"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "charity_featured_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["cause_id"]
           },
           {
             foreignKeyName: "charity_featured_cause_id_fkey"
@@ -280,6 +370,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charity_featured_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -321,6 +418,7 @@ export type Database = {
           contact_number: string | null
           created_at: string
           end_date: string | null
+          id: number
           payment_details_ref: string | null
           start_date: string | null
           updated_at: string | null
@@ -332,6 +430,7 @@ export type Database = {
           contact_number?: string | null
           created_at?: string
           end_date?: string | null
+          id?: number
           payment_details_ref?: string | null
           start_date?: string | null
           updated_at?: string | null
@@ -343,6 +442,7 @@ export type Database = {
           contact_number?: string | null
           created_at?: string
           end_date?: string | null
+          id?: number
           payment_details_ref?: string | null
           start_date?: string | null
           updated_at?: string | null
@@ -351,16 +451,23 @@ export type Database = {
           {
             foreignKeyName: "charity_partners_charity_id_fkey"
             columns: ["charity_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "charities_charities"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "charity_partners_charity_id_fkey"
             columns: ["charity_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charity_partners_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -457,6 +564,13 @@ export type Database = {
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
           },
+          {
+            foreignKeyName: "charity_spotlight_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       charities_charity_sub_causes: {
@@ -491,6 +605,64 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      charities_crm_contact_log: {
+        Row: {
+          added_by: string | null
+          charity_id: string | null
+          created_at: string
+          date: string | null
+          follow_up: string | null
+          id: number
+          note: string | null
+          subject: string | null
+          type: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          charity_id?: string | null
+          created_at?: string
+          date?: string | null
+          follow_up?: string | null
+          id?: number
+          note?: string | null
+          subject?: string | null
+          type?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          charity_id?: string | null
+          created_at?: string
+          date?: string | null
+          follow_up?: string | null
+          id?: number
+          note?: string | null
+          subject?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charities_crm_contact_log_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charities_crm_contact_log_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charities_crm_contact_log_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       charities_meta: {
         Row: {
@@ -592,18 +764,18 @@ export type Database = {
             referencedColumns: ["charity_id"]
           },
           {
-            foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
-            columns: ["subcause_id"]
+            foreignKeyName: "charities_subcauses_charity_id_fkey"
+            columns: ["charity_id"]
             isOneToOne: false
-            referencedRelation: "charities_charity_sub_causes"
+            referencedRelation: "v_charities_list"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
             columns: ["subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
+            referencedRelation: "charities_charity_sub_causes"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
@@ -616,7 +788,7 @@ export type Database = {
             foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
             columns: ["subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
+            referencedRelation: "v_charities_subcauses_all"
             referencedColumns: ["id"]
           },
         ]
@@ -714,6 +886,13 @@ export type Database = {
             referencedColumns: ["charity_id"]
           },
           {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_allocation_meta"
             columns: ["allocation_meta_id"]
             isOneToOne: false
@@ -745,13 +924,6 @@ export type Database = {
             foreignKeyName: "fk_allocation_subcause"
             columns: ["allocation_subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fk_allocation_subcause"
-            columns: ["allocation_subcause_id"]
-            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["subcause_id"]
           },
@@ -759,7 +931,7 @@ export type Database = {
             foreignKeyName: "fk_allocation_subcause"
             columns: ["allocation_subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
+            referencedRelation: "v_charities_subcauses_all"
             referencedColumns: ["id"]
           },
         ]
@@ -1108,186 +1280,6 @@ export type Database = {
         }
         Relationships: []
       }
-      old_fingerprint_live: {
-        Row: {
-          allocation_percentage: number
-          cause_id: number | null
-          charity_id: string | null
-          created_at: string
-          deleted_at: string | null
-          id: string
-          submitted_at: string | null
-          user_id: string
-        }
-        Insert: {
-          allocation_percentage: number
-          cause_id?: number | null
-          charity_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          submitted_at?: string | null
-          user_id: string
-        }
-        Update: {
-          allocation_percentage?: number
-          cause_id?: number | null
-          charity_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          submitted_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charity_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["charity_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_donors_list"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      old_fingerprint_temp: {
-        Row: {
-          allocation_percentage: number
-          cause_id: number | null
-          charity_id: string | null
-          created_at: string
-          deleted_at: string | null
-          id: number
-          submitted_at: string | null
-          user_id: string
-        }
-        Insert: {
-          allocation_percentage: number
-          cause_id?: number | null
-          charity_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: number
-          submitted_at?: string | null
-          user_id: string
-        }
-        Update: {
-          allocation_percentage?: number
-          cause_id?: number | null
-          charity_id?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          id?: number
-          submitted_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charity_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["charity_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_donors_list"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       processes_categories: {
         Row: {
           archived_at: string | null
@@ -1603,43 +1595,26 @@ export type Database = {
       }
     }
     Views: {
-      v_active_causes_with_subcauses: {
+      v_campaign_statistics: {
         Row: {
-          cause_description: string | null
-          cause_id: number | null
-          cause_img: string | null
-          cause_name: string | null
-          subcause_description: string | null
-          subcause_id: number | null
-          subcause_img: string | null
-          subcause_name: string | null
+          created_at: string | null
+          creator_avatar: string | null
+          creator_name: string | null
+          current_amount: number | null
+          description: string | null
+          donation_count: number | null
+          end_date: string | null
+          id: string | null
+          image_url: string | null
+          slug: string | null
+          status: string | null
+          target_amount: number | null
+          title: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
         }
         Relationships: []
-      }
-      v_active_partner_charities: {
-        Row: {
-          charity_id: string | null
-          charity_name: string | null
-          end_date: string | null
-          registered_number: string | null
-          start_date: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "charity_partners_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: true
-            referencedRelation: "charities_charities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "charity_partners_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: true
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["charity_id"]
-          },
-        ]
       }
       v_charities_by_subcause: {
         Row: {
@@ -1715,13 +1690,6 @@ export type Database = {
             foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
             columns: ["sub_cause_id"]
             isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
-            columns: ["sub_cause_id"]
-            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["subcause_id"]
           },
@@ -1729,7 +1697,7 @@ export type Database = {
             foreignKeyName: "charities_charity_featured_sub_cause_id_fkey"
             columns: ["sub_cause_id"]
             isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
+            referencedRelation: "v_charities_subcauses_all"
             referencedColumns: ["id"]
           },
           {
@@ -1738,13 +1706,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "charities_charity_causes"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "charity_featured_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["cause_id"]
           },
           {
             foreignKeyName: "charity_featured_cause_id_fkey"
@@ -1767,6 +1728,57 @@ export type Database = {
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
           },
+          {
+            foreignKeyName: "charity_featured_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_charities_list: {
+        Row: {
+          address_city: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          address_line_3: string | null
+          address_postcode: string | null
+          charity_base_id: number | null
+          charity_name: string | null
+          company_id: string | null
+          created_at: string | null
+          deleted_at: string | null
+          featured_status: string | null
+          id: string | null
+          introduction: string | null
+          meta_names: string[] | null
+          partner_status: string | null
+          region_names: string[] | null
+          registered_number: string | null
+          spotlight_status: string | null
+          subcause_names: string[] | null
+          updated_at: string | null
+          website: string | null
+        }
+        Relationships: []
+      }
+      v_charities_meta: {
+        Row: {
+          charities_id: string | null
+          created_at: string | null
+          id: number | null
+          meta_id: number | null
+          meta_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charities_meta_meta_id_fkey"
+            columns: ["meta_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_metadata"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_charities_partner_charities: {
@@ -1778,24 +1790,58 @@ export type Database = {
           contact_number: string | null
           created_at: string | null
           end_date: string | null
+          id: number | null
           payment_details_ref: string | null
           start_date: string | null
+          status: string | null
           updated_at: string | null
         }
         Relationships: [
           {
             foreignKeyName: "charity_partners_charity_id_fkey"
             columns: ["charity_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "charities_charities"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "charity_partners_charity_id_fkey"
             columns: ["charity_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charity_partners_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_charities_regions: {
+        Row: {
+          charities_id: string | null
+          created_at: string | null
+          id: number | null
+          region_id: number | null
+          region_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charities_regions_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charities_regions_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_regions_spotlight"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1827,6 +1873,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charity_spotlight_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1874,9 +1927,70 @@ export type Database = {
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["charity_id"]
           },
+          {
+            foreignKeyName: "charity_spotlight_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      v_charities_sub_causes: {
+      v_charities_subcauses: {
+        Row: {
+          cause_name: string | null
+          charity_id: string | null
+          created_at: string | null
+          id: number | null
+          subcause_id: number | null
+          subcause_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charities_subcauses_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charities_subcauses_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["charity_id"]
+          },
+          {
+            foreignKeyName: "charities_subcauses_charity_id_fkey"
+            columns: ["charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
+            columns: ["subcause_id"]
+            isOneToOne: false
+            referencedRelation: "charities_charity_sub_causes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
+            columns: ["subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_by_subcause"
+            referencedColumns: ["subcause_id"]
+          },
+          {
+            foreignKeyName: "charities_subcauses_sub_cause_id_fkey"
+            columns: ["subcause_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_subcauses_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_charities_subcauses_all: {
         Row: {
           cause_id: number | null
           cause_name: string | null
@@ -1899,148 +2013,6 @@ export type Database = {
           last_sign_in_at: string | null
         }
         Relationships: []
-      }
-      v_fingerprint_live: {
-        Row: {
-          allocation_percentage: number | null
-          cause_id: number | null
-          cause_name: string | null
-          charity_id: string | null
-          charity_name: string | null
-          created_at: string | null
-          id: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charity_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["charity_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_live_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_donors_list"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_fingerprint_temp: {
-        Row: {
-          allocation_percentage: number | null
-          cause_id: number | null
-          cause_name: string | null
-          charity_id: string | null
-          charity_name: string | null
-          created_at: string | null
-          deleted_at: string | null
-          id: number | null
-          submitted_at: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charity_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_cause_id_fkey"
-            columns: ["cause_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "charities_charities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_charity_id_fkey"
-            columns: ["charity_id"]
-            isOneToOne: false
-            referencedRelation: "v_charities_by_subcause"
-            referencedColumns: ["charity_id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fingerprint_temp_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_donors_list"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       v_fingerprints_live: {
         Row: {
@@ -2098,6 +2070,13 @@ export type Database = {
             referencedColumns: ["charity_id"]
           },
           {
+            foreignKeyName: "fk_allocation_charity"
+            columns: ["allocation_charity_id"]
+            isOneToOne: false
+            referencedRelation: "v_charities_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_allocation_meta"
             columns: ["allocation_meta_id"]
             isOneToOne: false
@@ -2129,13 +2108,6 @@ export type Database = {
             foreignKeyName: "fk_allocation_subcause"
             columns: ["allocation_subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_active_causes_with_subcauses"
-            referencedColumns: ["subcause_id"]
-          },
-          {
-            foreignKeyName: "fk_allocation_subcause"
-            columns: ["allocation_subcause_id"]
-            isOneToOne: false
             referencedRelation: "v_charities_by_subcause"
             referencedColumns: ["subcause_id"]
           },
@@ -2143,7 +2115,7 @@ export type Database = {
             foreignKeyName: "fk_allocation_subcause"
             columns: ["allocation_subcause_id"]
             isOneToOne: false
-            referencedRelation: "v_charities_sub_causes"
+            referencedRelation: "v_charities_subcauses_all"
             referencedColumns: ["id"]
           },
         ]
