@@ -65,9 +65,8 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
     <PaymentForm 
       recipientId={recipientId} 
       recipientName={recipientName}
-      // Since we can't modify PaymentForm directly (it's read-only),
-      // we'll need to work with what's available or implement this
-      // association logic elsewhere
+      campaignId={campaignId}
+      onSuccess={handlePaymentSuccess}
     />
   );
 };

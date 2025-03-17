@@ -48,7 +48,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const [stripePromise, setStripePromise] = useState<any>(null);
 
   useEffect(() => {
-    // Initialize Stripe
     const initializeStripe = async () => {
       const { data, error } = await supabase.functions.invoke('get-stripe-key');
       
@@ -72,9 +71,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       name: "",
       email: "",
       message: "",
-      campaign_id: campaignId,
+      campaign_id: campaignId || "",
     },
   });
+
+  useEffect(() => {
+    form.setValue("campaign_id", campaignId || "");
+  }, [campaignId, form]);
 
   const onSubmit = async (values: PaymentFormValues) => {
     if (!stripePromise) {
@@ -85,10 +88,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     try {
       setIsSubmitting(true);
       
-      // Convert amount to cents for Stripe
       const amountInCents = Math.round(values.amount * 100);
       
-      // Create checkout session
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           amount: amountInCents,
@@ -111,7 +112,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error("Failed to create checkout session");
       }
       
-      // Redirect to Stripe Checkout
       const stripe = await stripePromise;
       const { error: stripeError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
@@ -121,7 +121,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error(stripeError.message);
       }
       
-      // If payment is successful and we have a payment ID and onSuccess callback
       if (data.paymentId && onSuccess) {
         onSuccess(data.paymentId);
       }
@@ -225,11 +224,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             )}
           />
           
-          {/* Hidden field for campaign_id */}
           <input 
             type="hidden" 
             {...form.register("campaign_id")} 
-            value={campaignId || ""} 
           />
           
           <Button 
@@ -250,7 +247,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <p className="text-xs text-center text-gray-500 mt-4">
             Your donation will be processed securely via Stripe.
             <br />
-            All payments support {recipientName}'s giving fingerprint.
+            All payments support {recipientName}&apos;s giving fingerprint.
+            {campaignId && <br />Your donation will be linked to this campaign.}
           </p>
         </form>
       </Form>
