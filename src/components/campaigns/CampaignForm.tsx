@@ -26,6 +26,7 @@ import {
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Campaign } from "@/types/campaign";
+import { ImageSelector } from "./ImageSelector";
 
 const campaignFormSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -68,6 +69,14 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
     resolver: zodResolver(campaignFormSchema),
     defaultValues,
   });
+
+  // Set image URL from ImageSelector component
+  const handleImageSelected = (url: string) => {
+    form.setValue("image_url", url || null, { 
+      shouldValidate: true,
+      shouldDirty: true
+    });
+  };
 
   const onSubmit = async (values: CampaignFormValues) => {
     try {
@@ -162,6 +171,24 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
           )}
         />
         
+        {/* Image selection field */}
+        <FormField
+          control={form.control}
+          name="image_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Campaign Image</FormLabel>
+              <FormControl>
+                <ImageSelector 
+                  imageUrl={field.value || null} 
+                  onImageSelected={handleImageSelected}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -222,24 +249,6 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
             )}
           />
         </div>
-        
-        <FormField
-          control={form.control}
-          name="image_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cover Image URL (Optional)</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         
         <div className="flex justify-end gap-3">
           <Button
