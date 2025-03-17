@@ -20,13 +20,13 @@ export const useCausesAndSubcauses = () => {
       // Query the actual available tables instead of using the view
       const { data: causesData, error: causesError } = await supabase
         .from('charities_charity_causes')
-        .select('id, cause_name, description as cause_description, img as cause_img');
+        .select('id, cause_name, description, img');
       
       if (causesError) throw causesError;
       
       const { data: subcausesData, error: subcausesError } = await supabase
         .from('charities_charity_sub_causes')
-        .select('id as subcause_id, cause_id, subcause_name, description as subcause_description, img as subcause_img');
+        .select('id, cause_id, subcause_name, description, img');
       
       if (subcausesError) throw subcausesError;
       
@@ -38,8 +38,8 @@ export const useCausesAndSubcauses = () => {
         causesMap.set(cause.id, {
           id: cause.id,
           name: cause.cause_name,
-          description: cause.cause_description,
-          img: cause.cause_img,
+          description: cause.description,
+          img: cause.img,
           subcauses: []
         });
       });
@@ -49,10 +49,10 @@ export const useCausesAndSubcauses = () => {
         const cause = causesMap.get(subcause.cause_id);
         if (cause) {
           cause.subcauses.push({
-            id: subcause.subcause_id,
+            id: subcause.id,
             name: subcause.subcause_name,
-            description: subcause.subcause_description,
-            img: subcause.subcause_img
+            description: subcause.description,
+            img: subcause.img
           });
         }
       });
