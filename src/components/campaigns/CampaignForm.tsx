@@ -84,7 +84,14 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
       const amountInCents = Math.round(values.target_amount * 100);
       
       // Get the current user
-      const { data: { user }} = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error("Authentication error:", authError);
+        toast.error("Authentication error. Please try logging in again.");
+        navigate("/auth");
+        return;
+      }
+      
       if (!user) {
         toast.error("You must be logged in to create a campaign");
         navigate("/auth");
@@ -117,7 +124,7 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
           
         if (error) {
           console.error("Database error:", error);
-          throw error;
+          throw new Error(error.message || "Error updating campaign");
         }
         
         console.log("Campaign updated successfully:", data);
@@ -132,7 +139,7 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
           
         if (error) {
           console.error("Database error:", error);
-          throw error;
+          throw new Error(error.message || "Error creating campaign");
         }
         
         console.log("Campaign created successfully:", data);

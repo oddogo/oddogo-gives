@@ -1,25 +1,11 @@
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Search, Upload, Link, X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface UnsplashImage {
-  id: string;
-  urls: {
-    regular: string;
-    small: string;
-    thumb: string;
-  };
-  user: {
-    name: string;
-  };
-  alt_description: string;
-}
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2, Upload, Search, X } from "lucide-react";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ImageSelectorProps {
   imageUrl: string | null;
@@ -27,310 +13,229 @@ interface ImageSelectorProps {
 }
 
 export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps) => {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<UnsplashImage[]>([]);
-  const [selectedUnsplashImage, setSelectedUnsplashImage] = useState<UnsplashImage | null>(null);
-  const [manualUrl, setManualUrl] = useState(imageUrl || "");
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("upload");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  // Preview the currently selected image (either from URL or file)
+  const imagePreview = imageUrl || (selectedFile ? URL.createObjectURL(selectedFile) : null);
+
+  // Clean up object URL when component unmounts or URL changes
+  useEffect(() => {
+    return () => {
+      if (selectedFile) URL.revokeObjectURL(URL.createObjectURL(selectedFile));
+    };
+  }, [selectedFile, imageUrl]);
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      // Clear any existing image URL
+      if (imageUrl) onImageSelected("");
+    }
+  };
 
   // Handle file upload to Supabase storage
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    
-    // Check file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Image must be less than 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleUpload = async () => {
+    if (!selectedFile) return;
 
     try {
-      setIsUploading(true);
+      setUploading(true);
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "You must be logged in to upload images.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Generate a unique filename with original extension
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
       
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      
-      // Upload the file
       const { data, error } = await supabase.storage
         .from('campaign-images')
-        .upload(fileName, file);
-      
+        .upload(fileName, selectedFile);
+
       if (error) {
-        console.error("Storage error details:", error);
-        if (error.message.includes("bucket not found")) {
-          toast({
-            title: "Storage not configured",
-            description: "The storage bucket is not available. Please contact the administrator.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
+        console.error("Error uploading image:", error);
+        toast.error(`Upload failed: ${error.message}`);
+        setUploading(false);
         return;
       }
       
-      // Get the public URL
+      // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('campaign-images')
-        .getPublicUrl(data.path);
+        .getPublicUrl(fileName);
       
-      // Call the callback with the image URL
       onImageSelected(publicUrl);
-      
-      toast({
-        title: "Image uploaded",
-        description: "Your image has been uploaded successfully.",
-      });
+      setSelectedFile(null);
+      toast.success("Image uploaded successfully");
     } catch (error: any) {
-      console.error("Error uploading image:", error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error in upload process:", error);
+      toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsUploading(false);
+      setUploading(false);
     }
   };
 
-  // Search for images on Unsplash
-  const searchUnsplash = async () => {
-    if (!searchTerm.trim()) return;
+  // Handle image search using Unsplash
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
     
     try {
-      setIsSearching(true);
+      setSearching(true);
       setSearchResults([]);
       
-      console.log("Searching Unsplash for:", searchTerm);
-      
-      // Use Supabase Edge Function to proxy the Unsplash API request
-      const { data, error } = await supabase.functions.invoke("unsplash-search", {
-        body: { query: searchTerm }
+      const response = await supabase.functions.invoke('unsplash-search', {
+        body: { query: searchQuery.trim() },
       });
       
-      console.log("Unsplash search response:", { data, error });
-      
-      if (error) {
-        throw new Error(error.message || "Failed to search for images");
+      if (response.error) {
+        console.error("Search error:", response.error);
+        toast.error(`Search failed: ${response.error.message || 'Unknown error'}`);
+        return;
       }
       
-      if (!data || !Array.isArray(data.results)) {
-        console.error("Invalid response format:", data);
-        throw new Error("Invalid response from image search");
-      }
-      
-      setSearchResults(data.results || []);
+      setSearchResults(response.data?.results || []);
     } catch (error: any) {
-      console.error("Error searching Unsplash:", error);
-      toast({
-        title: "Search failed",
-        description: error.message || "Failed to search for images. Please try again.",
-        variant: "destructive",
-      });
-      // Set empty results on error
-      setSearchResults([]);
+      console.error("Error in search process:", error);
+      toast.error(`Search failed: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsSearching(false);
+      setSearching(false);
     }
   };
 
-  // Select an image from Unsplash search results
-  const selectUnsplashImage = (image: UnsplashImage) => {
-    setSelectedUnsplashImage(image);
-    onImageSelected(image.urls.regular);
-  };
-
-  // Apply the manual URL
-  const applyManualUrl = () => {
-    if (!manualUrl.trim()) return;
-    onImageSelected(manualUrl);
+  // Handle selecting an image from search results
+  const selectSearchResult = (imageUrl: string) => {
+    onImageSelected(imageUrl);
+    setSearchResults([]);
+    setSearchQuery("");
   };
 
   // Clear the current image
   const clearImage = () => {
     onImageSelected("");
-    setManualUrl("");
-    setSelectedUnsplashImage(null);
+    setSelectedFile(null);
   };
 
   return (
     <div className="space-y-4">
-      {/* Preview of the selected image */}
-      {imageUrl && (
+      {/* Image preview */}
+      {imagePreview && (
         <div className="relative">
           <img 
-            src={imageUrl} 
-            alt="Campaign cover" 
-            className="w-full h-64 object-cover rounded-md border border-white/10" 
+            src={imagePreview} 
+            alt="Selected" 
+            className="w-full h-48 object-cover rounded-md" 
           />
           <Button 
             variant="destructive" 
-            size="icon"
+            size="icon" 
             className="absolute top-2 right-2"
             onClick={clearImage}
           >
-            <X size={16} />
+            <X className="h-4 w-4" />
           </Button>
         </div>
       )}
-      
-      {/* Image selection tabs */}
-      <Tabs 
-        defaultValue={activeTab} 
-        onValueChange={setActiveTab}
-        className="w-full"
-      >
-        <TabsList className="grid grid-cols-3 w-full">
-          <TabsTrigger value="upload">
-            <Upload size={16} className="mr-2" />
-            Upload
-          </TabsTrigger>
-          <TabsTrigger value="search">
-            <Search size={16} className="mr-2" />
-            Search
-          </TabsTrigger>
-          <TabsTrigger value="url">
-            <Link size={16} className="mr-2" />
-            URL
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Upload tab */}
-        <TabsContent value="upload" className="space-y-4">
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="picture">Upload Image</Label>
+
+      {/* Upload section */}
+      {!imagePreview && (
+        <div className="space-y-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-primary transition-colors">
             <Input 
-              id="picture" 
               type="file" 
+              id="image-upload" 
               accept="image/*"
-              onChange={handleFileUpload}
-              disabled={isUploading}
+              onChange={handleFileChange}
+              className="hidden"
             />
-            {isUploading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Uploading...
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        {/* Search tab */}
-        <TabsContent value="search" className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Search for images..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  searchUnsplash();
-                }
-              }}
-            />
-            <Button 
-              onClick={searchUnsplash}
-              disabled={isSearching || !searchTerm.trim()}
-            >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search size={16} />
-              )}
-            </Button>
+            <label htmlFor="image-upload" className="cursor-pointer">
+              <Upload className="mx-auto h-10 w-10 text-gray-400" />
+              <p className="mt-2 text-sm font-medium">Click to upload an image</p>
+              <p className="text-xs text-gray-400 mt-1">PNG, JPG or WEBP (max 5MB)</p>
+            </label>
           </div>
           
-          {isSearching && (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          {selectedFile && (
+            <div className="flex justify-center">
+              <Button 
+                onClick={handleUpload} 
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  'Upload'
+                )}
+              </Button>
             </div>
           )}
-          
-          {!isSearching && searchResults.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1">
-              {searchResults.map((image) => (
-                <div 
-                  key={image.id}
-                  onClick={() => selectUnsplashImage(image)}
-                  className={`relative cursor-pointer rounded-md overflow-hidden border-2 hover:opacity-90 transition-all ${
-                    selectedUnsplashImage?.id === image.id 
-                      ? "border-primary" 
-                      : "border-transparent"
-                  }`}
+
+          {/* Search section */}
+          <div className="mt-6">
+            <p className="text-sm font-medium mb-2">Or search for free images</p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Search for images..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <Button 
+                onClick={handleSearch}
+                disabled={!searchQuery.trim() || searching}
+              >
+                {searching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search results */}
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          {searchResults.map((result, index) => (
+            <div 
+              key={index} 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => selectSearchResult(result.urls.regular)}
+            >
+              <img 
+                src={result.urls.small} 
+                alt={result.alt_description || "Unsplash image"} 
+                className="w-full h-32 object-cover rounded-md"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Photo by <a 
+                  href={`https://unsplash.com/@${result.user.username}?utm_source=campaign_app&utm_medium=referral`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <img 
-                    src={image.urls.small} 
-                    alt={image.alt_description || "Unsplash image"} 
-                    className="w-full h-32 object-cover"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1">
-                    Photo by {image.user.name}
-                  </div>
-                </div>
-              ))}
+                  {result.user.name}
+                </a> on <a 
+                  href="https://unsplash.com/?utm_source=campaign_app&utm_medium=referral"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Unsplash
+                </a>
+              </p>
             </div>
-          )}
-          
-          {!isSearching && searchResults.length === 0 && searchTerm && (
-            <div className="text-center py-4 text-muted-foreground">
-              No images found. Try a different search term.
-            </div>
-          )}
-        </TabsContent>
-        
-        {/* URL tab */}
-        <TabsContent value="url" className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="https://example.com/image.jpg"
-              value={manualUrl}
-              onChange={(e) => setManualUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  applyManualUrl();
-                }
-              }}
-            />
-            <Button 
-              onClick={applyManualUrl}
-              disabled={!manualUrl.trim()}
-            >
-              Apply
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

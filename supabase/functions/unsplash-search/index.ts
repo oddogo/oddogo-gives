@@ -1,112 +1,90 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const UNSPLASH_API_URL = "https://api.unsplash.com/search/photos";
-const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Parse request data
-    let query = "";
-    
-    // Check if this is a POST or GET request and get the query parameter accordingly
-    if (req.method === "POST") {
-      // For POST requests, extract query from the request body
-      const body = await req.json();
-      query = body.query || "";
-    } else if (req.method === "GET") {
-      // For GET requests, extract query from URL parameters
-      const url = new URL(req.url);
-      query = url.searchParams.get("query") || "";
-    } else {
-      return new Response(
-        JSON.stringify({ error: "Method not allowed" }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-
-    if (!query) {
-      return new Response(
-        JSON.stringify({ error: "Query parameter is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-
+    const UNSPLASH_ACCESS_KEY = Deno.env.get('UNSPLASH_API_KEY')
     if (!UNSPLASH_ACCESS_KEY) {
+      console.error('Missing UNSPLASH_API_KEY environment variable')
       return new Response(
-        JSON.stringify({ 
-          error: "Server configuration error", 
-          message: "Unsplash API key is not configured" 
-        }),
+        JSON.stringify({ error: 'Server configuration error' }),
         { 
           status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
-      );
+      )
     }
 
-    // Construct the search URL
-    const searchUrl = new URL(UNSPLASH_API_URL);
-    searchUrl.searchParams.append("query", query);
-    searchUrl.searchParams.append("per_page", "12");
-    searchUrl.searchParams.append("orientation", "landscape");
+    // Parse request body
+    const { query } = await req.json()
+    console.log(`Processing search request for: "${query}"`)
 
-    // Add some debugging logs
-    console.log(`Searching Unsplash for: ${query}`);
-    console.log(`Using API URL: ${searchUrl.toString()}`);
-    console.log(`Access Key available: ${UNSPLASH_ACCESS_KEY ? 'Yes' : 'No'}`);
+    if (!query || typeof query !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Query parameter is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
-    // Make the request to Unsplash API
-    const response = await fetch(searchUrl.toString(), {
+    // Make request to Unsplash API
+    const url = new URL('https://api.unsplash.com/search/photos')
+    url.searchParams.append('query', query)
+    url.searchParams.append('per_page', '10')
+    url.searchParams.append('content_filter', 'high')
+
+    console.log(`Sending request to Unsplash API: ${url.toString()}`)
+    const unsplashResponse = await fetch(url.toString(), {
       headers: {
-        "Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`
+        'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
       }
-    });
+    })
 
-    if (!response.ok) {
-      console.error(`Unsplash API responded with status: ${response.status}`);
-      const errorText = await response.text();
-      console.error(`Error response: ${errorText}`);
-      throw new Error(`Unsplash API responded with status: ${response.status}`);
+    if (!unsplashResponse.ok) {
+      const errorText = await unsplashResponse.text()
+      console.error(`Unsplash API error (${unsplashResponse.status}): ${errorText}`)
+      return new Response(
+        JSON.stringify({ 
+          error: `Unsplash API returned an error: ${unsplashResponse.status}`,
+          details: errorText
+        }),
+        { 
+          status: unsplashResponse.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    const data = await response.json();
-    console.log(`Found ${data.results?.length || 0} results`);
+    const data = await unsplashResponse.json()
+    console.log(`Received ${data.results?.length || 0} results from Unsplash API`)
 
     return new Response(
       JSON.stringify(data),
       { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    );
+    )
   } catch (error) {
-    console.error("Error:", error.message);
-    
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to search for images", 
-        details: error.message 
-      }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    );
+    )
   }
-});
+})
