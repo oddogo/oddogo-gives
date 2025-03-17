@@ -29,7 +29,8 @@ serve(async (req) => {
       );
     }
 
-    const { amount, recipientId } = requestData;
+    const { amount, recipientId, email, name, message, campaignId } = requestData;
+    // Convert amount to cents for Stripe
     const amountInCents = Math.round(Number(amount) * 100);
 
     const origin = req.headers.get('origin');
@@ -44,13 +45,14 @@ serve(async (req) => {
     const fingerprintId = await getFingerprintId(recipientId);
     console.log('Found fingerprint:', fingerprintId);
 
-    // Create payment record with fingerprint_id
+    // Create payment record with fingerprint_id and email
     const payment = await createPaymentRecord({
       amount: amountInCents,
       currency: 'gbp',
       user_id: userId,
       fingerprint_id: fingerprintId,
-      status: 'pending'
+      status: 'pending',
+      email: email
     });
     console.log('Payment record created:', payment.id);
 
@@ -61,11 +63,15 @@ serve(async (req) => {
       payment,
       recipientId,
       fingerprintId,
-      userId
+      userId,
+      email
     );
 
     return new Response(
-      JSON.stringify({ url: session.url }),
+      JSON.stringify({ 
+        url: session.url,
+        paymentId: payment.id 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {

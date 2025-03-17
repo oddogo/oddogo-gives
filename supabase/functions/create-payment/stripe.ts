@@ -9,11 +9,12 @@ export const createStripeSession = async (
   payment: any,
   recipientId: string,
   fingerprintId: string,
-  userId: string | null
+  userId: string | null,
+  email?: string
 ): Promise<Stripe.Checkout.Session> => {
   console.log('Creating Stripe session with amount:', amount);
   
-  const session = await stripe.checkout.sessions.create({
+  const sessionConfig: Stripe.Checkout.SessionCreateParams = {
     payment_method_types: ['card'],
     line_items: [
       {
@@ -41,9 +42,15 @@ export const createStripeSession = async (
       payment_id: payment.id,
       fingerprintId,
       userId: userId || 'anonymous'
-    },
-    customer_email: payment.email, // Add this to capture email
-  });
+    }
+  };
+
+  // Add customer email if provided
+  if (email) {
+    sessionConfig.customer_email = email;
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionConfig);
 
   console.log('Stripe session created:', session.id);
   console.log('Session metadata:', session.metadata);

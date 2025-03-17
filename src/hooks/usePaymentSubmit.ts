@@ -40,19 +40,17 @@ export const usePaymentSubmit = ({
       setIsSubmitting(true);
       setPaymentError(null);
       
-      const amountInCents = Math.round(values.amount * 100);
+      // We send the amount as a number - the edge function will convert it to cents
+      console.log("Submitting payment for amount:", values.amount);
       
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
-          amount: amountInCents,
-          name: values.name,
+          amount: values.amount,
+          recipientId: recipientId,
           email: values.email,
+          name: values.name,
           message: values.message || "",
-          recipient_id: recipientId,
-          recipient_name: recipientName,
-          campaign_id: values.campaign_id || campaignId || "",
-          success_url: window.location.origin + "/payment-success?recipient_id=" + recipientId,
-          cancel_url: window.location.origin + "/payment-cancelled",
+          campaignId: values.campaign_id || campaignId || ""
         },
       });
       
@@ -63,26 +61,20 @@ export const usePaymentSubmit = ({
         return;
       }
       
-      if (!data?.sessionId) {
-        console.error("Missing session ID in response");
+      if (!data?.url) {
+        console.error("Missing checkout URL in response:", data);
         setPaymentError("Could not create payment session");
         toast.error("Payment session creation failed");
         return;
       }
       
-      const stripe = await stripePromise;
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
+      console.log("Payment session created, redirecting to:", data.url);
       
-      if (stripeError) {
-        console.error("Stripe redirect error:", stripeError);
-        setPaymentError(stripeError.message || "Payment redirect failed");
-        toast.error("Payment redirect failed");
-      }
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
       
-      if (onSuccess) {
-        onSuccess(data.sessionId);
+      if (onSuccess && data.paymentId) {
+        onSuccess(data.paymentId);
       }
       
     } catch (error: any) {
