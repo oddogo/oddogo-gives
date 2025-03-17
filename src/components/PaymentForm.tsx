@@ -6,6 +6,8 @@ import { z } from "zod";
 import { useStripeInitialization } from "@/hooks/useStripeInitialization";
 import { usePaymentSubmit } from "@/hooks/usePaymentSubmit";
 import { PaymentFormContent } from "./payment/PaymentFormContent";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const paymentFormSchema = z.object({
   amount: z.coerce
@@ -33,7 +35,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   campaignId,
   onSuccess,
 }) => {
-  const { stripePromise, isStripeLoading } = useStripeInitialization();
+  const { stripePromise, isStripeLoading, stripeError } = useStripeInitialization();
   
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
@@ -61,7 +63,26 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   if (isStripeLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 text-center">
-        <p className="text-gray-500">Initializing payment system...</p>
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (stripeError) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {stripeError} 
+          </AlertDescription>
+        </Alert>
+        <p className="text-center text-gray-500 mt-2">
+          Our payment system is currently unavailable. Please try again later or contact support for assistance.
+        </p>
       </div>
     );
   }

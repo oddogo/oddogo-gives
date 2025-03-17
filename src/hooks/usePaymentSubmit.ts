@@ -27,15 +27,18 @@ export const usePaymentSubmit = ({
   stripePromise,
 }: PaymentSubmitProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const submitPayment = async (values: PaymentDetails) => {
     if (!stripePromise) {
       toast.error("Payment system is not available right now");
+      setPaymentError("Payment system unavailable");
       return;
     }
     
     try {
       setIsSubmitting(true);
+      setPaymentError(null);
       
       const amountInCents = Math.round(values.amount * 100);
       
@@ -54,10 +57,14 @@ export const usePaymentSubmit = ({
       });
       
       if (error) {
+        console.error("Payment service error:", error);
+        setPaymentError(error.message || "Payment service error");
         throw new Error(error.message);
       }
       
       if (!data?.sessionId) {
+        console.error("Missing session ID in response");
+        setPaymentError("Could not create payment session");
         throw new Error("Failed to create checkout session");
       }
       
@@ -67,6 +74,8 @@ export const usePaymentSubmit = ({
       });
       
       if (stripeError) {
+        console.error("Stripe redirect error:", stripeError);
+        setPaymentError(stripeError.message || "Payment redirect failed");
         throw new Error(stripeError.message);
       }
       
@@ -77,6 +86,7 @@ export const usePaymentSubmit = ({
     } catch (error: any) {
       console.error("Payment error:", error);
       toast.error(error.message || "Payment failed");
+      setPaymentError(error.message || "Payment processing error");
     } finally {
       setIsSubmitting(false);
     }
@@ -84,6 +94,7 @@ export const usePaymentSubmit = ({
 
   return {
     isSubmitting,
-    submitPayment
+    submitPayment,
+    paymentError
   };
 };
