@@ -73,8 +73,7 @@ export const CampaignCard = ({ campaign, compact = false }: CampaignCardProps) =
           
           <Progress 
             value={percentProgress} 
-            className="h-2 bg-slate-700" 
-            indicatorClassName="bg-gradient-to-r from-emerald-500 to-teal-400"
+            className="h-2 bg-slate-700"
           />
           
           <div className="flex justify-between text-sm mt-1">

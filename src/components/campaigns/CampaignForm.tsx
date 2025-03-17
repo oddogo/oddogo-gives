@@ -74,6 +74,14 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
       setIsSubmitting(true);
       const amountInCents = Math.round(values.target_amount * 100);
       
+      // Get the current user
+      const { data: { user }} = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to create a campaign");
+        navigate("/auth");
+        return;
+      }
+      
       // Prepare the data
       const campaignData = {
         title: values.title,
@@ -81,6 +89,7 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
         target_amount: amountInCents,
         end_date: values.end_date?.toISOString(),
         image_url: values.image_url || null,
+        user_id: user.id // Add the user_id
       };
       
       if (campaign) {
