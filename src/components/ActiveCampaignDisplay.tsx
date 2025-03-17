@@ -1,9 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
-import { Zap, Calendar, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Zap, Calendar } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface ActiveCampaignDisplayProps {
@@ -83,42 +81,57 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
   };
   
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-0 mb-12 bg-white rounded-lg shadow-sm p-6">
-      <div className="text-center mb-4">
-        <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-full mb-4">
-          <Zap className="w-4 h-4" />
-          <span>Active Campaign</span>
+    <div className="w-full py-12 bg-gray-50" id="campaign">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 text-primary mb-2">
+            <Zap className="w-5 h-5" />
+            <span className="font-medium">Active Campaign</span>
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            {campaign.title}
+          </h2>
         </div>
-        <h3 className="text-2xl font-semibold mb-4 text-black">{campaign.title}</h3>
-        
-        <div className="mb-6">
-          <Progress 
-            value={percentProgress} 
-            className="h-2 bg-gray-200"
-          />
-          <div className="flex justify-between text-sm mt-2">
-            <span className="font-medium">{formatCurrency(campaign.current_amount)}</span>
-            <span className="text-gray-500">of {formatCurrency(campaign.target_amount)} goal</span>
+
+        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {campaign.image_url && (
+              <div className="md:w-1/3">
+                <div className="rounded-lg overflow-hidden">
+                  <img 
+                    src={campaign.image_url} 
+                    alt={campaign.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div className={campaign.image_url ? "md:w-2/3" : "w-full"}>
+              <p className="text-gray-600 mb-6 text-lg">
+                {campaign.description}
+              </p>
+              
+              <div className="mb-6">
+                <Progress 
+                  value={percentProgress} 
+                  className="h-2 bg-gray-200"
+                />
+                <div className="flex justify-between text-sm mt-2">
+                  <span className="font-medium">{formatCurrency(campaign.current_amount)}</span>
+                  <span className="text-gray-500">of {formatCurrency(campaign.target_amount)} goal</span>
+                </div>
+              </div>
+              
+              {campaign.end_date && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Calendar className="w-4 h-4" />
+                  <span>Ends {formatDate(campaign.end_date)}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        
-        {campaign.end_date && (
-          <div className="flex items-center justify-center gap-1 text-sm text-gray-500 mb-4">
-            <Calendar className="w-4 h-4" />
-            <span>Ends {formatDate(campaign.end_date)}</span>
-          </div>
-        )}
-        
-        <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-          {campaign.description}
-        </p>
-        
-        <Link to={`/campaigns/${campaign.slug}`}>
-          <Button className="gap-2">
-            Support this Campaign
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
       </div>
     </div>
   );
