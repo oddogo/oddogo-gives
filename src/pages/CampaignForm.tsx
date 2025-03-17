@@ -76,7 +76,13 @@ const CampaignFormPage = () => {
         return;
       }
       
-      setCampaign(data);
+      // Ensure the status is correctly typed
+      const typedCampaign: Campaign = {
+        ...data,
+        status: data.status as "active" | "completed" | "cancelled"
+      };
+      
+      setCampaign(typedCampaign);
     } catch (error: any) {
       console.error('Error loading campaign:', error.message);
       toast({

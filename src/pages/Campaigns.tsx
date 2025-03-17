@@ -49,7 +49,14 @@ const CampaignsPage = () => {
 
       if (error) throw error;
       
-      setCampaigns(data || []);
+      // Ensure each item has the is_featured property
+      const typedData: CampaignStatistic[] = data?.map(item => ({
+        ...item,
+        is_featured: item.is_featured ?? false, // Default to false if not present
+        status: (item.status as "active" | "completed" | "cancelled") || "active"
+      })) || [];
+      
+      setCampaigns(typedData);
     } catch (error: any) {
       console.error('Error loading campaigns:', error.message);
       toast({

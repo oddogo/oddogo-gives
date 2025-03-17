@@ -76,7 +76,14 @@ const CampaignDetail = () => {
         return;
       }
       
-      setCampaign(data);
+      // Ensure the campaign data has all required fields
+      const typedCampaign: CampaignStatistic = {
+        ...data,
+        is_featured: data.is_featured ?? false, // Default to false if not present
+        status: (data.status as "active" | "completed" | "cancelled") || "active"
+      };
+      
+      setCampaign(typedCampaign);
     } catch (error: any) {
       console.error('Error loading campaign:', error.message);
       toast({
