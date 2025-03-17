@@ -69,6 +69,8 @@ serve(async (req) => {
 
     // Add some debugging logs
     console.log(`Searching Unsplash for: ${query}`);
+    console.log(`Using API URL: ${searchUrl.toString()}`);
+    console.log(`Access Key available: ${UNSPLASH_ACCESS_KEY ? 'Yes' : 'No'}`);
 
     // Make the request to Unsplash API
     const response = await fetch(searchUrl.toString(), {
@@ -78,6 +80,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      console.error(`Unsplash API responded with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`Error response: ${errorText}`);
       throw new Error(`Unsplash API responded with status: ${response.status}`);
     }
 

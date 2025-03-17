@@ -86,7 +86,19 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
         .from('campaign-images')
         .upload(fileName, file);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Storage error details:", error);
+        if (error.message.includes("bucket not found")) {
+          toast({
+            title: "Storage not configured",
+            description: "The storage bucket is not available. Please contact the administrator.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
@@ -118,18 +130,27 @@ export const ImageSelector = ({ imageUrl, onImageSelected }: ImageSelectorProps)
     
     try {
       setIsSearching(true);
+      setSearchResults([]);
+      
+      console.log("Searching Unsplash for:", searchTerm);
       
       // Use Supabase Edge Function to proxy the Unsplash API request
-      // Fix: Pass the query parameter using the correct structure for FunctionInvokeOptions
       const { data, error } = await supabase.functions.invoke("unsplash-search", {
         body: { query: searchTerm }
       });
+      
+      console.log("Unsplash search response:", { data, error });
       
       if (error) {
         throw new Error(error.message || "Failed to search for images");
       }
       
-      setSearchResults(data?.results || []);
+      if (!data || !Array.isArray(data.results)) {
+        console.error("Invalid response format:", data);
+        throw new Error("Invalid response from image search");
+      }
+      
+      setSearchResults(data.results || []);
     } catch (error: any) {
       console.error("Error searching Unsplash:", error);
       toast({

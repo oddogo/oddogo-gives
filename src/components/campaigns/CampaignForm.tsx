@@ -24,7 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { Campaign } from "@/types/campaign";
 import { ImageSelector } from "./ImageSelector";
 
@@ -91,6 +91,12 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
         return;
       }
       
+      console.log("Creating campaign with data:", {
+        ...values, 
+        target_amount: amountInCents,
+        user_id: user.id
+      });
+      
       // Prepare the data
       const campaignData = {
         title: values.title,
@@ -103,12 +109,18 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
       
       if (campaign) {
         // Update existing campaign
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("campaigns")
           .update(campaignData)
-          .eq("id", campaign.id);
+          .eq("id", campaign.id)
+          .select();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Database error:", error);
+          throw error;
+        }
+        
+        console.log("Campaign updated successfully:", data);
         toast.success("Campaign updated successfully");
       } else {
         // Create new campaign
@@ -118,7 +130,12 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
           .select("slug")
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Database error:", error);
+          throw error;
+        }
+        
+        console.log("Campaign created successfully:", data);
         toast.success("Campaign created successfully");
         
         // Navigate to the new campaign page
@@ -260,7 +277,14 @@ export const CampaignForm = ({ campaign, onSuccess }: CampaignFormProps) => {
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : campaign ? 'Update Campaign' : 'Create Campaign'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {campaign ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              campaign ? 'Update Campaign' : 'Create Campaign'
+            )}
           </Button>
         </div>
       </form>
