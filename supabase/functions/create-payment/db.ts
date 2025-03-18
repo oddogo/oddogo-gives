@@ -10,34 +10,28 @@ const supabaseClient = createClient(
 export const createPaymentRecord = async (paymentData: PaymentData) => {
   console.log('Creating payment record with data:', paymentData);
   
-  const { data: payment, error: paymentError } = await supabaseClient
-    .from('stripe_payments')
-    .insert([paymentData])
-    .select()
-    .single();
+  try {
+    const { data: payment, error: paymentError } = await supabaseClient
+      .from('stripe_payments')
+      .insert([paymentData])
+      .select()
+      .single();
 
-  if (paymentError) {
-    console.error('Error creating payment record:', paymentError);
-    throw new Error(`Failed to create payment record: ${paymentError.message}`);
+    if (paymentError) {
+      console.error('Error creating payment record:', paymentError);
+      throw new Error(`Failed to create payment record: ${paymentError.message}`);
+    }
+
+    if (!payment) {
+      throw new Error('No payment record was created');
+    }
+
+    console.log('Payment record created successfully:', payment);
+    return payment;
+  } catch (error) {
+    console.error('Exception in createPaymentRecord:', error);
+    throw error;
   }
-
-  return payment;
-};
-
-export const updatePaymentWithStripeId = async (paymentId: string, stripePaymentIntentId: string) => {
-  console.log(`Updating payment ${paymentId} with Stripe payment intent ID: ${stripePaymentIntentId}`);
-  
-  const { error: updateError } = await supabaseClient
-    .from('stripe_payments')
-    .update({ stripe_payment_intent_id: stripePaymentIntentId })
-    .eq('id', paymentId);
-
-  if (updateError) {
-    console.error('Error updating payment record with Stripe ID:', updateError);
-    throw new Error(`Failed to update payment record with Stripe session details: ${updateError.message}`);
-  }
-  
-  console.log(`Successfully updated payment ${paymentId} with Stripe payment intent ID`);
 };
 
 export const getFingerprintId = async (recipientId: string) => {
@@ -69,6 +63,8 @@ export const getFingerprintId = async (recipientId: string) => {
 };
 
 export const getUserId = async (authHeader: string | null) => {
+  console.log('Getting user ID from auth header:', !!authHeader);
+  
   if (!authHeader) {
     console.log('No auth header provided, proceeding as anonymous');
     return null;
