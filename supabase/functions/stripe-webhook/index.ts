@@ -84,9 +84,7 @@ serve(async (req) => {
         status: 'received',
         raw_event: event,
         is_test: !event.livemode
-      })
-      .select()
-      .single();
+      });
 
     if (webhookError) {
       console.error('Error storing webhook event:', webhookError);
