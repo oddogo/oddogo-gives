@@ -14,7 +14,6 @@ export interface PaymentData {
   user_id: string | null;
   fingerprint_id: string;
   status: string;
-  email?: string;
   stripe_payment_email?: string;
 }
 

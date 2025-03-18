@@ -41,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    const { amount, recipientId, email, name, message, campaignId } = requestData;
+    const { amount, recipientId, email, name } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
     const origin = req.headers.get('origin');
@@ -80,7 +80,6 @@ serve(async (req) => {
           user_id: userId,
           fingerprint_id: fingerprintId,
           status: 'pending',
-          email: email,
           stripe_payment_email: email
         });
         console.log('Payment record created:', payment.id);
