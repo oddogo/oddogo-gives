@@ -7,9 +7,19 @@ import { createPaymentRecord, getFingerprintId, getUserId } from './db.ts';
 import { createStripeSession } from './stripe.ts';
 
 serve(async (req) => {
+  console.log('Payment request received');
+
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log('Handling CORS preflight request');
+    return new Response(null, { 
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+      }
+    });
   }
 
   try {
@@ -17,7 +27,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
     
-    console.log('Services initialized');
+    console.log('Stripe initialized');
 
     const requestData = await req.json();
     console.log('Received request data:', requestData);
