@@ -124,9 +124,7 @@ serve(async (req) => {
               stripe_customer_id: session.customer,
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId)
-            .select()
-            .single();
+            .eq('id', paymentId);
 
           if (updateError) {
             console.error('Error updating payment record:', updateError);
@@ -152,7 +150,9 @@ serve(async (req) => {
         });
         
         if (paymentId) {
-          const { error: updateError } = await supabaseClient
+          // The crucial update to ensure payment status is set to 'completed'
+          // and all IDs are properly stored
+          const { data: updatedPayment, error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               status: 'completed',
@@ -173,14 +173,14 @@ serve(async (req) => {
             );
           }
 
-          console.log('Successfully updated payment status to completed');
+          console.log('Successfully updated payment status to completed', updatedPayment);
 
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
             .insert({
               payment_id: paymentId,
               metadata: {
-                ...event.data.object,
+                ...paymentIntent,
                 payment_intent_id: paymentIntent.id,
                 payment_method_id: paymentIntent.payment_method,
                 charge_id: paymentIntent.latest_charge
@@ -198,6 +198,12 @@ serve(async (req) => {
           }
 
           console.log('Successfully logged payment completion');
+        } else {
+          console.error('No payment ID found in metadata');
+          return new Response(
+            JSON.stringify({ error: 'No payment ID found in metadata' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
         }
         break;
       }
@@ -232,7 +238,7 @@ serve(async (req) => {
             .from('stripe_payment_logs')
             .insert({
               payment_id: paymentId,
-              metadata: event.data.object,
+              metadata: paymentIntent,
               status: 'failed',
               message: paymentIntent.last_payment_error?.message || 'Payment failed'
             });
