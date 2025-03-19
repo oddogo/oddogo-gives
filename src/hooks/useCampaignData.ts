@@ -45,42 +45,20 @@ export function useCampaignData(userId: string): CampaignData {
         
         setCampaign(campaignData as Campaign);
         
-        // Get payment data through the campaign_payments table or direct campaign_id
+        // Get payments directly associated with campaign_id - simplified approach
         if (campaignData.id) {
-          // Method 1: Get payment IDs associated through campaign_payments table
-          const { data: campaignPayments, error: campaignPaymentsError } = await supabase
-            .from('campaign_payments')
-            .select('payment_id')
-            .eq('campaign_id', campaignData.id);
-            
-          if (campaignPaymentsError) {
-            console.error("Error fetching campaign payment relations:", campaignPaymentsError);
-          }
-          
-          // Method 2: Get payments directly associated with campaign_id
-          const { data: directPayments, error: directPaymentsError } = await supabase
+          const { data: payments, error: paymentsError } = await supabase
             .from('stripe_payments')
             .select('id, amount, status')
             .eq('campaign_id', campaignData.id);
             
-          if (directPaymentsError) {
-            console.error("Error fetching direct campaign payments:", directPaymentsError);
+          if (paymentsError) {
+            console.error("Error fetching campaign payments:", paymentsError);
+            setLoading(false);
+            return;
           }
           
-          // Combine payment IDs from both methods
-          const paymentIds = new Set<string>();
-          
-          // Add payment IDs from campaign_payments relation
-          if (campaignPayments && campaignPayments.length > 0) {
-            campaignPayments.forEach(item => paymentIds.add(item.payment_id));
-          }
-          
-          // Add direct payment IDs
-          if (directPayments && directPayments.length > 0) {
-            directPayments.forEach(payment => paymentIds.add(payment.id));
-          }
-          
-          if (paymentIds.size === 0 && (!directPayments || directPayments.length === 0)) {
+          if (!payments || payments.length === 0) {
             console.log("No payments found for campaign:", campaignData.id);
             setTotalAmount(0);
             setPendingAmount(0);
@@ -91,46 +69,21 @@ export function useCampaignData(userId: string): CampaignData {
           let completedAmount = 0;
           let pendingAmount = 0;
           
-          // Process direct payments if any
-          if (directPayments && directPayments.length > 0) {
-            for (const payment of directPayments) {
-              if (payment.amount && typeof payment.amount === 'number') {
-                if (payment.status === 'completed') {
-                  completedAmount += payment.amount;
-                } else if (payment.status === 'pending') {
-                  pendingAmount += payment.amount;
-                }
+          for (const payment of payments) {
+            if (payment.amount && typeof payment.amount === 'number') {
+              if (payment.status === 'completed') {
+                completedAmount += payment.amount;
+              } else if (payment.status === 'pending') {
+                pendingAmount += payment.amount;
               }
             }
           }
           
-          // Fetch additional payments from campaign_payments relation if needed
-          if (campaignPayments && campaignPayments.length > 0) {
-            const idsToFetch = Array.from(paymentIds).filter(id => 
-              !directPayments || !directPayments.some(p => p.id === id)
-            );
-            
-            if (idsToFetch.length > 0) {
-              const { data: paymentData, error: paymentsError } = await supabase
-                .from('stripe_payments')
-                .select('id, amount, status')
-                .in('id', idsToFetch);
-                
-              if (paymentsError) {
-                console.error("Error fetching payment details:", paymentsError);
-              } else if (paymentData && paymentData.length > 0) {
-                for (const payment of paymentData) {
-                  if (payment.amount && typeof payment.amount === 'number') {
-                    if (payment.status === 'completed') {
-                      completedAmount += payment.amount;
-                    } else if (payment.status === 'pending') {
-                      pendingAmount += payment.amount;
-                    }
-                  }
-                }
-              }
-            }
-          }
+          console.log(`Campaign ${campaignData.id} payments:`, {
+            total: payments.length, 
+            completed: completedAmount,
+            pending: pendingAmount
+          });
           
           setTotalAmount(completedAmount);
           setPendingAmount(pendingAmount);
