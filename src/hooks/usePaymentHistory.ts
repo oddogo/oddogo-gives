@@ -101,12 +101,16 @@ export const usePaymentHistory = (userId: string) => {
           // Enhance payment data with campaign info
           const enhancedPayments = paymentsData?.map(payment => {
             const campaignInfo = campaignMap[payment.id];
-            return {
+            
+            // Create a proper Payment object with all fields
+            const enhancedPayment: Payment = {
               ...payment,
-              campaign_id: campaignInfo?.id || payment.campaign_id,
+              campaign_id: campaignInfo?.id || payment.campaign_id || undefined,
               campaign_title: campaignInfo?.title || '',
               campaign_slug: campaignInfo?.slug || ''
             };
+            
+            return enhancedPayment;
           }) || [];
 
           console.log('Enhanced payments with campaign data:', enhancedPayments);
