@@ -26,6 +26,19 @@ export const createStripeSession = async (
     const successUrl = campaignId 
       ? `${origin}/payment-success?recipient_id=${recipientId}&campaign_id=${campaignId}`
       : `${origin}/payment-success?recipient_id=${recipientId}`;
+    
+    // Prepare metadata object without empty values
+    const metadata: Record<string, string> = {
+      payment_id: payment.id,
+      recipient_id: recipientId,
+      fingerprint_id: fingerprintId,
+      user_id: userId || 'anonymous',
+    };
+    
+    // Only add campaign_id to metadata if it has a value
+    if (campaignId && campaignId.trim() !== '') {
+      metadata.campaign_id = campaignId;
+    }
       
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -45,16 +58,11 @@ export const createStripeSession = async (
       success_url: successUrl,
       cancel_url: `${origin}/payment-cancelled`,
       customer_email: email,
-      metadata: {
-        payment_id: payment.id,
-        recipient_id: recipientId,
-        fingerprint_id: fingerprintId,
-        user_id: userId || 'anonymous',
-        campaign_id: campaignId || ''
-      },
+      metadata: metadata,
     });
 
     console.log('Stripe session created:', session.id);
+    console.log('Session metadata:', metadata);
     return session;
   } catch (error) {
     console.error('Error creating Stripe session:', error);

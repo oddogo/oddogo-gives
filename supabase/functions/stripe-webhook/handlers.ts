@@ -1,3 +1,4 @@
+
 import { supabaseClient, updatePaymentWithSession, getPayment, updatePaymentStatus, logPaymentActivity, findPaymentByIntentId, createCampaignPayment } from './db.ts';
 import { StripeSession, PaymentIntent } from './types.ts';
 
@@ -20,6 +21,10 @@ export const handleCheckoutSessionCompleted = async (session: StripeSession) => 
     return;
   }
   
+  // First, get the current payment record to preserve any existing campaign_id
+  const currentPayment = await getPayment(paymentId);
+  console.log('Current payment record:', currentPayment);
+  
   const updateData = { 
     stripe_payment_intent_id: session.payment_intent,
     stripe_payment_method_id: session.payment_method,
@@ -30,7 +35,13 @@ export const handleCheckoutSessionCompleted = async (session: StripeSession) => 
   
   // Only set campaign_id if it exists and isn't an empty string
   if (campaignId && campaignId.trim() !== '') {
+    console.log(`Using campaign_id ${campaignId} from session metadata`);
     updateData.campaign_id = campaignId;
+  } else if (currentPayment?.campaign_id) {
+    console.log(`Preserving existing campaign_id ${currentPayment.campaign_id} from database`);
+    // We don't need to set it in updateData since we're not changing it
+  } else {
+    console.log('No campaign_id in metadata or database');
   }
   
   await updatePaymentWithSession(paymentId, updateData);
@@ -96,6 +107,7 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: PaymentIntent)
     
     // First, get the current payment record to keep campaign_id if it exists
     const currentPayment = await getPayment(paymentId);
+    console.log('Current payment record from database:', currentPayment);
     
     // Create update data with all the fields
     const updateData = { 
@@ -107,9 +119,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: PaymentIntent)
     };
     
     // Determine which campaign_id to use, prioritizing:
-    // 1. The campaign_id from Stripe metadata (if present)
+    // 1. The campaign_id from Stripe metadata (if present and not empty)
     // 2. The existing campaign_id in the database (if present)
-    // 3. Nothing (keep campaign_id as is)
     if (campaignId && campaignId.trim() !== '') {
       console.log(`Using campaign_id ${campaignId} from payment intent metadata`);
       updateData.campaign_id = campaignId;
@@ -117,12 +128,13 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: PaymentIntent)
       console.log(`Preserving existing campaign_id ${currentPayment.campaign_id} from database`);
       // We don't need to set it in updateData since we're not changing it
     } else {
-      console.log('No campaign_id in metadata or database');
+      console.log('No valid campaign_id in metadata or database');
     }
 
     const updatedPayment = await updatePaymentStatus(paymentId, updateData);
+    console.log('Updated payment:', updatedPayment);
 
-    // Create campaign payment record if there's a campaign_id
+    // Create campaign payment record if there's a campaign_id in the updated payment
     if (updatedPayment.campaign_id) {
       console.log(`Creating campaign payment link for campaign ${updatedPayment.campaign_id}`);
       await createCampaignPayment(updatedPayment.campaign_id, updatedPayment.id);
@@ -133,7 +145,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: PaymentIntent)
       {
         payment_intent_id: paymentIntent.id,
         payment_method_id: paymentIntent.payment_method,
-        charge_id: paymentIntent.latest_charge
+        charge_id: paymentIntent.latest_charge,
+        campaign_id: updatedPayment.campaign_id || null
       },
       'completed',
       'Payment completed successfully'
