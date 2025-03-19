@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,7 +68,6 @@ export const usePaymentHistory = (userId: string) => {
       const paymentIds = paymentsData?.map(p => p.id) || [];
       
       if (paymentIds.length > 0) {
-        // Get campaign payment associations using the junction table
         const { data: campaignPaymentsData, error: campaignError } = await supabase
           .from('campaign_payments')
           .select(`
@@ -83,38 +83,30 @@ export const usePaymentHistory = (userId: string) => {
 
         if (campaignError) {
           console.error('Error fetching campaign payment associations:', campaignError);
-          toast.error('Failed to load campaign payment associations');
         } else {
           console.log('Campaign payments data:', campaignPaymentsData);
           
           // Create a map of payment IDs to campaign info
           const campaignMap: Record<string, { id: string, title: string, slug: string }> = {};
-          
-          if (campaignPaymentsData) {
-            campaignPaymentsData.forEach(cp => {
-              if (cp.campaigns) {
-                campaignMap[cp.payment_id] = {
-                  id: cp.campaign_id,
-                  title: cp.campaigns.title,
-                  slug: cp.campaigns.slug
-                };
-              }
-            });
-          }
+          campaignPaymentsData?.forEach(cp => {
+            if (cp.campaigns) {
+              campaignMap[cp.payment_id] = {
+                id: cp.campaign_id,
+                title: cp.campaigns.title,
+                slug: cp.campaigns.slug
+              };
+            }
+          });
 
           // Enhance payment data with campaign info
           const enhancedPayments = paymentsData?.map(payment => {
             const campaignInfo = campaignMap[payment.id];
-            
-            // Create a proper Payment object with all fields
-            const enhancedPayment: Payment = {
+            return {
               ...payment,
-              campaign_id: campaignInfo?.id || undefined,
-              campaign_title: campaignInfo?.title || '',
-              campaign_slug: campaignInfo?.slug || ''
+              campaign_id: campaignInfo?.id,
+              campaign_title: campaignInfo?.title,
+              campaign_slug: campaignInfo?.slug
             };
-            
-            return enhancedPayment;
           }) || [];
 
           console.log('Enhanced payments with campaign data:', enhancedPayments);
@@ -129,7 +121,6 @@ export const usePaymentHistory = (userId: string) => {
           const { campaignPayments: byCampaign, standalonePayments: standalone } = 
             organizePaymentsByCampaign(enhancedPayments);
 
-          console.log('Organized campaign payments:', byCampaign);
           setCampaignPayments(byCampaign);
           setStandalonePayments(standalone);
         }

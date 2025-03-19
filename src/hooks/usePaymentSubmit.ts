@@ -34,28 +34,7 @@ export const usePaymentSubmit = ({
       setPaymentError(null);
       
       // Use the campaign_id from form values or props, ensuring it's a string
-      let campaign_id = values.campaign_id || campaignId || "";
-
-      // If no campaign_id is provided, check if the recipient has an active campaign
-      if (!campaign_id) {
-        console.log("No campaign_id provided, checking for active campaigns for recipient:", recipientId);
-        const { data: activeCampaigns, error: campaignError } = await supabase
-          .from('campaigns')
-          .select('id')
-          .eq('user_id', recipientId)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (campaignError) {
-          console.error("Error checking for active campaigns:", campaignError);
-        } else if (activeCampaigns && activeCampaigns.length > 0) {
-          campaign_id = activeCampaigns[0].id;
-          console.log("Found active campaign:", campaign_id);
-        } else {
-          console.log("No active campaigns found for recipient");
-        }
-      }
+      const campaign_id = values.campaign_id || campaignId || "";
 
       console.log("Submitting payment with data:", {
         amount: values.amount,

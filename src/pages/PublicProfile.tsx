@@ -103,8 +103,7 @@ const PublicProfile = () => {
         </div>
       )}
 
-      {/* Updated PaymentHistory section to match private profile */}
-      <div id="payment-history">
+      <div id="payment-history" className="py-12">
         <PaymentHistory userId={id || ''} />
       </div>
     </div>
