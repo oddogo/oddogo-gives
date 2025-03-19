@@ -103,9 +103,9 @@ export const usePaymentHistory = (userId: string) => {
             const campaignInfo = campaignMap[payment.id];
             return {
               ...payment,
-              campaign_id: campaignInfo?.id,
-              campaign_title: campaignInfo?.title,
-              campaign_slug: campaignInfo?.slug
+              campaign_id: campaignInfo?.id || payment.campaign_id,
+              campaign_title: campaignInfo?.title || '',
+              campaign_slug: campaignInfo?.slug || ''
             };
           }) || [];
 
