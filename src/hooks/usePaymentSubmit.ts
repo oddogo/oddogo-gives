@@ -87,6 +87,9 @@ export function usePaymentSubmit() {
         throw new Error('No session ID returned from payment creation');
       }
       
+      // Get the payment ID from the response
+      const paymentId = data.paymentId;
+      
       // Redirect to Stripe Checkout
       const { error: stripeError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId
@@ -96,11 +99,11 @@ export function usePaymentSubmit() {
         throw new Error(`Stripe checkout error: ${stripeError.message}`);
       }
       
-      return { success: true, error: null };
+      return { success: true, error: null, paymentId };
     } catch (error: any) {
       console.error('Payment submission error:', error);
       toast.error(`Payment failed: ${error.message}`);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, paymentId: null };
     } finally {
       setIsSubmitting(false);
     }

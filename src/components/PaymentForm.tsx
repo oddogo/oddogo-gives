@@ -79,7 +79,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       options
     );
     
-    if (result.success && onSuccess) {
+    if (result.success && result.paymentId && onSuccess) {
       onSuccess(result.paymentId);
     }
   };
