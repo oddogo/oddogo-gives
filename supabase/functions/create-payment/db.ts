@@ -11,7 +11,12 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
   console.log('Creating payment record with data:', paymentData);
   
   try {
-    // Create the payment record without storing campaign_id directly in stripe_payments
+    // Ensure fingerprint_id is present
+    if (!paymentData.fingerprint_id) {
+      throw new Error('Missing fingerprint_id in payment data');
+    }
+    
+    // Create the payment record with all required fields
     const { data: payment, error: paymentError } = await supabaseClient
       .from('stripe_payments')
       .insert([{
