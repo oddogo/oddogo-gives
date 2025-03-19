@@ -13,6 +13,14 @@ export const CampaignProgress = ({ campaignId, payments }: CampaignProgressProps
   const campaignTitle = payments[0]?.campaign_title || 'Campaign';
   const { completed: completedAmount, pending: pendingAmount, total: totalAmount } = calculateTotals(payments);
   
+  console.log(`Rendering campaign progress for ${campaignId}:`, { 
+    title: campaignTitle, 
+    payments: payments.length,
+    completed: completedAmount,
+    pending: pendingAmount,
+    total: totalAmount
+  });
+  
   return (
     <div className="space-y-4 mb-8">
       <div className="flex items-center gap-2 mb-2">

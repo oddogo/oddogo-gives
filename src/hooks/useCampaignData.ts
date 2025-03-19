@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
+import { toast } from "sonner";
 
 interface CampaignData {
   campaign: Campaign | null;
@@ -44,22 +45,48 @@ export function useCampaignData(userId: string): CampaignData {
         }
         
         setCampaign(campaignData as Campaign);
+        console.log("Found active campaign:", campaignData.id, campaignData.title);
         
-        // Get payments directly associated with campaign_id - simplified approach
+        // Get payments for this campaign using campaign_payments junction table
         if (campaignData.id) {
+          // Query the campaign_payments table to get all payment IDs associated with this campaign
+          const { data: campaignPaymentsData, error: cpError } = await supabase
+            .from('campaign_payments')
+            .select('payment_id')
+            .eq('campaign_id', campaignData.id);
+            
+          if (cpError) {
+            console.error("Error fetching campaign payment IDs:", cpError);
+            setLoading(false);
+            return;
+          }
+          
+          if (!campaignPaymentsData || campaignPaymentsData.length === 0) {
+            console.log("No payments found for campaign:", campaignData.id);
+            setTotalAmount(0);
+            setPendingAmount(0);
+            setLoading(false);
+            return;
+          }
+          
+          // Extract the payment IDs
+          const paymentIds = campaignPaymentsData.map(cp => cp.payment_id);
+          console.log(`Found ${paymentIds.length} payments linked to campaign ${campaignData.id}:`, paymentIds);
+          
+          // Now fetch the actual payment data using these IDs
           const { data: payments, error: paymentsError } = await supabase
             .from('stripe_payments')
             .select('id, amount, status')
-            .eq('campaign_id', campaignData.id);
+            .in('id', paymentIds);
             
           if (paymentsError) {
-            console.error("Error fetching campaign payments:", paymentsError);
+            console.error("Error fetching campaign payment details:", paymentsError);
             setLoading(false);
             return;
           }
           
           if (!payments || payments.length === 0) {
-            console.log("No payments found for campaign:", campaignData.id);
+            console.log("No payment details found for campaign payment IDs");
             setTotalAmount(0);
             setPendingAmount(0);
             setLoading(false);
@@ -90,6 +117,7 @@ export function useCampaignData(userId: string): CampaignData {
         }
       } catch (error) {
         console.error("Error loading campaign data:", error);
+        toast.error("Failed to load campaign data");
       } finally {
         setLoading(false);
       }
