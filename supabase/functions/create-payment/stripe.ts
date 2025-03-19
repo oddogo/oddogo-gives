@@ -28,7 +28,7 @@ export const createStripeSession = async (
     hasCampaignId: !!campaignId
   });
 
-  const successUrl = `${origin}/payment-success?payment_id=${payment.id}`;
+  const successUrl = `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
   const cancelUrl = `${origin}/payment-cancelled?payment_id=${payment.id}`;
   
   console.log('Payment success URL:', successUrl);

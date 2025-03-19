@@ -1,19 +1,44 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const PaymentSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
-  const recipient_id = searchParams.get("recipient_id");
+  const paymentId = searchParams.get("payment_id");
+  const [recipientId, setRecipientId] = useState<string | null>(searchParams.get("recipient_id"));
+
+  useEffect(() => {
+    // If we have a payment_id but not a recipient_id, try to fetch it from the payment
+    if (paymentId && !recipientId) {
+      const fetchPaymentDetails = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('stripe_payments')
+            .select('metadata')
+            .eq('id', paymentId)
+            .single();
+            
+          if (data?.metadata?.recipient_id) {
+            setRecipientId(data.metadata.recipient_id);
+          }
+        } catch (error) {
+          console.error("Error fetching payment details:", error);
+        }
+      };
+      
+      fetchPaymentDetails();
+    }
+  }, [paymentId, recipientId]);
 
   const handleReturnClick = () => {
-    if (recipient_id) {
-      navigate(`/profile/${recipient_id}`);
+    if (recipientId) {
+      navigate(`/profile/${recipientId}`);
     } else {
       navigate('/');
     }
@@ -27,12 +52,12 @@ const PaymentSuccess = () => {
             <CheckCircle className="h-12 w-12 text-green-500" />
           </div>
           <CardTitle className="text-2xl font-bold text-green-700">
-            Payment Processing
+            Payment Successful
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-gray-600">
-            Thank you for your donation. Your payment is being processed.
+            Thank you for your donation. Your payment has been processed successfully.
           </p>
           <Button onClick={handleReturnClick}>
             Return to Profile
