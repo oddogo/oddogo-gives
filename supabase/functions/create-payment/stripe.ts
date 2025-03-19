@@ -12,6 +12,7 @@ export const createStripeSession = async (
   email?: string,
   campaignId?: string
 ) => {
+  // Log all parameters including campaign_id
   console.log('Creating Stripe session with params:', {
     amount: amountInCents,
     paymentId: payment.id,
@@ -19,27 +20,18 @@ export const createStripeSession = async (
     fingerprintId,
     userId,
     email,
-    campaignId
+    campaignId: campaignId || 'None'
   });
 
   try {
     const successUrl = campaignId 
       ? `${origin}/payment-success?recipient_id=${recipientId}&campaign_id=${campaignId}`
       : `${origin}/payment-success?recipient_id=${recipientId}`;
-    
-    // Prepare metadata object without empty values
-    const metadata: Record<string, string> = {
-      payment_id: payment.id,
-      recipient_id: recipientId,
-      fingerprint_id: fingerprintId,
-      user_id: userId || 'anonymous',
-    };
-    
-    // Only add campaign_id to metadata if it has a value
-    if (campaignId && campaignId.trim() !== '') {
-      metadata.campaign_id = campaignId;
-    }
       
+    // Ensure campaign_id is properly sanitized (not empty string)
+    const sanitizedCampaignId = campaignId && campaignId.trim() !== '' ? campaignId : null;
+    
+    // Create session with campaign_id in metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -47,7 +39,7 @@ export const createStripeSession = async (
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'Donation',
+              name: sanitizedCampaignId ? 'Campaign Donation' : 'Donation',
             },
             unit_amount: amountInCents,
           },
@@ -58,11 +50,17 @@ export const createStripeSession = async (
       success_url: successUrl,
       cancel_url: `${origin}/payment-cancelled`,
       customer_email: email,
-      metadata: metadata,
+      metadata: {
+        payment_id: payment.id,
+        recipient_id: recipientId,
+        fingerprint_id: fingerprintId,
+        user_id: userId || 'anonymous',
+        campaign_id: sanitizedCampaignId || ''
+      },
     });
 
     console.log('Stripe session created:', session.id);
-    console.log('Session metadata:', metadata);
+    console.log('Session metadata:', session.metadata);
     return session;
   } catch (error) {
     console.error('Error creating Stripe session:', error);
