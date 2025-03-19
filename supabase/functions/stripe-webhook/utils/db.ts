@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+export const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
 export { supabaseClient };
 
@@ -83,5 +83,30 @@ export const markWebhookProcessed = async (eventId: string) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Exception in markWebhookProcessed:', errorMessage);
     // Don't throw here to prevent stopping the webhook processing flow
+  }
+};
+
+// Helper function to record payment logs
+export const recordPaymentLog = async (paymentId: string, status: string, message: string, metadata?: any) => {
+  console.log(`Recording payment log: ${status} - ${message} for payment ${paymentId}`);
+  
+  try {
+    // Make sure we're not trying to use 'none' as a UUID
+    const validPaymentId = paymentId && paymentId !== 'none' ? paymentId : null;
+    
+    const { error } = await supabaseClient
+      .from('stripe_payment_logs')
+      .insert({
+        payment_id: validPaymentId,
+        status,
+        message,
+        metadata
+      });
+
+    if (error) {
+      console.error('Error recording payment log:', error);
+    }
+  } catch (error) {
+    console.error('Exception recording payment log:', error);
   }
 };

@@ -44,7 +44,7 @@ export const AllocationsSection = ({ allocations, firstName = 'My' }: Allocation
               </div>
               <Button 
                 onClick={scrollToDonateSection}
-                className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-6 text-lg rounded-full shadow-lg transform transition-all hover:scale-105 animate-pulse flex items-center gap-2 justify-center mt-2"
+                className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-6 px-8 text-lg rounded-full shadow-lg transform transition-all hover:scale-105 animate-pulse flex items-center gap-2 justify-center mt-2"
               >
                 <HandHeart className="w-6 h-6" />
                 Donate Now

@@ -44,7 +44,7 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
         {campaignTitle ? (
           <div className="mb-6 text-center">
             <span className="text-sm text-gray-500">Supporting</span>
-            <h3 className="text-xl font-semibold text-gray-900">{campaignTitle}</h3>
+            <h3 className="text-xl font-semibold text-center text-gray-900">{campaignTitle}</h3>
           </div>
         ) : (
           <h3 className="text-xl font-semibold text-center mb-6 text-gray-900">

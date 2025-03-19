@@ -5,10 +5,13 @@ import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 import { 
   logWebhookEvent, 
   markWebhookProcessed, 
+  supabaseClient
+} from './utils/db.ts';
+import { 
   handleCheckoutSessionCompleted, 
   handlePaymentIntentSucceeded, 
   handlePaymentIntentFailed 
-} from './handlers.ts';
+} from './handlers/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
