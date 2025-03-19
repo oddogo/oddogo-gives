@@ -61,7 +61,7 @@ export const usePaymentSubmit = ({
       if (error) {
         console.error("Payment service error:", error);
         setPaymentError(error.message || "Payment service error");
-        toast.error("Payment service error");
+        toast.error(`Payment service error: ${error.message || "Unknown error"}`);
         return;
       }
       
@@ -84,7 +84,7 @@ export const usePaymentSubmit = ({
       
     } catch (error: any) {
       console.error("Payment error:", error);
-      toast.error(error.message || "Payment failed");
+      toast.error(`Payment error: ${error.message || "Unknown error"}`);
       setPaymentError(error.message || "Payment processing error");
     } finally {
       setIsSubmitting(false);

@@ -40,7 +40,10 @@ export const createStripeSession = async (
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'Donation',
+              name: campaignId ? 
+                `Donation to campaign` : 
+                `Donation`,
+              description: message ? `Message: ${message}` : undefined,
             },
             unit_amount: amountInCents,
           },

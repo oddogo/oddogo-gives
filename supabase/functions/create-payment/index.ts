@@ -82,6 +82,7 @@ serve(async (req) => {
           status: 'pending',
           stripe_payment_email: email,
           message: message,
+          donor_name: name,
           campaignId: campaignId
         });
         console.log('Payment record created:', payment.id);
@@ -108,12 +109,13 @@ serve(async (req) => {
           campaignId
         );
 
-        console.log('Stripe session created successfully');
+        console.log('Stripe session created successfully:', session.id);
         
         return new Response(
           JSON.stringify({ 
             url: session.url,
-            paymentId: payment.id 
+            paymentId: payment.id,
+            sessionId: session.id  // Add session ID to response for debugging
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
