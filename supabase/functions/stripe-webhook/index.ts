@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -102,6 +101,7 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const paymentId = session.metadata?.payment_id;
+        const campaignId = session.metadata?.campaign_id;
         
         console.log('Processing checkout session completed:', paymentId);
         console.log('Session details:', {
@@ -109,7 +109,8 @@ serve(async (req) => {
           email: session.customer_email,
           customer: session.customer,
           payment_intent: session.payment_intent,
-          payment_method: session.payment_method
+          payment_method: session.payment_method,
+          campaignId: campaignId || 'none'
         });
         
         if (paymentId) {
@@ -132,6 +133,28 @@ serve(async (req) => {
             );
           }
 
+          // If a campaign ID is provided, create a campaign payment record
+          if (campaignId) {
+            try {
+              const { error: campaignPaymentError } = await supabaseClient
+                .from('campaign_payments')
+                .insert({
+                  campaign_id: campaignId,
+                  payment_id: paymentId
+                });
+                
+              if (campaignPaymentError) {
+                console.error('Error creating campaign payment record:', campaignPaymentError);
+                // Continue processing - campaign payment failures shouldn't stop the webhook
+              } else {
+                console.log('Successfully created campaign payment record');
+              }
+            } catch (err) {
+              console.error('Exception creating campaign payment:', err);
+              // Continue processing
+            }
+          }
+
           console.log('Successfully updated payment with Stripe session details');
         } else {
           console.log('No payment ID in session metadata, skipping database update');
@@ -141,6 +164,7 @@ serve(async (req) => {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
+        const campaignId = paymentIntent.metadata?.campaign_id;
         
         console.log('Processing successful payment intent:', paymentIntent.id);
         console.log('Payment details:', {
@@ -229,6 +253,30 @@ serve(async (req) => {
 
           console.log('Successfully updated payment status to completed', updatedPayment);
 
+          // If a campaign ID is provided, create a campaign payment record
+          if (campaignId) {
+            try {
+              const { error: campaignPaymentError } = await supabaseClient
+                .from('campaign_payments')
+                .insert({
+                  campaign_id: campaignId,
+                  payment_id: paymentId
+                })
+                .onConflict(['campaign_id', 'payment_id'])
+                .ignore();
+                
+              if (campaignPaymentError) {
+                console.error('Error creating campaign payment record:', campaignPaymentError);
+                // Continue processing - campaign payment failures shouldn't stop the webhook
+              } else {
+                console.log('Successfully created campaign payment record');
+              }
+            } catch (err) {
+              console.error('Exception creating campaign payment:', err);
+              // Continue processing
+            }
+          }
+
           const { error: logError } = await supabaseClient
             .from('stripe_payment_logs')
             .insert({
@@ -236,7 +284,8 @@ serve(async (req) => {
               metadata: {
                 payment_intent_id: paymentIntent.id,
                 payment_method_id: paymentIntent.payment_method,
-                charge_id: paymentIntent.latest_charge
+                charge_id: paymentIntent.latest_charge,
+                campaign_id: campaignId || null
               },
               status: 'completed',
               message: 'Payment completed successfully'

@@ -41,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    const { amount, recipientId, email, name } = requestData;
+    const { amount, recipientId, email, name, message, campaignId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
 
     const origin = req.headers.get('origin');
@@ -80,7 +80,8 @@ serve(async (req) => {
           user_id: userId,
           fingerprint_id: fingerprintId,
           status: 'pending',
-          stripe_payment_email: email
+          stripe_payment_email: email,
+          message: message
         });
         console.log('Payment record created:', payment.id);
       } catch (paymentError) {
@@ -100,7 +101,10 @@ serve(async (req) => {
           recipientId,
           fingerprintId,
           userId,
-          email
+          email,
+          name,
+          message,
+          campaignId
         );
 
         console.log('Stripe session created successfully');

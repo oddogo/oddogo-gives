@@ -15,6 +15,7 @@ export interface PaymentData {
   fingerprint_id: string;
   status: string;
   stripe_payment_email?: string;
+  message?: string;
 }
 
 export const corsHeaders = {
