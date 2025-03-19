@@ -7,8 +7,7 @@ interface CampaignDetailsProps {
   description: string | null;
   imageUrl: string | null;
   targetAmount: number;
-  completedAmount: number;
-  pendingAmount: number;
+  totalAmount: number;
   endDate: string | null;
 }
 
@@ -16,8 +15,7 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
   description,
   imageUrl,
   targetAmount,
-  completedAmount,
-  pendingAmount,
+  totalAmount,
   endDate,
 }) => {
   // Format end date if it exists
@@ -54,8 +52,7 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
           <div className="space-y-4 mb-6">
             <CampaignProgressChart 
               targetAmount={targetAmount} 
-              completedAmount={completedAmount}
-              pendingAmount={pendingAmount}
+              totalAmount={totalAmount}
               showDetails={true}
             />
               

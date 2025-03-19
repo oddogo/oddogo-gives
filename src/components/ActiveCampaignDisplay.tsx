@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCampaignData } from "@/hooks/useCampaignData";
 import { CampaignHeader } from "./campaigns/CampaignHeader";
 import { CampaignDetails } from "./campaigns/CampaignDetails";
@@ -10,7 +9,7 @@ interface ActiveCampaignDisplayProps {
 }
 
 export const ActiveCampaignDisplay: React.FC<ActiveCampaignDisplayProps> = ({ userId }) => {
-  const { campaign, completedAmount, pendingAmount, loading } = useCampaignData(userId);
+  const { campaign, totalAmount, loading } = useCampaignData(userId);
 
   if (loading) {
     return (
@@ -36,8 +35,7 @@ export const ActiveCampaignDisplay: React.FC<ActiveCampaignDisplayProps> = ({ us
           description={campaign.description}
           imageUrl={campaign.image_url}
           targetAmount={campaign.target_amount}
-          completedAmount={completedAmount}
-          pendingAmount={pendingAmount}
+          totalAmount={totalAmount}
           endDate={campaign.end_date}
         />
       </div>

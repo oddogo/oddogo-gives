@@ -1,26 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
 
-interface Payment {
-  id: string;
-  amount: number;
-  status: string;
-}
-
 interface CampaignData {
   campaign: Campaign | null;
-  completedAmount: number;
-  pendingAmount: number;
+  totalAmount: number;
   loading: boolean;
 }
 
 export function useCampaignData(userId: string): CampaignData {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
-  const [completedAmount, setCompletedAmount] = useState(0);
-  const [pendingAmount, setPendingAmount] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
     const loadCampaign = async () => {
@@ -54,7 +45,7 @@ export function useCampaignData(userId: string): CampaignData {
         // Get payment data in a simplified manner
         const { data: paymentData, error: paymentsError } = await supabase
           .from('v_stripe_payments')
-          .select('id, amount, status')
+          .select('amount')
           .eq('campaign_id', campaignData.id);
           
         if (paymentsError) {
@@ -63,25 +54,12 @@ export function useCampaignData(userId: string): CampaignData {
           return;
         }
         
-        // Explicitly type the payments to avoid deep inference
-        const payments = (paymentData || []) as Payment[];
+        // Calculate total amount using reduce to keep it simple
+        const total = (paymentData || []).reduce((sum, payment) => {
+          return sum + (Number(payment.amount) || 0);
+        }, 0);
         
-        // Calculate totals avoiding complex type inference
-        let completed = 0;
-        let pending = 0;
-        
-        payments.forEach(payment => {
-          const amount = Number(payment.amount) || 0;
-          
-          if (payment.status === 'completed') {
-            completed += amount;
-          } else if (payment.status === 'pending') {
-            pending += amount;
-          }
-        });
-        
-        setCompletedAmount(completed);
-        setPendingAmount(pending);
+        setTotalAmount(total);
       } catch (error) {
         console.error("Error loading campaign data:", error);
       } finally {
@@ -94,5 +72,5 @@ export function useCampaignData(userId: string): CampaignData {
     }
   }, [userId]);
 
-  return { campaign, completedAmount, pendingAmount, loading };
+  return { campaign, totalAmount, loading };
 }
