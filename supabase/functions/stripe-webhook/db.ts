@@ -10,12 +10,19 @@ const supabaseClient = createClient(
 export { supabaseClient };
 
 export const storeWebhookEvent = async (event: StripeEvent) => {
+  // Extract campaign_id from metadata if it exists
+  const metadata = event.data.object.metadata || {};
+  const paymentId = metadata.payment_id;
+  const campaignId = metadata.campaign_id;
+  
+  console.log('Storing webhook event with metadata:', metadata);
+  
   const { error } = await supabaseClient
     .from('stripe_webhook_events')
     .insert({
       event_type: event.type,
       stripe_event_id: event.id,
-      payment_id: event.data.object.metadata?.payment_id,
+      payment_id: paymentId,
       status: 'received',
       raw_event: event,
       is_test: !event.livemode
@@ -27,6 +34,16 @@ export const storeWebhookEvent = async (event: StripeEvent) => {
   }
   
   console.log('Successfully stored webhook event:', event.id);
+  
+  // If we have a payment_id and campaign_id, log it separately
+  if (paymentId && campaignId) {
+    await logPaymentActivity(
+      paymentId,
+      { event_id: event.id, event_type: event.type, campaign_id: campaignId },
+      'webhook_received',
+      `Webhook ${event.type} received with campaign_id: ${campaignId}`
+    );
+  }
 };
 
 export const markWebhookAsProcessed = async (eventId: string) => {
@@ -58,13 +75,17 @@ export const findPaymentByIntentId = async (intentId: string) => {
     return null;
   }
   
+  if (data) {
+    console.log(`Found payment ${data.id} with campaign_id: ${data.campaign_id || 'None'}`);
+  }
+  
   return data;
 };
 
 export const getPayment = async (paymentId: string) => {
   const { data, error } = await supabaseClient
     .from('stripe_payments')
-    .select('campaign_id')
+    .select('campaign_id, stripe_payment_intent_id, fingerprint_id')
     .eq('id', paymentId)
     .single();
   
@@ -73,10 +94,14 @@ export const getPayment = async (paymentId: string) => {
     return null;
   }
   
+  console.log(`Retrieved payment ${paymentId} with campaign_id: ${data.campaign_id || 'None'}`);
   return data;
 };
 
 export const updatePaymentWithSession = async (paymentId: string, updateData: any) => {
+  // Log the actual update data for debugging
+  console.log(`Updating payment ${paymentId} with session data:`, updateData);
+  
   const { error } = await supabaseClient
     .from('stripe_payments')
     .update(updateData)
@@ -88,9 +113,21 @@ export const updatePaymentWithSession = async (paymentId: string, updateData: an
   }
 
   console.log('Successfully updated payment with Stripe session details');
+  
+  // Get the updated record to verify
+  const { data: updatedPayment } = await supabaseClient
+    .from('stripe_payments')
+    .select('campaign_id')
+    .eq('id', paymentId)
+    .single();
+    
+  console.log(`Payment ${paymentId} now has campaign_id: ${updatedPayment?.campaign_id || 'None'}`);
 };
 
 export const updatePaymentStatus = async (paymentId: string, updateData: any) => {
+  // Log the actual update data for debugging
+  console.log(`Updating payment ${paymentId} status with data:`, updateData);
+  
   const { data, error } = await supabaseClient
     .from('stripe_payments')
     .update(updateData)
@@ -103,11 +140,12 @@ export const updatePaymentStatus = async (paymentId: string, updateData: any) =>
     throw new Error('Failed to update payment status');
   }
 
-  console.log('Successfully updated payment status to completed', data);
+  console.log('Successfully updated payment status:', data);
   return data;
 };
 
 export const logPaymentActivity = async (paymentId: string, metadata: any, status: string, message: string) => {
+  // Ensure campaign_id is included in metadata if it exists
   const { error } = await supabaseClient
     .from('stripe_payment_logs')
     .insert({
@@ -121,11 +159,13 @@ export const logPaymentActivity = async (paymentId: string, metadata: any, statu
     console.error(`Error logging payment ${status}:`, error);
     // We don't throw here to avoid failing the webhook on just logging issues
   } else {
-    console.log(`Successfully logged payment ${status}`);
+    console.log(`Successfully logged payment ${status} with metadata:`, metadata);
   }
 };
 
 export const checkCampaignPaymentExists = async (campaignId: string, paymentId: string) => {
+  console.log(`Checking if campaign payment link exists for campaign ${campaignId}, payment ${paymentId}`);
+  
   const { data, error } = await supabaseClient
     .from('campaign_payments')
     .select('id')
@@ -138,7 +178,9 @@ export const checkCampaignPaymentExists = async (campaignId: string, paymentId: 
     return false;
   }
   
-  return !!data;
+  const exists = !!data;
+  console.log(`Campaign payment link exists: ${exists}`);
+  return exists;
 };
 
 export const createCampaignPayment = async (campaignId: string, paymentId: string) => {
@@ -149,17 +191,21 @@ export const createCampaignPayment = async (campaignId: string, paymentId: strin
     return;
   }
   
-  const { error } = await supabaseClient
+  console.log(`Creating campaign payment link: campaign ${campaignId}, payment ${paymentId}`);
+  
+  const { data, error } = await supabaseClient
     .from('campaign_payments')
     .insert({
       campaign_id: campaignId,
       payment_id: paymentId
-    });
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Error creating campaign payment link:', error);
     // We don't throw here to avoid failing the webhook just because of a link issue
   } else {
-    console.log('Successfully created campaign payment link');
+    console.log('Successfully created campaign payment link:', data);
   }
 };
