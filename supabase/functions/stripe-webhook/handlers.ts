@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -196,9 +197,9 @@ const handlePaymentSuccessById = async (paymentId: string, paymentIntent: any) =
     console.log('Updating payment record with completed status and charge details');
     
     // Update payment record with successful payment data
+    // Remove the completed_at field since it doesn't exist in the database schema
     const updateData: any = {
-      status: 'completed',
-      completed_at: new Date().toISOString()
+      status: 'completed'
     };
 
     // Only add the charge ID if it exists
