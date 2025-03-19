@@ -14,8 +14,8 @@ export async function createStripeCheckoutSession(
     const stripe = new Stripe(stripeKey);
     const { amount, name, email, recipientId, campaignId, campaignTitle, campaignSlug, internalPaymentId } = paymentRequest;
     
-    // Always use a complete URL for Stripe - empty domain is not valid for Stripe
-    // Default to your application domain if no PUBLIC_APP_URL is specified
+    // Get domain from environment or use a fallback
+    // Make sure PUBLIC_APP_URL is set in your environment variables
     const domain = Deno.env.get('PUBLIC_APP_URL') || 'https://oddogo-app.vercel.app';
     console.log('Using domain for redirects:', domain);
     
@@ -25,7 +25,7 @@ export async function createStripeCheckoutSession(
     if (campaignId) successParams.append('campaign_id', campaignId);
     if (recipientId) successParams.append('recipient_id', recipientId);
     
-    // Always use absolute URLs for Stripe
+    // Use absolute URLs for Stripe
     const successUrl = `${domain}/payment-success?${successParams.toString()}`;
     const cancelUrl = `${domain}/payment-cancelled`;
     
@@ -38,7 +38,7 @@ export async function createStripeCheckoutSession(
       line_items: [
         {
           price_data: {
-            currency: 'gbp', // Changed from 'usd' to 'gbp'
+            currency: 'gbp',
             product_data: {
               name: campaignTitle || `Donation to ${name || 'charity causes'}`,
               description: campaignTitle ? `Supporting ${campaignTitle}` : 'Thank you for your donation',

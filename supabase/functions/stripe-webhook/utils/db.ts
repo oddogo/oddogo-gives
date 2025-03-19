@@ -112,4 +112,5 @@ export const recordPaymentLog = async (paymentId: string, status: string, messag
   }
 };
 
+// Export supabaseClient only once (removing the duplicate export)
 export { supabaseClient };
