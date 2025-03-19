@@ -6,6 +6,7 @@ import { Campaign } from "@/types/campaign";
 interface CampaignData {
   campaign: Campaign | null;
   totalAmount: number;
+  pendingAmount: number;
   loading: boolean;
 }
 
@@ -13,6 +14,7 @@ export function useCampaignData(userId: string): CampaignData {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   useEffect(() => {
     const loadCampaign = async () => {
@@ -43,9 +45,9 @@ export function useCampaignData(userId: string): CampaignData {
         
         setCampaign(campaignData as Campaign);
         
-        // Get payment data through the campaign_payments table
+        // Get payment data through the campaign_payments table or direct campaign_id
         if (campaignData.id) {
-          // First, get payment IDs associated with this campaign
+          // Method 1: Get payment IDs associated through campaign_payments table
           const { data: campaignPayments, error: campaignPaymentsError } = await supabase
             .from('campaign_payments')
             .select('payment_id')
@@ -53,43 +55,85 @@ export function useCampaignData(userId: string): CampaignData {
             
           if (campaignPaymentsError) {
             console.error("Error fetching campaign payment relations:", campaignPaymentsError);
-            setLoading(false);
-            return;
           }
           
-          if (!campaignPayments || campaignPayments.length === 0) {
+          // Method 2: Get payments directly associated with campaign_id
+          const { data: directPayments, error: directPaymentsError } = await supabase
+            .from('stripe_payments')
+            .select('id, amount, status')
+            .eq('campaign_id', campaignData.id);
+            
+          if (directPaymentsError) {
+            console.error("Error fetching direct campaign payments:", directPaymentsError);
+          }
+          
+          // Combine payment IDs from both methods
+          const paymentIds = new Set<string>();
+          
+          // Add payment IDs from campaign_payments relation
+          if (campaignPayments && campaignPayments.length > 0) {
+            campaignPayments.forEach(item => paymentIds.add(item.payment_id));
+          }
+          
+          // Add direct payment IDs
+          if (directPayments && directPayments.length > 0) {
+            directPayments.forEach(payment => paymentIds.add(payment.id));
+          }
+          
+          if (paymentIds.size === 0 && (!directPayments || directPayments.length === 0)) {
             console.log("No payments found for campaign:", campaignData.id);
             setTotalAmount(0);
+            setPendingAmount(0);
             setLoading(false);
             return;
           }
           
-          // Extract payment IDs
-          const paymentIds = campaignPayments.map(item => item.payment_id);
+          let completedAmount = 0;
+          let pendingAmount = 0;
           
-          // Now fetch the actual payment data
-          const { data: paymentData, error: paymentsError } = await supabase
-            .from('v_stripe_payments')
-            .select('amount')
-            .in('id', paymentIds);
-            
-          if (paymentsError) {
-            console.error("Error fetching payment details:", paymentsError);
-            setLoading(false);
-            return;
-          }
-          
-          // Calculate total using a simple approach to avoid complex type issues
-          let total = 0;
-          if (paymentData && paymentData.length > 0) {
-            for (const payment of paymentData) {
+          // Process direct payments if any
+          if (directPayments && directPayments.length > 0) {
+            for (const payment of directPayments) {
               if (payment.amount && typeof payment.amount === 'number') {
-                total += payment.amount;
+                if (payment.status === 'completed') {
+                  completedAmount += payment.amount;
+                } else if (payment.status === 'pending') {
+                  pendingAmount += payment.amount;
+                }
               }
             }
           }
           
-          setTotalAmount(total);
+          // Fetch additional payments from campaign_payments relation if needed
+          if (campaignPayments && campaignPayments.length > 0) {
+            const idsToFetch = Array.from(paymentIds).filter(id => 
+              !directPayments || !directPayments.some(p => p.id === id)
+            );
+            
+            if (idsToFetch.length > 0) {
+              const { data: paymentData, error: paymentsError } = await supabase
+                .from('stripe_payments')
+                .select('id, amount, status')
+                .in('id', idsToFetch);
+                
+              if (paymentsError) {
+                console.error("Error fetching payment details:", paymentsError);
+              } else if (paymentData && paymentData.length > 0) {
+                for (const payment of paymentData) {
+                  if (payment.amount && typeof payment.amount === 'number') {
+                    if (payment.status === 'completed') {
+                      completedAmount += payment.amount;
+                    } else if (payment.status === 'pending') {
+                      pendingAmount += payment.amount;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          setTotalAmount(completedAmount);
+          setPendingAmount(pendingAmount);
         }
       } catch (error) {
         console.error("Error loading campaign data:", error);
@@ -103,5 +147,5 @@ export function useCampaignData(userId: string): CampaignData {
     }
   }, [userId]);
 
-  return { campaign, totalAmount, loading };
+  return { campaign, totalAmount, pendingAmount, loading };
 }

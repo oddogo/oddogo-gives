@@ -9,7 +9,7 @@ interface ActiveCampaignDisplayProps {
 }
 
 export const ActiveCampaignDisplay: React.FC<ActiveCampaignDisplayProps> = ({ userId }) => {
-  const { campaign, totalAmount, loading } = useCampaignData(userId);
+  const { campaign, totalAmount, pendingAmount, loading } = useCampaignData(userId);
 
   if (loading) {
     return (
@@ -36,6 +36,7 @@ export const ActiveCampaignDisplay: React.FC<ActiveCampaignDisplayProps> = ({ us
           imageUrl={campaign.image_url}
           targetAmount={campaign.target_amount}
           totalAmount={totalAmount}
+          pendingAmount={pendingAmount}
           endDate={campaign.end_date}
         />
       </div>
