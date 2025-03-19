@@ -59,7 +59,8 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
         
       if (campaignPaymentError) {
         console.error('Error creating campaign payment record:', campaignPaymentError);
-        throw new Error(`Failed to create campaign payment record: ${campaignPaymentError.message}`);
+        // Continue even if campaign payment association fails - don't block the main payment
+        console.log('Continuing despite campaign payment error');
       } else {
         console.log('Campaign payment record created successfully');
       }

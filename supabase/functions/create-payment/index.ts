@@ -30,7 +30,7 @@ serve(async (req) => {
     console.log('Stripe initialized');
 
     const requestData = await req.json();
-    console.log('Received request data:', requestData);
+    console.log('Received request data:', JSON.stringify(requestData));
     
     const validation = validatePaymentRequest(requestData);
     if (!validation.isValid) {
@@ -41,8 +41,9 @@ serve(async (req) => {
       );
     }
 
-    const { amount, recipientId, email, name, message, campaignId } = requestData;
+    const { amount, recipientId, recipientName, email, name, message, campaignId } = requestData;
     const amountInCents = Math.round(Number(amount) * 100);
+    console.log('Processed amount in cents:', amountInCents);
 
     const origin = req.headers.get('origin');
     if (!origin) {

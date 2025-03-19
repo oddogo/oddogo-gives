@@ -1,7 +1,7 @@
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -17,4 +17,14 @@ export interface PaymentData {
   message?: string;
   campaignId?: string;
   donor_name?: string;
+}
+
+export interface PaymentRequest {
+  amount: number;
+  recipientId: string;
+  recipientName: string;
+  email?: string;
+  name?: string;
+  message?: string;
+  campaignId?: string;
 }
