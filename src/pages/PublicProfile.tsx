@@ -29,6 +29,7 @@ const PublicProfile = () => {
   );
 
   const hidePaymentForm = user?.id === id;
+  const firstName = profile.display_name.split(' ')[0];
 
   return (
     <div className="min-h-screen bg-white">
@@ -37,7 +38,7 @@ const PublicProfile = () => {
 
       <div id="allocations">
         {allocations.length > 0 ? (
-          <AllocationsSection allocations={allocations} />
+          <AllocationsSection allocations={allocations} firstName={firstName} />
         ) : (
           <div className="text-center py-8 text-gray-500">
             No allocations found for this profile.
@@ -60,7 +61,7 @@ const PublicProfile = () => {
                 Donate Today
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                Your generous donation will directly support the charities and initiatives that matter most to {profile.display_name}.
+                Your generous donation will directly support the charities and initiatives that matter most to {firstName}.
               </p>
             </div>
             

@@ -21,6 +21,7 @@ interface PaymentFormContentProps {
   form: UseFormReturn<PaymentFormValues>;
   isSubmitting: boolean;
   recipientName: string;
+  firstName?: string;
   campaignId?: string;
   campaignTitle?: string;
   onSubmit: (values: PaymentFormValues) => void;
@@ -30,6 +31,7 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
   form,
   isSubmitting,
   recipientName,
+  firstName = recipientName.split(' ')[0],
   campaignId,
   campaignTitle,
   onSubmit,
@@ -45,8 +47,8 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
             <h3 className="text-xl font-semibold text-gray-900">{campaignTitle}</h3>
           </div>
         ) : (
-          <h3 className="text-xl font-semibold text-center mb-6">
-            Support {recipientName}
+          <h3 className="text-xl font-semibold text-center mb-6 text-gray-900">
+            Support {firstName}
           </h3>
         )}
 
@@ -58,7 +60,7 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
           name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Message (Optional)</FormLabel>
+              <FormLabel className="text-gray-700">Message (Optional)</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Add a personal message..."
@@ -81,7 +83,7 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
         </Button>
 
         <PaymentFooter 
-          recipientName={recipientName} 
+          recipientName={firstName} 
           hasCampaign={!!campaignId} 
         />
       </form>
