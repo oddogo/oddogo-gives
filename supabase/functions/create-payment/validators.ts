@@ -2,7 +2,7 @@
 import { PaymentRequest } from './types.ts';
 
 export const validatePaymentRequest = (data: any): { isValid: boolean; error?: string } => {
-  console.log('Validating payment request:', JSON.stringify(data));
+  console.log('Validating payment request:', data);
 
   // Check if data exists
   if (!data) {

@@ -147,13 +147,6 @@ export type Database = {
             referencedRelation: "v_stripe_payments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "campaign_payments_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: true
-            referencedRelation: "v_stripe_payments_extended"
-            referencedColumns: ["id"]
-          },
         ]
       }
       campaigns: {
@@ -1467,13 +1460,6 @@ export type Database = {
             referencedRelation: "v_stripe_payments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "stripe_payment_logs_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "v_stripe_payments_extended"
-            referencedColumns: ["id"]
-          },
         ]
       }
       stripe_payments: {
@@ -1481,10 +1467,8 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
-          donor_name: string | null
           fingerprint_id: string | null
           id: string
-          message: string | null
           status: string
           stripe_charge_id: string | null
           stripe_customer_id: string | null
@@ -1498,10 +1482,8 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
-          donor_name?: string | null
           fingerprint_id?: string | null
           id?: string
-          message?: string | null
           status?: string
           stripe_charge_id?: string | null
           stripe_customer_id?: string | null
@@ -1515,10 +1497,8 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
-          donor_name?: string | null
           fingerprint_id?: string | null
           id?: string
-          message?: string | null
           status?: string
           stripe_charge_id?: string | null
           stripe_customer_id?: string | null
@@ -1585,13 +1565,6 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: false
             referencedRelation: "v_stripe_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stripe_webhook_events_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "v_stripe_payments_extended"
             referencedColumns: ["id"]
           },
         ]
@@ -2258,52 +2231,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "v_donors_list"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stripe_payments_fingerprint_id_fkey"
-            columns: ["fingerprint_id"]
-            isOneToOne: false
-            referencedRelation: "fingerprints"
-            referencedColumns: ["fingerprint"]
-          },
-        ]
-      }
-      v_stripe_payments_extended: {
-        Row: {
-          amount: number | null
-          campaign_id: string | null
-          campaign_slug: string | null
-          campaign_title: string | null
-          campaign_user_id: string | null
-          created_at: string | null
-          currency: string | null
-          donor_name: string | null
-          fingerprint_id: string | null
-          id: string | null
-          message: string | null
-          recipient_name: string | null
-          status: string | null
-          stripe_charge_id: string | null
-          stripe_payment_email: string | null
-          stripe_payment_intent_id: string | null
-          stripe_payment_method_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_payments_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_payments_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "v_campaign_statistics"
             referencedColumns: ["id"]
           },
           {

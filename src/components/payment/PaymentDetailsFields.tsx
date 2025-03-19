@@ -2,6 +2,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   FormControl,
   FormField,
@@ -9,10 +10,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentDetailsFieldsProps {
-  form: UseFormReturn<PaymentFormValues>;
+  form: UseFormReturn<any>;
 }
 
 export const PaymentDetailsFields: React.FC<PaymentDetailsFieldsProps> = ({ form }) => {
@@ -42,6 +42,24 @@ export const PaymentDetailsFields: React.FC<PaymentDetailsFieldsProps> = ({ form
               <Input 
                 type="email" 
                 placeholder="your@email.com" 
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      <FormField
+        control={form.control}
+        name="message"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Message (Optional)</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Add a personal message..." 
+                className="resize-none"
                 {...field} 
               />
             </FormControl>

@@ -1,7 +1,9 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { 
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import {
   Form,
   FormControl,
   FormField,
@@ -9,20 +11,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PaymentAmountSelector } from "./PaymentAmountSelector";
 import { PaymentDetailsFields } from "./PaymentDetailsFields";
 import { PaymentFooter } from "./PaymentFooter";
-import { Textarea } from "@/components/ui/textarea";
-import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentFormContentProps {
-  form: UseFormReturn<PaymentFormValues>;
+  form: UseFormReturn<any>;
   isSubmitting: boolean;
   recipientName: string;
   campaignId?: string;
-  campaignTitle?: string;
-  onSubmit: (values: PaymentFormValues) => void;
+  onSubmit: (values: any) => void;
 }
 
 export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
@@ -30,54 +29,55 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
   isSubmitting,
   recipientName,
   campaignId,
-  campaignTitle,
   onSubmit,
 }) => {
-  const handleSubmit = form.handleSubmit(onSubmit);
-
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {campaignTitle ? (
-          <div className="mb-6 text-center">
-            <span className="text-sm text-gray-500">Supporting</span>
-            <h3 className="text-xl font-semibold text-gray-900">{campaignTitle}</h3>
-          </div>
-        ) : (
-          <h3 className="text-xl font-semibold text-center mb-6">
-            Support {recipientName}
-          </h3>
-        )}
-
-        <PaymentAmountSelector form={form} />
-        <PaymentDetailsFields form={form} />
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="message"
+          name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Message (Optional)</FormLabel>
+              <FormLabel>Donation Amount (£)</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Add a personal message..."
+                <Input
+                  type="number"
+                  placeholder="25"
+                  min={1}
+                  step={1}
                   {...field}
-                  className="resize-none"
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <Button
-          type="submit"
-          className="w-full py-6 text-lg"
+        
+        <PaymentAmountSelector form={form} />
+        
+        <PaymentDetailsFields form={form} />
+        
+        <input 
+          type="hidden" 
+          {...form.register("campaign_id")} 
+        />
+        
+        <Button 
+          type="submit" 
+          className="w-full" 
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Processing..." : "Make Payment"}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            `Donate £${form.watch("amount") || 0}`
+          )}
         </Button>
-
+        
         <PaymentFooter 
           recipientName={recipientName} 
           hasCampaign={!!campaignId} 
