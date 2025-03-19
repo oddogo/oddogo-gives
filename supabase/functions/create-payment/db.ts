@@ -26,7 +26,7 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
         currency: paymentData.currency,
         status: 'pending',
         stripe_payment_email: paymentData.stripe_payment_email,
-        message: paymentData.message
+        message: paymentData.message || ''
       }])
       .select()
       .single();
