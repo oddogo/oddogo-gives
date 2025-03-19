@@ -8,6 +8,14 @@ interface ActiveCampaignDisplayProps {
   userId: string;
 }
 
+// Define an explicit interface for campaign payments
+interface CampaignPayment {
+  id: string;
+  amount: number;
+  status: string;
+  // Add other fields as needed
+}
+
 export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) => {
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -68,13 +76,16 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         let completed = 0;
         let pending = 0;
         
-        campaignPaymentsData.forEach((payment) => {
-          if (payment.status === 'completed') {
-            completed += payment.amount;
-          } else if (payment.status === 'pending') {
-            pending += payment.amount;
-          }
-        });
+        if (campaignPaymentsData) {
+          // Use the explicit type annotation to avoid the deep instantiation error
+          (campaignPaymentsData as CampaignPayment[]).forEach(payment => {
+            if (payment.status === 'completed') {
+              completed += payment.amount;
+            } else if (payment.status === 'pending') {
+              pending += payment.amount;
+            }
+          });
+        }
         
         console.log("Campaign payment amounts:", { completed, pending });
         setCompletedAmount(completed);
