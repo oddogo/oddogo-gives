@@ -1,8 +1,8 @@
 
-import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
+import { PaymentData } from './types.ts';
 
 export const createStripeSession = async (
-  stripe: Stripe,
+  stripe: any,
   amountInCents: number,
   origin: string,
   payment: any,
@@ -10,27 +10,27 @@ export const createStripeSession = async (
   fingerprintId: string,
   userId: string | null,
   email?: string,
-  name?: string,
+  name?: string, 
   message?: string,
   campaignId?: string
 ) => {
-  console.log('Creating Stripe session with params:', {
-    amount: amountInCents,
+  console.log('Creating Stripe session with parameters:', {
+    amountInCents,
     paymentId: payment.id,
     recipientId,
     fingerprintId,
     userId,
     email,
     name,
-    message,
-    campaignId
+    hasMessage: !!message,
+    hasCampaignId: !!campaignId
   });
 
-  // Validate fingerprint ID is present
-  if (!fingerprintId) {
-    console.error('Missing fingerprint ID when creating Stripe session');
-    throw new Error('Missing fingerprint ID for payment');
-  }
+  const successUrl = `${origin}/payment-success?payment_id=${payment.id}`;
+  const cancelUrl = `${origin}/payment-cancelled?payment_id=${payment.id}`;
+  
+  console.log('Payment success URL:', successUrl);
+  console.log('Payment cancel URL:', cancelUrl);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -40,10 +40,7 @@ export const createStripeSession = async (
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: campaignId ? 
-                `Donation to campaign` : 
-                `Donation`,
-              description: message ? `Message: ${message}` : undefined,
+              name: 'Donation',
             },
             unit_amount: amountInCents,
           },
@@ -51,20 +48,20 @@ export const createStripeSession = async (
         },
       ],
       mode: 'payment',
-      success_url: `${origin}/payment-success?recipient_id=${recipientId}${campaignId ? `&campaign_id=${campaignId}` : ''}`,
-      cancel_url: `${origin}/payment-cancelled`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       customer_email: email,
       metadata: {
         payment_id: payment.id,
         recipient_id: recipientId,
         fingerprint_id: fingerprintId,
         user_id: userId || 'anonymous',
-        donor_name: name || '',
+        donor_name: name || 'Anonymous',
         message: message || '',
         campaign_id: campaignId || ''
-      },
+      }
     });
-
+    
     console.log('Stripe session created:', session.id);
     return session;
   } catch (error) {
