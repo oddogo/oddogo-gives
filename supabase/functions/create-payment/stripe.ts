@@ -9,7 +9,8 @@ export const createStripeSession = async (
   recipientId: string,
   fingerprintId: string,
   userId: string | null,
-  email?: string
+  email?: string,
+  campaignId?: string
 ) => {
   console.log('Creating Stripe session with params:', {
     amount: amountInCents,
@@ -17,10 +18,15 @@ export const createStripeSession = async (
     recipientId,
     fingerprintId,
     userId,
-    email
+    email,
+    campaignId
   });
 
   try {
+    const successUrl = campaignId 
+      ? `${origin}/payment-success?recipient_id=${recipientId}&campaign_id=${campaignId}`
+      : `${origin}/payment-success?recipient_id=${recipientId}`;
+      
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -36,14 +42,15 @@ export const createStripeSession = async (
         },
       ],
       mode: 'payment',
-      success_url: `${origin}/payment-success?recipient_id=${recipientId}`,
+      success_url: successUrl,
       cancel_url: `${origin}/payment-cancelled`,
       customer_email: email,
       metadata: {
         payment_id: payment.id,
         recipient_id: recipientId,
         fingerprint_id: fingerprintId,
-        user_id: userId || 'anonymous'
+        user_id: userId || 'anonymous',
+        campaign_id: campaignId || ''
       },
     });
 

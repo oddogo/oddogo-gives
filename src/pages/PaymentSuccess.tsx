@@ -10,9 +10,12 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const recipient_id = searchParams.get("recipient_id");
+  const campaign_id = searchParams.get("campaign_id");
 
   const handleReturnClick = () => {
-    if (recipient_id) {
+    if (campaign_id) {
+      navigate(`/campaigns/${campaign_id}`);
+    } else if (recipient_id) {
       navigate(`/profile/${recipient_id}`);
     } else {
       navigate('/');
@@ -35,7 +38,11 @@ const PaymentSuccess = () => {
             Thank you for your donation. Your payment is being processed.
           </p>
           <Button onClick={handleReturnClick}>
-            Return to Profile
+            {campaign_id 
+              ? "Return to Campaign" 
+              : recipient_id 
+                ? "Return to Profile" 
+                : "Return Home"}
           </Button>
         </CardContent>
       </Card>
