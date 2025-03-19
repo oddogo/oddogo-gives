@@ -83,7 +83,10 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
           {isSubmitting ? "Processing..." : "Make Payment"}
         </Button>
 
-        <PaymentFooter />
+        <PaymentFooter 
+          recipientName={recipientName} 
+          hasCampaign={!!campaignId} 
+        />
       </form>
     </Form>
   );

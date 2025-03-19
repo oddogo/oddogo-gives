@@ -59,7 +59,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   useEffect(() => {
-    form.setValue("campaign_id", campaignId || "");
+    if (campaignId) {
+      form.setValue("campaign_id", campaignId);
+    }
   }, [campaignId, form]);
 
   if (isStripeLoading) {
