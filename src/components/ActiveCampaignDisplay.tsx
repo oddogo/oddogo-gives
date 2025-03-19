@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Zap, Calendar, CheckCircle, Clock } from "lucide-react";
@@ -37,7 +36,7 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
           .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (campaignError) {
           if (campaignError.code !== 'PGRST116') { // Not found error
@@ -53,9 +52,9 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         setCampaign(campaignData);
         
         // Get all payments associated with this campaign
-        const { data: campaignPaymentsData, error: paymentsError } = await supabase
+        const { data, error: paymentsError } = await supabase
           .from('v_stripe_payments')
-          .select('*')
+          .select('id, amount, status')
           .eq('campaign_id', campaignData.id);
           
         if (paymentsError) {
@@ -63,6 +62,9 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
           setLoading(false);
           return;
         }
+        
+        // Use type assertion with a simpler type to avoid deep instantiation
+        const campaignPaymentsData = data as CampaignPayment[];
         
         console.log("Campaign payments:", campaignPaymentsData);
         
@@ -76,16 +78,14 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         let completed = 0;
         let pending = 0;
         
-        if (campaignPaymentsData) {
-          // Use the explicit type annotation to avoid the deep instantiation error
-          (campaignPaymentsData as CampaignPayment[]).forEach(payment => {
-            if (payment.status === 'completed') {
-              completed += payment.amount;
-            } else if (payment.status === 'pending') {
-              pending += payment.amount;
-            }
-          });
-        }
+        // Process the payments
+        campaignPaymentsData.forEach(payment => {
+          if (payment.status === 'completed') {
+            completed += payment.amount;
+          } else if (payment.status === 'pending') {
+            pending += payment.amount;
+          }
+        });
         
         console.log("Campaign payment amounts:", { completed, pending });
         setCompletedAmount(completed);
