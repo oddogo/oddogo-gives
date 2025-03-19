@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
 
-interface CampaignPayment {
+interface Payment {
   id: string;
   amount: number;
   status: string;
@@ -27,8 +27,6 @@ export function useCampaignData(userId: string): CampaignData {
       try {
         setLoading(true);
         
-        console.log("Loading active campaign for user:", userId);
-        
         // Get the active campaign for this user
         const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
@@ -40,26 +38,21 @@ export function useCampaignData(userId: string): CampaignData {
           .maybeSingle();
           
         if (campaignError) {
-          if (campaignError.code !== 'PGRST116') { // Not found error
-            console.error("Error loading campaign:", campaignError);
-          } else {
-            console.log("No active campaign found for user:", userId);
-          }
+          console.error("Error loading campaign:", campaignError);
           setLoading(false);
           return;
         }
         
         if (!campaignData) {
-          console.log("No active campaign data returned");
+          console.log("No active campaign found for user:", userId);
           setLoading(false);
           return;
         }
         
-        console.log("Found active campaign:", campaignData);
         setCampaign(campaignData as Campaign);
         
-        // Get all payments associated with this campaign
-        const { data, error: paymentsError } = await supabase
+        // Get payment data in a simplified manner
+        const { data: paymentData, error: paymentsError } = await supabase
           .from('v_stripe_payments')
           .select('id, amount, status')
           .eq('campaign_id', campaignData.id);
@@ -70,30 +63,23 @@ export function useCampaignData(userId: string): CampaignData {
           return;
         }
         
-        const payments: CampaignPayment[] = data || [];
+        // Explicitly type the payments to avoid deep inference
+        const payments = (paymentData || []) as Payment[];
         
-        console.log("Campaign payments:", payments);
-        
-        if (payments.length === 0) {
-          console.log("No payments associated with this campaign yet");
-          setLoading(false);
-          return;
-        }
-        
-        // Calculate completed and pending amounts
+        // Calculate totals avoiding complex type inference
         let completed = 0;
         let pending = 0;
         
-        // Process the payments
         payments.forEach(payment => {
+          const amount = Number(payment.amount) || 0;
+          
           if (payment.status === 'completed') {
-            completed += payment.amount;
+            completed += amount;
           } else if (payment.status === 'pending') {
-            pending += payment.amount;
+            pending += amount;
           }
         });
         
-        console.log("Campaign payment amounts:", { completed, pending });
         setCompletedAmount(completed);
         setPendingAmount(pending);
       } catch (error) {
