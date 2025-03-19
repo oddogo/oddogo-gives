@@ -12,7 +12,6 @@ export const createStripeSession = async (
   email?: string,
   campaignId?: string
 ) => {
-  // Log all parameters including campaign_id
   console.log('Creating Stripe session with params:', {
     amount: amountInCents,
     paymentId: payment.id,
@@ -20,7 +19,7 @@ export const createStripeSession = async (
     fingerprintId,
     userId,
     email,
-    campaignId: campaignId || 'None'
+    campaignId
   });
 
   try {
@@ -28,10 +27,6 @@ export const createStripeSession = async (
       ? `${origin}/payment-success?recipient_id=${recipientId}&campaign_id=${campaignId}`
       : `${origin}/payment-success?recipient_id=${recipientId}`;
       
-    // Ensure campaign_id is properly sanitized (not empty string)
-    const sanitizedCampaignId = campaignId && campaignId.trim() !== '' ? campaignId : null;
-    
-    // Create session with campaign_id in metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -39,7 +34,7 @@ export const createStripeSession = async (
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: sanitizedCampaignId ? 'Campaign Donation' : 'Donation',
+              name: 'Donation',
             },
             unit_amount: amountInCents,
           },
@@ -55,12 +50,11 @@ export const createStripeSession = async (
         recipient_id: recipientId,
         fingerprint_id: fingerprintId,
         user_id: userId || 'anonymous',
-        campaign_id: sanitizedCampaignId || ''
+        campaign_id: campaignId || ''
       },
     });
 
     console.log('Stripe session created:', session.id);
-    console.log('Session metadata:', session.metadata);
     return session;
   } catch (error) {
     console.error('Error creating Stripe session:', error);
