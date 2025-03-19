@@ -114,7 +114,7 @@ serve(async (req) => {
         });
         
         if (paymentId) {
-          const { error: updateError } = await supabaseClient
+          const { data: updatedPayment, error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               stripe_payment_intent_id: session.payment_intent,
@@ -123,7 +123,9 @@ serve(async (req) => {
               stripe_customer_id: session.customer,
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId);
+            .eq('id', paymentId)
+            .select()
+            .single();
 
           if (updateError) {
             console.error('Error updating payment record:', updateError);
@@ -133,15 +135,13 @@ serve(async (req) => {
             );
           }
 
-          // If a campaign ID is directly in the payment record or in metadata, handle it
-          const paymentCampaignId = updatedPayment?.campaign_id || paymentIntent.metadata?.campaign_id;
-          
-          if (paymentCampaignId) {
+          // Handle campaign ID if present
+          if (campaignId) {
             try {
               const { error: campaignPaymentError } = await supabaseClient
                 .from('campaign_payments')
                 .insert({
-                  campaign_id: paymentCampaignId,
+                  campaign_id: campaignId,
                   payment_id: paymentId
                 })
                 .onConflict(['campaign_id', 'payment_id'])
@@ -151,7 +151,7 @@ serve(async (req) => {
                 console.error('Error creating campaign payment record:', campaignPaymentError);
                 // Continue processing - campaign payment failures shouldn't stop the webhook
               } else {
-                console.log('Successfully created campaign payment record for campaign:', paymentCampaignId);
+                console.log('Successfully created campaign payment record for campaign:', campaignId);
               }
             } catch (err) {
               console.error('Exception creating campaign payment:', err);
@@ -255,17 +255,16 @@ serve(async (req) => {
             );
           }
 
-          console.log('Successfully updated payment status to completed', updatedPayment);
+          console.log('Successfully updated payment status to completed');
 
-          // If a campaign ID is directly in the payment record or in metadata, handle it
-          const paymentCampaignId = updatedPayment?.campaign_id || paymentIntent.metadata?.campaign_id;
-          
-          if (paymentCampaignId) {
+          // If a campaign ID is in metadata, handle it
+          if (campaignId) {
             try {
+              console.log(`Creating campaign payment relation for campaign ${campaignId} and payment ${paymentId}`);
               const { error: campaignPaymentError } = await supabaseClient
                 .from('campaign_payments')
                 .insert({
-                  campaign_id: paymentCampaignId,
+                  campaign_id: campaignId,
                   payment_id: paymentId
                 })
                 .onConflict(['campaign_id', 'payment_id'])
@@ -275,12 +274,14 @@ serve(async (req) => {
                 console.error('Error creating campaign payment record:', campaignPaymentError);
                 // Continue processing - campaign payment failures shouldn't stop the webhook
               } else {
-                console.log('Successfully created campaign payment record for campaign:', paymentCampaignId);
+                console.log('Successfully created campaign payment record for campaign:', campaignId);
               }
             } catch (err) {
               console.error('Exception creating campaign payment:', err);
               // Continue processing
             }
+          } else {
+            console.log('No campaign ID found in payment intent metadata');
           }
 
           const { error: logError } = await supabaseClient
