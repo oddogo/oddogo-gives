@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -9,24 +8,32 @@ export const logWebhookEvent = async (eventType: string, eventId: string, paymen
   console.log('Logging webhook event:', { eventType, eventId, paymentId, isTestMode });
 
   try {
+    // Validate paymentId is not undefined but can be null
+    const safePaymentId = paymentId === undefined ? null : paymentId;
+    
+    // Ensure eventData is serializable
+    const safeEventData = eventData ? JSON.parse(JSON.stringify(eventData)) : null;
+    
     const { error } = await supabaseClient
       .from('stripe_webhook_logs')
       .insert({
         event_type: eventType,
         event_id: eventId,
-        payment_id: paymentId,
-        event_data: eventData,
+        payment_id: safePaymentId,
+        event_data: safeEventData,
         is_test: isTestMode,
         status: 'received'
       });
 
     if (error) {
       console.error('Error logging webhook event:', error);
+      throw new Error(`Failed to log webhook event: ${error.message}`);
     } else {
       console.log('Webhook event logged successfully');
     }
   } catch (error) {
     console.error('Exception in logWebhookEvent:', error);
+    // Don't throw here to prevent stopping the webhook processing flow
   }
 };
 
@@ -44,11 +51,13 @@ export const markWebhookProcessed = async (eventId: string) => {
 
     if (error) {
       console.error('Error marking webhook as processed:', error);
+      throw new Error(`Failed to mark webhook as processed: ${error.message}`);
     } else {
       console.log('Webhook marked as processed successfully');
     }
   } catch (error) {
     console.error('Exception in markWebhookProcessed:', error);
+    // Don't throw here to prevent stopping the webhook processing flow
   }
 };
 
@@ -154,7 +163,6 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
   return handlePaymentSuccessById(paymentId, paymentIntent);
 };
 
-// Helper function to handle payment success by ID
 const handlePaymentSuccessById = async (paymentId: string, paymentIntent: any) => {
   try {
     // Find the payment charge
