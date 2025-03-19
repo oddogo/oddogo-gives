@@ -17,8 +17,73 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
       .eq('stripe_payment_intent_id', paymentIntent.id)
       .maybeSingle();
       
-    if (findError || !paymentByIntentId) {
-      console.error('Unable to find payment by payment_intent_id:', findError || 'No payment found');
+    if (findError) {
+      console.error('Error finding payment by payment_intent_id:', findError);
+      return;
+    }
+    
+    if (!paymentByIntentId) {
+      console.error('No payment found with payment_intent_id:', paymentIntent.id);
+      
+      // If we have an email in the payment intent, try to find by email
+      if (paymentIntent.receipt_email) {
+        console.log('Attempting to find payment by email:', paymentIntent.receipt_email);
+        const { data: paymentByEmail, error: emailError } = await supabaseClient
+          .from('stripe_payments')
+          .select('id')
+          .eq('stripe_payment_email', paymentIntent.receipt_email)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          
+        if (emailError) {
+          console.error('Error finding payment by email:', emailError);
+          return;
+        }
+        
+        if (!paymentByEmail) {
+          console.error('No payment found with email:', paymentIntent.receipt_email);
+          return;
+        }
+        
+        console.log('Found payment by email:', paymentByEmail.id);
+        return handlePaymentSuccessById(paymentByEmail.id, paymentIntent);
+      }
+      
+      // As a last resort, create a new payment record if we have enough information
+      if (paymentIntent.amount && paymentIntent.currency) {
+        console.log('Creating new payment record for orphaned payment intent');
+        
+        const newPaymentData = {
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency.toLowerCase(),
+          stripe_payment_intent_id: paymentIntent.id,
+          stripe_payment_email: paymentIntent.receipt_email || '',
+          stripe_payment_method_id: paymentIntent.payment_method || null,
+          stripe_charge_id: paymentIntent.latest_charge || null,
+          status: 'completed',
+          user_id: paymentIntent.metadata?.recipient_id || null,
+          fingerprint_id: paymentIntent.metadata?.fingerprint_id || null,
+          campaign_id: paymentIntent.metadata?.campaign_id || null,
+          donor_name: paymentIntent.metadata?.donor_name || 'Anonymous'
+        };
+        
+        const { data: newPayment, error: createError } = await supabaseClient
+          .from('stripe_payments')
+          .insert(newPaymentData)
+          .select('id')
+          .single();
+          
+        if (createError) {
+          console.error('Error creating new payment record:', createError);
+          return;
+        }
+        
+        console.log('Created new payment record:', newPayment.id);
+        return;
+      }
+      
       return;
     }
     

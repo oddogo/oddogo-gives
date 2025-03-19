@@ -15,6 +15,7 @@ export interface Payment {
   donor_name?: string;
   fingerprint_id?: string;
   user_id?: string;
+  failure_message?: string;
 }
 
 export interface CampaignPaymentGroup {
