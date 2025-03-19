@@ -5,7 +5,6 @@ import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 import { 
   logWebhookEvent, 
   markWebhookProcessed, 
-  recordPaymentLog, 
   handleCheckoutSessionCompleted, 
   handlePaymentIntentSucceeded, 
   handlePaymentIntentFailed 
@@ -111,7 +110,7 @@ serve(async (req) => {
         event.type,
         event.id,
         paymentId,
-        event.data.object,
+        event,
         !event.livemode
       );
     } catch (logError) {
@@ -123,10 +122,6 @@ serve(async (req) => {
     console.log('Event metadata:', JSON.stringify(event.data.object.metadata || {}));
 
     try {
-      // Generate a correlation ID for this webhook processing
-      const correlationId = crypto.randomUUID();
-      console.log(`Webhook processing correlation ID: ${correlationId}`);
-      
       // Process different event types
       switch (event.type) {
         case 'checkout.session.completed':
@@ -143,14 +138,6 @@ serve(async (req) => {
           
         default:
           console.log('Unhandled event type:', event.type);
-          
-          // Log unhandled event type
-          await recordPaymentLog(
-            paymentId || 'none',
-            'unhandled_event',
-            `Unhandled webhook event type: ${event.type}`,
-            { event_id: event.id }
-          );
       }
 
       // Mark webhook as processed - wrap in try/catch to prevent failure
@@ -161,21 +148,7 @@ serve(async (req) => {
         // Continue to return success even if marking fails
       }
 
-      // Log successful processing
-      await recordPaymentLog(
-        paymentId || 'none',
-        'webhook_processed',
-        `Successfully processed webhook event: ${event.type}`,
-        { 
-          event_id: event.id,
-          correlation_id: correlationId
-        }
-      );
-
-      return new Response(JSON.stringify({ 
-        received: true,
-        correlation_id: correlationId
-      }), {
+      return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
@@ -185,11 +158,7 @@ serve(async (req) => {
       
       // Still return 200 to prevent Stripe from retrying, but include error details
       return new Response(
-        JSON.stringify({ 
-          received: true, 
-          warning: processError.message,
-          event_id: event.id
-        }), 
+        JSON.stringify({ received: true, warning: processError.message }), 
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200, // Return 200 even on processing errors to prevent retries
