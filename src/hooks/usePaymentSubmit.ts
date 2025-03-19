@@ -96,8 +96,8 @@ export function usePaymentSubmit() {
         throw new Error(`Stripe checkout error: ${stripeError.message}`);
       }
       
-      // Success is handled by redirect to success page
-    } catch (error) {
+      return { success: true, error: null };
+    } catch (error: any) {
       console.error('Payment submission error:', error);
       toast.error(`Payment failed: ${error.message}`);
       return { success: false, error: error.message };

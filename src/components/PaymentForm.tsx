@@ -27,6 +27,7 @@ interface PaymentFormProps {
   recipientName: string;
   campaignId?: string;
   campaignTitle?: string;
+  campaignSlug?: string;
   onSuccess?: (paymentId: string) => void;
 }
 
@@ -35,6 +36,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   recipientName,
   campaignId,
   campaignTitle,
+  campaignSlug,
   onSuccess,
 }) => {
   const { stripePromise, isStripeLoading, stripeError } = useStripeInitialization();
@@ -50,19 +52,37 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     },
   });
 
-  const { isSubmitting, submitPayment } = usePaymentSubmit({
-    recipientId,
-    recipientName,
-    campaignId,
-    onSuccess,
-    stripePromise,
-  });
+  const { isSubmitting, submitPayment } = usePaymentSubmit();
 
   useEffect(() => {
     if (campaignId) {
       form.setValue("campaign_id", campaignId);
     }
   }, [campaignId, form]);
+
+  const handleSubmit = async (formData: PaymentFormValues) => {
+    const options = {
+      recipientId,
+      recipientName,
+      campaignId,
+      campaignTitle,
+      campaignSlug
+    };
+    
+    const result = await submitPayment(
+      {
+        amount: formData.amount,
+        name: formData.name,
+        email: formData.email,
+        message: formData.message
+      }, 
+      options
+    );
+    
+    if (result.success && onSuccess) {
+      onSuccess(result.paymentId);
+    }
+  };
 
   if (isStripeLoading) {
     return (
@@ -99,7 +119,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         recipientName={recipientName}
         campaignId={campaignId}
         campaignTitle={campaignTitle}
-        onSubmit={submitPayment}
+        onSubmit={handleSubmit}
       />
     </div>
   );
