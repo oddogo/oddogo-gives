@@ -32,7 +32,7 @@ export const createStripeSession = async (
   // Extract the origin from the request or use a fallback from environment
   const appUrl = Deno.env.get('APP_URL') || origin;
   // Make sure we're not using the edge-runtime.supabase.com domain
-  const correctOrigin = appUrl.includes('edge-runtime.supabase.com') 
+  const correctOrigin = appUrl.includes('edge-runtime.supabase.co') 
     ? Deno.env.get('SUPABASE_URL') || 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
     : appUrl;
   

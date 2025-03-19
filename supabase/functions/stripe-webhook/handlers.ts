@@ -1,10 +1,9 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
 export const logWebhookEvent = async (eventType: string, eventId: string, paymentId: string | null, eventData: any, isTestMode: boolean) => {
   console.log('Logging webhook event:', { eventType, eventId, paymentId, isTestMode });
@@ -17,7 +16,8 @@ export const logWebhookEvent = async (eventType: string, eventId: string, paymen
         event_id: eventId,
         payment_id: paymentId,
         event_data: eventData,
-        is_test: isTestMode
+        is_test: isTestMode,
+        status: 'received'
       });
 
     if (error) {
@@ -36,7 +36,10 @@ export const markWebhookProcessed = async (eventId: string) => {
   try {
     const { error } = await supabaseClient
       .from('stripe_webhook_logs')
-      .update({ processed: true, processed_at: new Date().toISOString() })
+      .update({ 
+        status: 'processed',
+        processed_at: new Date().toISOString() 
+      })
       .eq('event_id', eventId);
 
     if (error) {
@@ -91,17 +94,31 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
     if (session.metadata?.campaign_id) {
       console.log('Updating campaign payment for campaign:', session.metadata.campaign_id);
       
-      const { error: campaignError } = await supabaseClient
+      // First check if this payment is already linked to a campaign
+      const { data: existingLink, error: checkError } = await supabaseClient
         .from('campaign_payments')
-        .insert({
-          campaign_id: session.metadata.campaign_id,
-          payment_id: paymentId
-        });
+        .select('id')
+        .eq('payment_id', paymentId)
+        .maybeSingle();
         
-      if (campaignError) {
-        console.error('Error linking payment to campaign:', campaignError);
+      if (checkError) {
+        console.error('Error checking existing campaign link:', checkError);
+      } else if (!existingLink) {
+        // Only create the link if it doesn't exist yet
+        const { error: campaignError } = await supabaseClient
+          .from('campaign_payments')
+          .insert({
+            campaign_id: session.metadata.campaign_id,
+            payment_id: paymentId
+          });
+          
+        if (campaignError) {
+          console.error('Error linking payment to campaign:', campaignError);
+        } else {
+          console.log('Payment successfully linked to campaign');
+        }
       } else {
-        console.log('Payment successfully linked to campaign');
+        console.log('Payment already linked to campaign, skipping');
       }
     }
   } catch (error) {
@@ -158,6 +175,34 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     }
 
     console.log('Payment marked as completed successfully:', data);
+    
+    // If this payment is connected to a campaign, ensure it's properly linked
+    if (paymentIntent.metadata?.campaign_id) {
+      const { data: existingLink, error: checkError } = await supabaseClient
+        .from('campaign_payments')
+        .select('id')
+        .eq('payment_id', paymentId)
+        .eq('campaign_id', paymentIntent.metadata.campaign_id)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking existing campaign link:', checkError);
+      } else if (!existingLink) {
+        // Only create the link if it doesn't exist
+        const { error: campaignError } = await supabaseClient
+          .from('campaign_payments')
+          .insert({
+            campaign_id: paymentIntent.metadata.campaign_id,
+            payment_id: paymentId
+          });
+          
+        if (campaignError) {
+          console.error('Error linking payment to campaign:', campaignError);
+        } else {
+          console.log('Payment successfully linked to campaign');
+        }
+      }
+    }
   } catch (error) {
     console.error('Exception in handlePaymentIntentSucceeded:', error);
   }

@@ -7,6 +7,7 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { Payment } from "@/types/payment";
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -16,7 +17,7 @@ const PaymentSuccess = () => {
   const [recipientId, setRecipientId] = useState<string | null>(searchParams.get("recipient_id"));
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [paymentDetails, setPaymentDetails] = useState<Payment | null>(null);
 
   useEffect(() => {
     const processPayment = async () => {
@@ -35,7 +36,7 @@ const PaymentSuccess = () => {
           .from('stripe_payments')
           .select('*')
           .eq('id', paymentId)
-          .single();
+          .maybeSingle();
           
         if (paymentError) {
           console.error("Error fetching payment details:", paymentError);
@@ -88,7 +89,15 @@ const PaymentSuccess = () => {
           }
         }
         
-        toast.success("Payment processed successfully!");
+        // If payment status is not completed, show a message that it's being processed
+        if (paymentData && paymentData.status !== 'completed') {
+          toast.info("Your payment is being processed. This may take a moment.");
+          
+          // Start polling for payment status updates
+          startPaymentStatusPolling(paymentId);
+        } else {
+          toast.success("Payment processed successfully!");
+        }
       } catch (error) {
         console.error("Error processing payment success:", error);
         setError(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
@@ -99,6 +108,58 @@ const PaymentSuccess = () => {
     
     processPayment();
   }, [paymentId, recipientId]);
+
+  // Function to poll for payment status updates
+  const startPaymentStatusPolling = (paymentId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('stripe_payments')
+          .select('status')
+          .eq('id', paymentId)
+          .single();
+          
+        if (error) {
+          console.error("Error polling payment status:", error);
+          clearInterval(pollInterval);
+          return;
+        }
+        
+        if (data && data.status === 'completed') {
+          console.log("Payment completed!");
+          toast.success("Payment completed successfully!");
+          clearInterval(pollInterval);
+          
+          // Refresh payment details
+          const { data: refreshedData } = await supabase
+            .from('stripe_payments')
+            .select('*')
+            .eq('id', paymentId)
+            .single();
+            
+          if (refreshedData) {
+            setPaymentDetails(refreshedData);
+          }
+        } else if (data && data.status === 'failed') {
+          console.error("Payment failed!");
+          toast.error("Payment processing failed");
+          clearInterval(pollInterval);
+          setError("Your payment could not be processed. Please try again.");
+        }
+      } catch (e) {
+        console.error("Error in polling:", e);
+        clearInterval(pollInterval);
+      }
+    }, 5000); // Poll every 5 seconds
+    
+    // Clear interval after 2 minutes maximum to avoid infinite polling
+    setTimeout(() => {
+      clearInterval(pollInterval);
+    }, 120000);
+    
+    // Clean up on component unmount
+    return () => clearInterval(pollInterval);
+  };
 
   const handleReturnClick = () => {
     // Use optional chaining and type assertion to safely access campaign_id property
@@ -161,6 +222,8 @@ const PaymentSuccess = () => {
     );
   }
 
+  const paymentStatus = paymentDetails?.status || 'pending';
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
@@ -169,7 +232,7 @@ const PaymentSuccess = () => {
             <CheckCircle className="h-12 w-12 text-green-500" />
           </div>
           <CardTitle className="text-2xl font-bold text-green-700">
-            Payment Successful
+            Payment {paymentStatus === 'completed' ? 'Successful' : 'Being Processed'}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
@@ -180,8 +243,19 @@ const PaymentSuccess = () => {
                 {" "}£{(paymentDetails.amount / 100).toFixed(2)}
               </span>
             )}.
-            Your payment has been processed successfully.
+            {paymentStatus !== 'completed' ? 
+              " Your payment is being processed and will be confirmed shortly." : 
+              " Your payment has been processed successfully."}
           </p>
+          
+          {paymentStatus !== 'completed' && (
+            <Alert>
+              <AlertDescription className="text-sm">
+                The payment gateway is confirming your payment. This typically takes just a few moments.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Button onClick={handleReturnClick}>
             Return to {recipientId ? "Profile" : "Home"}
           </Button>
