@@ -43,15 +43,38 @@ export function useCampaignData(userId: string): CampaignData {
         
         setCampaign(campaignData as Campaign);
         
-        // Get payment data
+        // Get payment data through the campaign_payments table
         if (campaignData.id) {
+          // First, get payment IDs associated with this campaign
+          const { data: campaignPayments, error: campaignPaymentsError } = await supabase
+            .from('campaign_payments')
+            .select('payment_id')
+            .eq('campaign_id', campaignData.id);
+            
+          if (campaignPaymentsError) {
+            console.error("Error fetching campaign payment relations:", campaignPaymentsError);
+            setLoading(false);
+            return;
+          }
+          
+          if (!campaignPayments || campaignPayments.length === 0) {
+            console.log("No payments found for campaign:", campaignData.id);
+            setTotalAmount(0);
+            setLoading(false);
+            return;
+          }
+          
+          // Extract payment IDs
+          const paymentIds = campaignPayments.map(item => item.payment_id);
+          
+          // Now fetch the actual payment data
           const { data: paymentData, error: paymentsError } = await supabase
             .from('v_stripe_payments')
             .select('amount')
-            .eq('campaign_id', campaignData.id);
+            .in('id', paymentIds);
             
           if (paymentsError) {
-            console.error("Error fetching campaign payments:", paymentsError);
+            console.error("Error fetching payment details:", paymentsError);
             setLoading(false);
             return;
           }
