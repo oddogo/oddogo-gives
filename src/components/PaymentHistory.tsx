@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { 
   Table, 
@@ -9,8 +10,10 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, DollarSign, Clock } from "lucide-react";
+import { Receipt, DollarSign, Clock, Award, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface Payment {
   id: string;
@@ -19,6 +22,11 @@ interface Payment {
   status: string;
   stripe_payment_intent_id: string;
   stripe_payment_email: string;
+  message?: string;
+  campaign_id?: string;
+  campaign_title?: string;
+  campaign_slug?: string;
+  donor_name?: string;
 }
 
 interface PaymentHistoryProps {
@@ -29,11 +37,13 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalReceived, setTotalReceived] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
+  const [campaignPayments, setCampaignPayments] = useState<{[key: string]: Payment[]}>({});
+  const [standalonePayments, setStandalonePayments] = useState<Payment[]>([]);
 
   const fetchPayments = async () => {
     try {
       const { data: paymentsData, error: paymentsError } = await supabase
-        .from('v_stripe_payments')
+        .from('v_stripe_payments_extended')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -44,7 +54,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
         return;
       }
 
-      console.log('Fetched payments:', paymentsData);
+      console.log('Fetched extended payments:', paymentsData);
       setPayments(paymentsData || []);
 
       const completed = paymentsData?.filter(p => p.status === 'completed')
@@ -54,6 +64,24 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
 
       setTotalReceived(completed);
       setPendingAmount(pending);
+
+      // Organize payments by campaign
+      const byCampaign: {[key: string]: Payment[]} = {};
+      const standalone: Payment[] = [];
+
+      paymentsData?.forEach(payment => {
+        if (payment.campaign_id) {
+          if (!byCampaign[payment.campaign_id]) {
+            byCampaign[payment.campaign_id] = [];
+          }
+          byCampaign[payment.campaign_id].push(payment);
+        } else {
+          standalone.push(payment);
+        }
+      });
+
+      setCampaignPayments(byCampaign);
+      setStandalonePayments(standalone);
     } catch (error) {
       console.error('Error in fetchPayments:', error);
       toast.error('Failed to load payment history');
@@ -72,7 +100,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
         {
           event: '*',
           schema: 'public',
-          table: 'v_stripe_payments',
+          table: 'v_stripe_payments_extended',
           filter: `user_id=eq.${userId}`
         },
         () => {
@@ -85,6 +113,82 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
       supabase.removeChannel(channel);
     };
   }, [userId]);
+
+  const formatCurrency = (amount: number) => {
+    return `£${(amount / 100).toFixed(2)}`;
+  };
+
+  const renderCampaignProgress = (campaignId: string, payments: Payment[]) => {
+    const campaignTitle = payments[0]?.campaign_title || 'Campaign';
+    const completedAmount = payments.filter(p => p.status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const pendingAmount = payments.filter(p => p.status === 'pending')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const totalAmount = completedAmount + pendingAmount;
+
+    // For the pie chart data
+    const chartData = [
+      { name: 'Completed', value: completedAmount, color: '#10b981' },
+      { name: 'Pending', value: pendingAmount, color: '#f59e0b' }
+    ].filter(item => item.value > 0);
+    
+    return (
+      <div key={campaignId} className="space-y-4 mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Award className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">{campaignTitle}</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="col-span-2 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Total received</span>
+              <span>{formatCurrency(totalAmount)}</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600 font-medium">Completed</span>
+                <span className="text-green-600">{formatCurrency(completedAmount)}</span>
+              </div>
+              <Progress value={(completedAmount / totalAmount) * 100} className="h-2 bg-gray-200" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-amber-600 font-medium">Pending</span>
+                <span className="text-amber-600">{formatCurrency(pendingAmount)}</span>
+              </div>
+              <Progress value={(pendingAmount / totalAmount) * 100} className="h-2 bg-gray-200" />
+            </div>
+          </div>
+          
+          <div className="col-span-1">
+            {chartData.length > 0 && (
+              <div className="h-[120px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={50}
+                      dataKey="value"
+                      labelLine={false}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full bg-gradient-to-b from-teal-950 to-teal-900 py-12">
@@ -118,6 +222,17 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               </div>
             </div>
 
+            {/* Campaign donations sections */}
+            {Object.keys(campaignPayments).length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white/90">Campaign Donations</h3>
+                {Object.entries(campaignPayments).map(([campaignId, payments]) => 
+                  renderCampaignProgress(campaignId, payments)
+                )}
+              </div>
+            )}
+
+            {/* All payments table */}
             <div className="rounded-md border border-white/20 overflow-hidden backdrop-blur-xl bg-slate-900/30">
               <Table>
                 <TableHeader>
@@ -125,6 +240,9 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
                     <TableHead className="text-white/90">Date</TableHead>
                     <TableHead className="text-white/90">Amount</TableHead>
                     <TableHead className="text-white/90">Status</TableHead>
+                    <TableHead className="text-white/90">Campaign</TableHead>
+                    <TableHead className="text-white/90">From</TableHead>
+                    <TableHead className="text-white/90">Message</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -147,11 +265,25 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
                           {payment.status}
                         </span>
                       </TableCell>
+                      <TableCell className="text-white/80">
+                        {payment.campaign_title || 'Direct Donation'}
+                      </TableCell>
+                      <TableCell className="text-white/80">
+                        {payment.donor_name || payment.stripe_payment_email || 'Anonymous'}
+                      </TableCell>
+                      <TableCell className="text-white/80">
+                        {payment.message ? (
+                          <div className="flex items-center">
+                            <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                            <span className="truncate max-w-[150px]">{payment.message}</span>
+                          </div>
+                        ) : ''}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {payments.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-white/70 py-8">
+                      <TableCell colSpan={6} className="text-center text-white/70 py-8">
                         No donations made yet
                       </TableCell>
                     </TableRow>

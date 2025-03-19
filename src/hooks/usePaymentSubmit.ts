@@ -41,7 +41,14 @@ export const usePaymentSubmit = ({
       setPaymentError(null);
       
       // We send the amount as a number - the edge function will convert it to cents
-      console.log("Submitting payment for amount:", values.amount);
+      console.log("Submitting payment with data:", {
+        amount: values.amount,
+        recipientId,
+        email: values.email,
+        name: values.name,
+        message: values.message,
+        campaignId: values.campaign_id || campaignId
+      });
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {

@@ -26,6 +26,7 @@ interface PaymentFormProps {
   recipientId: string;
   recipientName: string;
   campaignId?: string;
+  campaignTitle?: string;
   onSuccess?: (paymentId: string) => void;
 }
 
@@ -33,6 +34,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   recipientId,
   recipientName,
   campaignId,
+  campaignTitle,
   onSuccess,
 }) => {
   const { stripePromise, isStripeLoading, stripeError } = useStripeInitialization();
@@ -94,6 +96,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         isSubmitting={isSubmitting}
         recipientName={recipientName}
         campaignId={campaignId}
+        campaignTitle={campaignTitle}
         onSubmit={submitPayment}
       />
     </div>

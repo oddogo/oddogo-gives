@@ -65,6 +65,7 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
       recipientName={recipientName}
       campaignId={campaignId}
       onSuccess={handlePaymentSuccess}
+      campaignTitle={campaign?.title}
     />
   );
 };

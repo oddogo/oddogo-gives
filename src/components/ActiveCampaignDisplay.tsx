@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Zap, Calendar } from "lucide-react";
+import { Zap, Calendar, CheckCircle, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface ActiveCampaignDisplayProps {
   userId: string;
@@ -11,6 +12,8 @@ interface ActiveCampaignDisplayProps {
 export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) => {
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [completedAmount, setCompletedAmount] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   useEffect(() => {
     const loadCampaign = async () => {
@@ -19,7 +22,7 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         
         const { data, error } = await supabase
           .from('campaigns')
-          .select('*, campaign_payments(payment_id, stripe_payments:payment_id(amount))')
+          .select('*, campaign_payments(payment_id, stripe_payments:payment_id(amount, status))')
           .eq('user_id', userId)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -33,6 +36,25 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         
         if (data) {
           setCampaign(data);
+          
+          // Calculate completed and pending amounts
+          let completed = 0;
+          let pending = 0;
+          
+          if (data.campaign_payments && data.campaign_payments.length > 0) {
+            data.campaign_payments.forEach((payment: any) => {
+              if (payment.stripe_payments) {
+                if (payment.stripe_payments.status === 'completed') {
+                  completed += payment.stripe_payments.amount;
+                } else if (payment.stripe_payments.status === 'pending') {
+                  pending += payment.stripe_payments.amount;
+                }
+              }
+            });
+          }
+          
+          setCompletedAmount(completed);
+          setPendingAmount(pending);
         }
       } catch (error) {
         console.error("Error:", error);
@@ -62,7 +84,9 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
   }
 
   // Calculate progress
-  const percentProgress = Math.min(Math.round((campaign.current_amount / campaign.target_amount) * 100), 100);
+  const totalFunded = completedAmount + pendingAmount;
+  const percentProgress = Math.min(Math.round((completedAmount / campaign.target_amount) * 100), 100);
+  const percentProgressTotal = Math.min(Math.round((totalFunded / campaign.target_amount) * 100), 100);
   
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -79,6 +103,14 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
       year: 'numeric'
     });
   };
+
+  // Prepare chart data
+  const remainingAmount = Math.max(campaign.target_amount - completedAmount - pendingAmount, 0);
+  const chartData = [
+    { name: 'Completed', value: completedAmount, color: '#10b981' },
+    { name: 'Pending', value: pendingAmount, color: '#f59e0b' },
+    { name: 'Remaining', value: remainingAmount, color: '#e5e7eb' }
+  ].filter(item => item.value > 0);
   
   return (
     <div className="w-full py-12 bg-gray-50" id="campaign">
@@ -112,23 +144,68 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
                 {campaign.description}
               </p>
               
-              <div className="mb-6">
-                <Progress 
-                  value={percentProgress} 
-                  className="h-2 bg-gray-200"
-                />
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="font-medium">{formatCurrency(campaign.current_amount)}</span>
-                  <span className="text-gray-500">of {formatCurrency(campaign.target_amount)} goal</span>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+                <div className="md:col-span-3 space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-0.5">
+                        <span className="text-sm text-gray-500">Progress</span>
+                        <div className="text-xl font-bold">{formatCurrency(completedAmount)}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 text-sm">of {formatCurrency(campaign.target_amount)} goal</span>
+                        <div className="text-sm font-medium text-gray-900">{percentProgress}% Complete</div>
+                      </div>
+                    </div>
+
+                    <Progress value={percentProgress} className="h-2.5 bg-gray-200" />
+                    
+                    {pendingAmount > 0 && (
+                      <div className="flex justify-between text-xs pt-1">
+                        <div className="flex items-center gap-1 text-amber-600">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{formatCurrency(pendingAmount)} pending</span>
+                        </div>
+                        <span className="text-gray-500">
+                          {percentProgressTotal}% with pending payments
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {campaign.end_date && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      <span>Ends {formatDate(campaign.end_date)}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="md:col-span-2">
+                  <div className="h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={70}
+                          innerRadius={40}
+                          paddingAngle={2}
+                          dataKey="value"
+                          labelLine={false}
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
-              
-              {campaign.end_date && (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>Ends {formatDate(campaign.end_date)}</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
