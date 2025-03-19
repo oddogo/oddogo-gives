@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
 
@@ -95,6 +96,11 @@ export const logPaymentStatusChange = async (
  * Creates or verifies a campaign payment relationship
  */
 export const createOrVerifyCampaignPayment = async (campaignId: string, paymentId: string) => {
+  if (!campaignId || !paymentId) {
+    console.log(`Missing required data: campaignId=${campaignId}, paymentId=${paymentId}`);
+    return;
+  }
+
   try {
     console.log(`Creating/verifying campaign payment relation for campaign ${campaignId} and payment ${paymentId}`);
     
@@ -119,12 +125,6 @@ export const createOrVerifyCampaignPayment = async (campaignId: string, paymentI
       
     if (paymentError || !payment) {
       console.error('Payment not found or error:', paymentError);
-      return;
-    }
-    
-    // Only create campaign payment relation if payment status is completed
-    if (payment.status !== 'completed') {
-      console.log(`Payment ${paymentId} status is ${payment.status}, not creating campaign payment relation yet`);
       return;
     }
     
@@ -174,6 +174,11 @@ export const createOrVerifyCampaignPayment = async (campaignId: string, paymentI
  * Finds a payment by Stripe payment intent ID
  */
 export const findPaymentByIntentId = async (paymentIntentId: string) => {
+  if (!paymentIntentId) {
+    console.error('Empty payment intent ID provided to findPaymentByIntentId');
+    return null;
+  }
+
   try {
     const { data: payment, error } = await supabaseClient
       .from('stripe_payments')
@@ -197,6 +202,11 @@ export const findPaymentByIntentId = async (paymentIntentId: string) => {
  * Gets a payment by ID
  */
 export const getPaymentById = async (paymentId: string) => {
+  if (!paymentId) {
+    console.error('Empty payment ID provided to getPaymentById');
+    return null;
+  }
+
   try {
     const { data: payment, error } = await supabaseClient
       .from('stripe_payments')
@@ -220,7 +230,21 @@ export const getPaymentById = async (paymentId: string) => {
  * Updates a payment record
  */
 export const updatePayment = async (paymentId: string, updateData: any) => {
+  if (!paymentId) {
+    console.error('Empty payment ID provided to updatePayment');
+    return null;
+  }
+
   try {
+    console.log(`Updating payment ${paymentId} with data:`, updateData);
+
+    // Make sure we're not overwriting important fields with null/undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key];
+      }
+    });
+
     const { data: updatedPayment, error } = await supabaseClient
       .from('stripe_payments')
       .update({
@@ -252,6 +276,7 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
   const campaignId = session.metadata?.campaign_id;
   const fingerprintId = session.metadata?.fingerprint_id;
   const message = session.metadata?.message;
+  const donorName = session.metadata?.donor_name;
   
   console.log('Processing checkout session completed:', paymentId);
   console.log('Session details:', {
@@ -262,7 +287,8 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
     payment_method: session.payment_method,
     campaignId: campaignId || 'none',
     fingerprintId: fingerprintId || 'none',
-    message: message || 'none'
+    message: message || 'none',
+    donorName: donorName || 'none'
   });
   
   if (!paymentId) {
@@ -278,13 +304,14 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
   }
   
   // Prepare the update fields, using existing data as fallback
+  // IMPORTANT: Don't override existing fields with null values
   const updateFields = {
-    stripe_payment_intent_id: session.payment_intent,
-    stripe_payment_method_id: session.payment_method,
+    stripe_payment_intent_id: session.payment_intent || existingPayment?.stripe_payment_intent_id,
+    stripe_payment_method_id: session.payment_method || existingPayment?.stripe_payment_method_id,
     stripe_payment_email: session.customer_email || existingPayment?.stripe_payment_email,
-    stripe_customer_id: session.customer,
+    stripe_customer_id: session.customer || existingPayment?.stripe_customer_id,
     message: message || existingPayment?.message || '',
-    updated_at: new Date().toISOString()
+    donor_name: donorName || existingPayment?.donor_name
   };
   
   // Ensure we don't lose fingerprint_id
@@ -320,6 +347,7 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
   const campaignId = paymentIntent.metadata?.campaign_id;
   const fingerprintId = paymentIntent.metadata?.fingerprint_id;
   const message = paymentIntent.metadata?.message;
+  const donorName = paymentIntent.metadata?.donor_name;
   
   console.log('Processing successful payment intent:', paymentIntent.id);
   console.log('Payment details:', {
@@ -328,7 +356,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     charge_id: paymentIntent.latest_charge,
     metadata: paymentIntent.metadata || {},
     fingerprintId: fingerprintId || 'none',
-    message: message || 'none'
+    message: message || 'none',
+    donorName: donorName || 'none'
   });
   
   // If no paymentId in metadata, try to find by payment intent ID
@@ -340,12 +369,13 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     if (paymentByIntent) {
       console.log(`Found payment record ${paymentByIntent.id} by intent ID`);
       
-      // Prepare update data
+      // Prepare update data - IMPORTANT: Don't override existing fields with null values
       const updateData = { 
         status: 'completed',
         stripe_payment_method_id: paymentIntent.payment_method || paymentByIntent.stripe_payment_method_id,
-        stripe_charge_id: paymentIntent.latest_charge,
+        stripe_charge_id: paymentIntent.latest_charge || paymentByIntent.stripe_charge_id,
         message: message || paymentByIntent.message || '',
+        donor_name: donorName || paymentByIntent.donor_name,
         updated_at: new Date().toISOString()
       };
       
@@ -384,7 +414,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
           payment_method_id: paymentIntent.payment_method,
           charge_id: paymentIntent.latest_charge,
           fingerprint_id: fingerprintId || paymentByIntent.fingerprint_id,
-          message: message || paymentByIntent.message
+          message: message || paymentByIntent.message,
+          donor_name: donorName || paymentByIntent.donor_name
         }
       );
       
@@ -401,12 +432,14 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
     }
     
     // Prepare update data with fallbacks to existing data
+    // IMPORTANT: Don't override existing fields with null values
     const updateData = { 
       status: 'completed',
-      stripe_payment_intent_id: paymentIntent.id,
+      stripe_payment_intent_id: paymentIntent.id || existingPayment?.stripe_payment_intent_id,
       stripe_payment_method_id: paymentIntent.payment_method || existingPayment?.stripe_payment_method_id,
-      stripe_charge_id: paymentIntent.latest_charge,
+      stripe_charge_id: paymentIntent.latest_charge || existingPayment?.stripe_charge_id,
       message: message || existingPayment?.message || '',
+      donor_name: donorName || existingPayment?.donor_name,
       updated_at: new Date().toISOString()
     };
     
@@ -445,7 +478,8 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
         charge_id: paymentIntent.latest_charge,
         campaign_id: campaignId || null,
         fingerprint_id: fingerprintId || existingPayment?.fingerprint_id,
-        message: message || existingPayment?.message
+        message: message || existingPayment?.message,
+        donor_name: donorName || existingPayment?.donor_name
       }
     );
   }
@@ -458,6 +492,7 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
   const paymentId = paymentIntent.metadata?.payment_id;
   const fingerprintId = paymentIntent.metadata?.fingerprint_id;
   const message = paymentIntent.metadata?.message;
+  const donorName = paymentIntent.metadata?.donor_name;
   
   console.log('Processing failed payment:', paymentId || paymentIntent.id);
   
@@ -469,6 +504,7 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
       const updateData = { 
         status: 'failed',
         message: message || paymentByIntent.message || '',
+        donor_name: donorName || paymentByIntent.donor_name,
         updated_at: new Date().toISOString()
       };
       
@@ -488,7 +524,8 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
         {
           ...paymentIntent,
           fingerprint_id: fingerprintId || paymentByIntent.fingerprint_id,
-          message: message || paymentByIntent.message
+          message: message || paymentByIntent.message,
+          donor_name: donorName || paymentByIntent.donor_name
         }
       );
     } else {
@@ -502,6 +539,7 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
     const updateData = { 
       status: 'failed',
       message: message || existingPayment?.message || '',
+      donor_name: donorName || existingPayment?.donor_name,
       updated_at: new Date().toISOString()
     };
     
@@ -521,7 +559,8 @@ export const handlePaymentIntentFailed = async (paymentIntent: any) => {
       {
         ...paymentIntent,
         fingerprint_id: fingerprintId || existingPayment?.fingerprint_id,
-        message: message || existingPayment?.message
+        message: message || existingPayment?.message,
+        donor_name: donorName || existingPayment?.donor_name
       }
     );
   }
