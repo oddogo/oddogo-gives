@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,13 @@ const PaymentSuccess = () => {
   const [pollingCount, setPollingCount] = useState(0);
 
   useEffect(() => {
-    if (!paymentId) return;
+    if (!paymentId) {
+      console.error("No payment ID found in URL");
+      setPaymentStatus("failed");
+      return;
+    }
+    
+    console.log(`Checking payment status for ID: ${paymentId}`);
     
     const checkPaymentStatus = async () => {
       try {
@@ -34,6 +41,7 @@ const PaymentSuccess = () => {
           return;
         }
 
+        console.log("Payment data:", data);
         setPaymentDetails(data);
         
         if (data.status === "completed") {
@@ -63,7 +71,7 @@ const PaymentSuccess = () => {
     
     // Poll every 2 seconds if payment is still processing
     const intervalId = setInterval(() => {
-      if (paymentStatus !== "completed" && paymentStatus !== "failed") {
+      if (paymentStatus === "loading" || paymentStatus === "processing") {
         checkPaymentStatus();
       }
     }, 2000);
@@ -127,7 +135,7 @@ const PaymentSuccess = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Amount:</span>
-                      <span className="font-semibold">${paymentDetails.amount.toFixed(2)}</span>
+                      <span className="font-semibold">£{paymentDetails.amount.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
@@ -141,9 +149,9 @@ const PaymentSuccess = () => {
         </CardContent>
         
         <CardFooter className="flex justify-center space-x-4 pt-2">
-          {paymentStatus === "completed" && campaignId && (
+          {paymentStatus === "completed" && campaignId && paymentDetails?.campaign_slug && (
             <Button asChild>
-              <Link to={`/campaigns/${paymentDetails?.campaign_slug || campaignId}`}>
+              <Link to={`/campaigns/${paymentDetails.campaign_slug}`}>
                 View Campaign
               </Link>
             </Button>

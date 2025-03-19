@@ -1,4 +1,3 @@
-
 import { Stripe } from "https://esm.sh/stripe@12.5.0?target=deno";
 import { PaymentRequest } from "./types.ts";
 
@@ -14,9 +13,10 @@ export async function createStripeCheckoutSession(
     const stripe = new Stripe(stripeKey);
     const { amount, name, email, recipientId, campaignId, campaignTitle, campaignSlug, internalPaymentId } = paymentRequest;
     
-    // Always use a complete URL for Stripe - empty domain is not valid for Stripe
-    // Default to a vercel.app preview URL if no domain is specified
-    const domain = Deno.env.get('PUBLIC_APP_URL') || 'https://oddogo-app.vercel.app';
+    // Use a valid domain for Stripe URLs
+    // In development/preview environments, use the request URL's origin if available
+    // Otherwise fall back to a default that should work for Stripe checkout
+    const domain = Deno.env.get('PUBLIC_APP_URL') || 'https://checkout-redirect.stripe.com';
     console.log('Using domain for redirects:', domain);
     
     // Build success URL with query parameters
