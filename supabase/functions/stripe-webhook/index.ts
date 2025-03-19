@@ -12,7 +12,7 @@ import {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-deno-subhost',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-deno-subhost, x-supabase-client',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -66,7 +66,7 @@ serve(async (req) => {
 
     let event;
     try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       console.log('Event constructed successfully:', event.type);
     } catch (err) {
       console.error('Webhook signature verification failed:', err.message);

@@ -18,6 +18,8 @@ const PaymentSuccess = () => {
     if (paymentId && !recipientId) {
       const fetchPaymentDetails = async () => {
         try {
+          console.log("Fetching payment details for payment ID:", paymentId);
+          
           const { data, error } = await supabase
             .from('stripe_payments')
             .select('user_id')
@@ -29,7 +31,10 @@ const PaymentSuccess = () => {
             return;
           }
           
+          console.log("Payment details fetched:", data);
+          
           if (data?.user_id) {
+            console.log("Setting recipient ID from user_id:", data.user_id);
             // Use the user_id as recipient_id if available
             setRecipientId(data.user_id);
           }
