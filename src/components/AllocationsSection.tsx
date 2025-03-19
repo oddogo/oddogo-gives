@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { DashboardChart } from "@/components/DashboardChart";
 import { AllocationTable } from "@/components/AllocationTable";
 import type { Allocation } from "@/types/allocation";
+import { Button } from "@/components/ui/button";
+import { HandHeart } from "lucide-react";
 
 interface AllocationsSectionProps {
   allocations: Allocation[];
@@ -10,6 +12,13 @@ interface AllocationsSectionProps {
 
 export const AllocationsSection = ({ allocations }: AllocationsSectionProps) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const scrollToDonateSection = () => {
+    const donateSection = document.getElementById('donate-section');
+    if (donateSection) {
+      donateSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="w-full">
@@ -42,6 +51,16 @@ export const AllocationsSection = ({ allocations }: AllocationsSectionProps) => 
                 />
               </div>
             </div>
+          </div>
+          
+          <div className="flex justify-center mt-8">
+            <Button 
+              onClick={scrollToDonateSection}
+              className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition-all hover:scale-105 animate-pulse flex items-center gap-2"
+            >
+              <HandHeart className="w-5 h-5" />
+              Donate Now
+            </Button>
           </div>
         </div>
       </div>

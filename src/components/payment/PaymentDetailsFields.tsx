@@ -23,7 +23,7 @@ export const PaymentDetailsFields: React.FC<PaymentDetailsFieldsProps> = ({ form
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Your Name</FormLabel>
+            <FormLabel className="text-gray-700">Your Name</FormLabel>
             <FormControl>
               <Input placeholder="Enter your name" {...field} />
             </FormControl>
@@ -37,7 +37,7 @@ export const PaymentDetailsFields: React.FC<PaymentDetailsFieldsProps> = ({ form
         name="email"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Email Address</FormLabel>
+            <FormLabel className="text-gray-700">Email Address</FormLabel>
             <FormControl>
               <Input 
                 type="email" 

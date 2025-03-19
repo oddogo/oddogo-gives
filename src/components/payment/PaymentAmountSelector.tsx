@@ -25,7 +25,7 @@ export const PaymentAmountSelector: React.FC<PaymentAmountSelectorProps> = ({ fo
             onClick={() => form.setValue("amount", amount, { shouldValidate: true })}
             className={`flex-1 ${
               form.watch("amount") === amount 
-                ? "bg-blue-100 border-blue-500 text-blue-700" 
+                ? "bg-primary text-primary-foreground border-primary" 
                 : ""
             }`}
           >
@@ -39,7 +39,7 @@ export const PaymentAmountSelector: React.FC<PaymentAmountSelectorProps> = ({ fo
         name="amount"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Custom Amount (£)</FormLabel>
+            <FormLabel className="text-gray-700">Custom Amount (£)</FormLabel>
             <FormControl>
               <Input
                 type="number"
