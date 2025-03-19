@@ -42,7 +42,8 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
         campaign_slug: paymentRequest.campaignSlug || null,
         donor_name: paymentRequest.name || null,
         user_id: paymentRequest.recipientId || null,
-        fingerprint_id: fingerprintId
+        fingerprint_id: fingerprintId,
+        currency: 'gbp' // Set default currency to GBP
       })
       .select()
       .single();
