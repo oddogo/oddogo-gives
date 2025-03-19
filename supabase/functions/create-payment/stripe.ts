@@ -66,8 +66,8 @@ export const createStripeSession = async (
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'Donation',
-              description: `Donation to ${recipientName}`
+              name: campaignId ? `Donation to ${recipientName}'s campaign` : 'Donation',
+              description: campaignId ? `Support ${recipientName}'s campaign` : `Donation to ${recipientName}`
             },
             unit_amount: amountInCents,
           },
