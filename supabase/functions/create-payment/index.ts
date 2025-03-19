@@ -52,15 +52,30 @@ serve(async (req) => {
     }
 
     // Extract payment request data
-    const { amount, recipientId, email, name, message, campaignId } = requestData as PaymentRequest;
+    const { amount, recipientId, recipientName, email, name, message, campaignId } = requestData as PaymentRequest;
     const amountInCents = Math.round(amount * 100);
-    const fingerprint_id = crypto.randomUUID();
+    
+    // Try to get user's fingerprint or create a fallback
+    let fingerprint_id = null;
+    try {
+      const fingerprintResult = await getRecipientFingerprint(recipientId);
+      if (fingerprintResult) {
+        fingerprint_id = fingerprintResult;
+        console.log(`Found fingerprint ID for recipient: ${fingerprint_id}`);
+      } else {
+        console.log(`No fingerprint found for recipient ${recipientId}, will use null`);
+      }
+    } catch (error) {
+      console.warn(`Error getting fingerprint for recipient: ${error.message}`);
+    }
+    
     const user_id = await getUserIdFromRequest(req);
     
     console.log('Processing payment with data:', {
       amount,
       amountInCents,
       recipientId,
+      recipientName,
       email,
       name,
       messageExists: !!message,
@@ -93,6 +108,7 @@ serve(async (req) => {
         origin,
         payment,
         recipientId,
+        recipientName,
         fingerprint_id,
         user_id,
         email,
@@ -177,6 +193,40 @@ async function getUserIdFromRequest(req: Request): Promise<string | null> {
     return user.id;
   } catch (error) {
     console.error('Error getting user ID from token:', error);
+    return null;
+  }
+}
+
+// Function to get recipient's fingerprint_id
+async function getRecipientFingerprint(recipientId: string): Promise<string | null> {
+  console.log(`Getting fingerprint for recipient ID: ${recipientId}`);
+  
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Try to find the fingerprint for this user
+    const { data, error } = await supabase
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', recipientId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching fingerprint:', error);
+      return null;
+    }
+    
+    if (!data) {
+      console.log(`No fingerprint found for user ${recipientId}`);
+      return null;
+    }
+    
+    return data.fingerprint_id;
+  } catch (error) {
+    console.error('Exception getting recipient fingerprint:', error);
     return null;
   }
 }

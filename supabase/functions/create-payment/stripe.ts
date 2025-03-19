@@ -7,7 +7,8 @@ export const createStripeSession = async (
   origin: string,
   payment: any,
   recipientId: string,
-  fingerprintId: string,
+  recipientName: string,
+  fingerprintId: string | null,
   userId: string | null,
   email?: string,
   name?: string, 
@@ -18,6 +19,7 @@ export const createStripeSession = async (
     amountInCents,
     paymentId: payment.id,
     recipientId,
+    recipientName,
     fingerprintId,
     userId,
     email,
@@ -33,6 +35,20 @@ export const createStripeSession = async (
   console.log('Payment cancel URL:', cancelUrl);
 
   try {
+    // Prepare metadata with only valid values
+    const metadata: Record<string, string> = {
+      payment_id: payment.id,
+      recipient_id: recipientId,
+      recipient_name: recipientName,
+      user_id: userId || 'anonymous',
+      donor_name: name || 'Anonymous'
+    };
+    
+    // Only add these fields if they exist
+    if (fingerprintId) metadata.fingerprint_id = fingerprintId;
+    if (message) metadata.message = message;
+    if (campaignId) metadata.campaign_id = campaignId;
+    
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -41,6 +57,7 @@ export const createStripeSession = async (
             currency: 'gbp',
             product_data: {
               name: 'Donation',
+              description: `Donation to ${recipientName}`
             },
             unit_amount: amountInCents,
           },
@@ -51,15 +68,7 @@ export const createStripeSession = async (
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: email,
-      metadata: {
-        payment_id: payment.id,
-        recipient_id: recipientId,
-        fingerprint_id: fingerprintId,
-        user_id: userId || 'anonymous',
-        donor_name: name || 'Anonymous',
-        message: message || '',
-        campaign_id: campaignId || ''
-      }
+      metadata: metadata
     });
     
     console.log('Stripe session created:', session.id);
