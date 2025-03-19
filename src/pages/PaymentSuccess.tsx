@@ -4,7 +4,8 @@ import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -15,10 +16,12 @@ const PaymentSuccess = () => {
   const [paymentStatus, setPaymentStatus] = useState<"loading" | "completed" | "processing" | "failed">("loading");
   const [paymentDetails, setPaymentDetails] = useState<any | null>(null);
   const [pollingCount, setPollingCount] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!paymentId) {
       console.error("No payment ID found in URL");
+      setErrorMessage("No payment ID was found in the URL. Please contact support if this issue persists.");
       setPaymentStatus("failed");
       return;
     }
@@ -35,8 +38,10 @@ const PaymentSuccess = () => {
 
         if (error) {
           console.error("Error fetching payment status:", error);
-          if (pollingCount > 20) { // Stop after ~40 seconds
+          if (pollingCount > 10) { // Stop after ~20 seconds
+            setErrorMessage(`Unable to verify payment status: ${error.message}`);
             setPaymentStatus("failed");
+            toast.error("Payment verification failed. Please contact support.");
           }
           return;
         }
@@ -46,23 +51,29 @@ const PaymentSuccess = () => {
         
         if (data.status === "completed") {
           setPaymentStatus("completed");
+          toast.success("Payment completed successfully!");
         } else if (data.status === "failed") {
           setPaymentStatus("failed");
+          setErrorMessage("Payment processing failed. Please try again or contact support.");
+          toast.error("Payment failed. Please contact support.");
         } else {
           // Still processing, keep polling
           setPaymentStatus("processing");
           
-          if (pollingCount < 60) { // Cap polling at ~2 minutes total
+          if (pollingCount < 30) { // Cap polling at ~1 minute total
             setPollingCount(prev => prev + 1);
           } else {
-            // After too many attempts, assume something went wrong
+            // After too many attempts, assume something went wrong with the webhook
             setPaymentStatus("failed");
+            setErrorMessage("Payment verification timed out. The payment might still be processing. Please check your email for confirmation or contact support.");
+            toast.error("Payment verification timed out. Please check your email for confirmation.");
           }
         }
       } catch (error) {
         console.error("Error checking payment status:", error);
-        if (pollingCount > 20) {
+        if (pollingCount > 10) {
           setPaymentStatus("failed");
+          setErrorMessage("An unexpected error occurred while verifying payment. Please contact support.");
         }
       }
     };
@@ -93,22 +104,7 @@ const PaymentSuccess = () => {
             </div>
           ) : (
             <div className="flex justify-center mb-4">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="64" 
-                height="64" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className="text-yellow-500"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+              <AlertCircle className="h-16 w-16 text-yellow-500" />
             </div>
           )}
           
@@ -116,7 +112,7 @@ const PaymentSuccess = () => {
             {paymentStatus === "loading" ? "Processing Your Donation..." :
              paymentStatus === "processing" ? "Processing Your Donation..." :
              paymentStatus === "completed" ? "Thank You For Your Donation!" :
-             "Payment Processing"}
+             "Payment Verification Issue"}
           </CardTitle>
         </CardHeader>
         
@@ -141,9 +137,14 @@ const PaymentSuccess = () => {
                 )}
               </div>
             ) : (
-              <p className="text-center text-gray-600">
-                We're still waiting to confirm your payment. You'll receive an email confirmation when completed.
-              </p>
+              <div className="space-y-2">
+                <p className="text-center text-gray-600">
+                  {errorMessage || "We're still waiting to confirm your payment. You'll receive an email confirmation when completed."}
+                </p>
+                <p className="text-center text-sm text-gray-500">
+                  Payment ID: {paymentId}
+                </p>
+              </div>
             )}
           </div>
         </CardContent>

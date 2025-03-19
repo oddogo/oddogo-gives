@@ -3,29 +3,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-export const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-
-export { supabaseClient };
+const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
 // Helper function to log webhook events
-export const logWebhookEvent = async (eventType: string, eventId: string, paymentId: string | null, eventData: any, isTestMode: boolean) => {
-  console.log('Logging webhook event:', { eventType, eventId, paymentId, isTestMode });
+export const logWebhookEvent = async (event: any) => {
+  console.log('Logging webhook event:', { 
+    eventType: event.type, 
+    eventId: event.id, 
+    isTestMode: event.livemode === false 
+  });
 
   try {
-    // Validate paymentId is not undefined but can be null
-    const safePaymentId = paymentId === undefined ? null : paymentId;
-    
-    // Ensure eventData is serializable
-    const safeEventData = eventData ? JSON.parse(JSON.stringify(eventData)) : null;
+    // Extract payment ID from metadata if available
+    const metadata = event.data?.object?.metadata || {};
+    const paymentId = metadata.payment_id || null;
     
     const { error } = await supabaseClient
       .from('stripe_webhook_logs')
       .insert({
-        event_type: eventType,
-        event_id: eventId,
-        payment_id: safePaymentId,
-        event_data: safeEventData,
-        is_test: isTestMode,
+        event_type: event.type,
+        event_id: event.id,
+        payment_id: paymentId,
+        event_data: JSON.parse(JSON.stringify(event)),
+        is_test: event.livemode === false,
         status: 'received'
       });
 
@@ -42,8 +42,8 @@ export const logWebhookEvent = async (eventType: string, eventId: string, paymen
 };
 
 // Helper function to mark webhooks as processed
-export const markWebhookProcessed = async (eventId: string) => {
-  console.log('Marking webhook as processed:', eventId);
+export const markWebhookProcessed = async (eventId: string, success = true, errorMessage?: string) => {
+  console.log('Marking webhook as processed:', eventId, success ? 'success' : 'failed');
 
   try {
     // First, check if the record exists
@@ -67,8 +67,9 @@ export const markWebhookProcessed = async (eventId: string) => {
     const { error } = await supabaseClient
       .from('stripe_webhook_logs')
       .update({ 
-        status: 'processed',
-        processed_at: new Date().toISOString() 
+        status: success ? 'processed' : 'failed',
+        processed_at: new Date().toISOString(),
+        error_message: errorMessage
       })
       .eq('event_id', eventId);
 
@@ -110,3 +111,5 @@ export const recordPaymentLog = async (paymentId: string, status: string, messag
     console.error('Exception recording payment log:', error);
   }
 };
+
+export { supabaseClient };

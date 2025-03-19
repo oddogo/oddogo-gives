@@ -29,6 +29,7 @@ serve(async (req) => {
     // Get the stripe-signature header for verification
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
+      console.error('Missing stripe-signature header');
       return new Response(
         JSON.stringify({ error: 'Missing stripe-signature header' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -38,6 +39,7 @@ serve(async (req) => {
     // Get the webhook secret from environment variables
     const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     if (!stripeWebhookSecret) {
+      console.error('Webhook secret not configured');
       return new Response(
         JSON.stringify({ error: 'Webhook secret not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -47,6 +49,7 @@ serve(async (req) => {
     // Create Stripe client
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
+      console.error('Stripe key not configured');
       return new Response(
         JSON.stringify({ error: 'Stripe key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -61,6 +64,7 @@ serve(async (req) => {
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret);
+      console.log(`Successfully verified webhook signature for event: ${event.id}`);
     } catch (err) {
       console.error(`Webhook signature verification failed: ${err.message}`);
       return new Response(
@@ -69,7 +73,7 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Webhook received: ${event.type}`);
+    console.log(`Webhook received: ${event.type} (${event.id})`);
     
     // Log the webhook event
     await logWebhookEvent(event);
@@ -79,14 +83,17 @@ serve(async (req) => {
     try {
       switch (event.type) {
         case 'checkout.session.completed':
+          console.log('Processing checkout.session.completed event');
           result = await handleCheckoutSessionCompleted(event);
           break;
           
         case 'payment_intent.succeeded':
+          console.log('Processing payment_intent.succeeded event');
           result = await handlePaymentIntentSucceeded(event);
           break;
           
         case 'payment_intent.payment_failed':
+          console.log('Processing payment_intent.payment_failed event');
           result = await handlePaymentIntentFailed(event);
           break;
           
