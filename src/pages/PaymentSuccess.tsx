@@ -1,14 +1,15 @@
 
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Home } from "lucide-react";
 import { toast } from "sonner";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const paymentId = searchParams.get("payment_id");
   const campaignId = searchParams.get("campaign_id");
   const recipientId = searchParams.get("recipient_id");
@@ -23,6 +24,7 @@ const PaymentSuccess = () => {
       console.error("No payment ID found in URL");
       setErrorMessage("No payment ID was found in the URL. Please contact support if this issue persists.");
       setPaymentStatus("failed");
+      toast.error("Payment verification failed: Missing payment ID");
       return;
     }
     
@@ -90,6 +92,11 @@ const PaymentSuccess = () => {
     return () => clearInterval(intervalId);
   }, [paymentId, paymentStatus, pollingCount]);
 
+  // Handle manual redirect to home if needed
+  const handleReturnHome = () => {
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg">
@@ -131,7 +138,7 @@ const PaymentSuccess = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Amount:</span>
-                      <span className="font-semibold">£{paymentDetails.amount.toFixed(2)}</span>
+                      <span className="font-semibold">£{paymentDetails.amount?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
                 )}
@@ -141,9 +148,11 @@ const PaymentSuccess = () => {
                 <p className="text-center text-gray-600">
                   {errorMessage || "We're still waiting to confirm your payment. You'll receive an email confirmation when completed."}
                 </p>
-                <p className="text-center text-sm text-gray-500">
-                  Payment ID: {paymentId}
-                </p>
+                {paymentId && (
+                  <p className="text-center text-sm text-gray-500">
+                    Payment ID: {paymentId}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -168,6 +177,7 @@ const PaymentSuccess = () => {
           
           <Button asChild variant={paymentStatus === "completed" ? "outline" : "default"}>
             <Link to="/">
+              <Home className="w-4 h-4 mr-2" />
               Return Home
             </Link>
           </Button>

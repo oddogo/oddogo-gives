@@ -20,15 +20,17 @@ export async function createStripeCheckoutSession(
     if (campaignId) successParams.append('campaign_id', campaignId);
     if (recipientId) successParams.append('recipient_id', recipientId);
     
-    // For Stripe, we need to use absolute URLs
-    // Use a fully qualified URL with https protocol
-    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://app.oddogo.com';
+    // For Stripe, we need to use absolute URLs with the correct domain
+    // Use the current deployment URL with fallback to Vercel URL
+    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://oddogo-app.vercel.app';
     const successUrl = `${baseUrl}/payment-success?${successParams.toString()}`;
     const cancelUrl = `${baseUrl}/payment-cancelled`;
     
-    console.log('Base URL for Stripe redirects:', baseUrl);
-    console.log('Success URL:', successUrl);
-    console.log('Cancel URL:', cancelUrl);
+    console.log('Payment configuration:');
+    console.log('- Base URL for redirects:', baseUrl);
+    console.log('- Success URL:', successUrl);
+    console.log('- Cancel URL:', cancelUrl);
+    console.log('- Payment ID:', internalPaymentId);
     
     // Create Stripe checkout session with metadata
     const session = await stripe.checkout.sessions.create({

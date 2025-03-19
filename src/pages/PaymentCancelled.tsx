@@ -1,12 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { XCircle } from "lucide-react";
+import { XCircle, Home } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const PaymentCancelled = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
+      <Card className="max-w-md w-full shadow-lg">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
             <XCircle className="h-12 w-12 text-red-500" />
@@ -20,7 +21,10 @@ const PaymentCancelled = () => {
             Your payment was cancelled. No charges were made.
           </p>
           <Button asChild>
-            <a href="/">Return Home</a>
+            <Link to="/">
+              <Home className="w-4 h-4 mr-2" />
+              Return Home
+            </Link>
           </Button>
         </CardContent>
       </Card>
