@@ -14,20 +14,15 @@ export async function createStripeCheckoutSession(
     const stripe = new Stripe(stripeKey);
     const { amount, name, email, recipientId, campaignId, campaignTitle, campaignSlug, internalPaymentId } = paymentRequest;
     
-    // Get domain from environment or use a fallback
-    // Make sure PUBLIC_APP_URL is set in your environment variables
-    const domain = Deno.env.get('PUBLIC_APP_URL') || 'https://oddogo-app.vercel.app';
-    console.log('Using domain for redirects:', domain);
-    
     // Build success URL with query parameters
     const successParams = new URLSearchParams();
     successParams.append('payment_id', internalPaymentId);
     if (campaignId) successParams.append('campaign_id', campaignId);
     if (recipientId) successParams.append('recipient_id', recipientId);
     
-    // Use absolute URLs for Stripe
-    const successUrl = `${domain}/payment-success?${successParams.toString()}`;
-    const cancelUrl = `${domain}/payment-cancelled`;
+    // Use relative URLs that will work regardless of deployment domain
+    const successUrl = `/payment-success?${successParams.toString()}`;
+    const cancelUrl = `/payment-cancelled`;
     
     console.log('Success URL:', successUrl);
     console.log('Cancel URL:', cancelUrl);
