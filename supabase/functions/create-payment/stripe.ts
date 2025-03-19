@@ -20,10 +20,13 @@ export async function createStripeCheckoutSession(
     if (campaignId) successParams.append('campaign_id', campaignId);
     if (recipientId) successParams.append('recipient_id', recipientId);
     
-    // Use relative URLs that will work regardless of deployment domain
-    const successUrl = `/payment-success?${successParams.toString()}`;
-    const cancelUrl = `/payment-cancelled`;
+    // For Stripe, we need to use absolute URLs
+    // Use a fully qualified URL with https protocol
+    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://app.oddogo.com';
+    const successUrl = `${baseUrl}/payment-success?${successParams.toString()}`;
+    const cancelUrl = `${baseUrl}/payment-cancelled`;
     
+    console.log('Base URL for Stripe redirects:', baseUrl);
     console.log('Success URL:', successUrl);
     console.log('Cancel URL:', cancelUrl);
     
