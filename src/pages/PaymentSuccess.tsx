@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -12,6 +13,8 @@ const PaymentSuccess = () => {
   const searchParams = new URLSearchParams(location.search);
   const paymentId = searchParams.get("payment_id");
   const [recipientId, setRecipientId] = useState<string | null>(searchParams.get("recipient_id"));
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // If we have a payment_id but not a recipient_id, try to fetch the associated user_id
@@ -19,6 +22,7 @@ const PaymentSuccess = () => {
       const fetchPaymentDetails = async () => {
         try {
           console.log("Fetching payment details for payment ID:", paymentId);
+          setIsLoading(true);
           
           const { data, error } = await supabase
             .from('stripe_payments')
@@ -28,6 +32,8 @@ const PaymentSuccess = () => {
             
           if (error) {
             console.error("Error fetching payment details:", error);
+            setError(`Could not find payment details: ${error.message}`);
+            setIsLoading(false);
             return;
           }
           
@@ -37,13 +43,20 @@ const PaymentSuccess = () => {
             console.log("Setting recipient ID from user_id:", data.user_id);
             // Use the user_id as recipient_id if available
             setRecipientId(data.user_id);
+          } else {
+            setError("Payment found but no recipient was associated with it.");
           }
         } catch (error) {
           console.error("Error in payment details fetch:", error);
+          setError(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+        } finally {
+          setIsLoading(false);
         }
       };
       
       fetchPaymentDetails();
+    } else {
+      setIsLoading(false);
     }
   }, [paymentId, recipientId]);
 
@@ -54,6 +67,56 @@ const PaymentSuccess = () => {
       navigate('/');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center space-y-2">
+            <CardTitle className="text-2xl font-bold">
+              Processing Payment...
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            </div>
+            <p className="text-gray-600">
+              Please wait while we confirm your payment details.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center">
+              <AlertCircle className="h-12 w-12 text-red-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-red-700">
+              Payment Verification Issue
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <p className="text-gray-600">
+              Your payment may have been processed, but we encountered an issue verifying the details.
+            </p>
+            <Button onClick={() => navigate('/')}>
+              Return to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

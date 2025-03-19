@@ -102,10 +102,32 @@ serve(async (req) => {
       
       // Create Stripe checkout session
       const origin = new URL(req.url).origin;
+      // Check if we need to override the origin (for development or edge function environment)
+      const hostHeader = req.headers.get('host');
+      const refererHeader = req.headers.get('referer');
+      let detectedOrigin = origin;
+      
+      // Try to get a better origin from headers if we're in edge function environment
+      if (origin.includes('edge-runtime.supabase.com') && refererHeader) {
+        try {
+          detectedOrigin = new URL(refererHeader).origin;
+          console.log('Using referer as origin:', detectedOrigin);
+        } catch (e) {
+          console.warn('Failed to parse referer URL:', e);
+        }
+      } else if (hostHeader && !hostHeader.includes('edge-runtime.supabase.com')) {
+        // Use host header as fallback
+        const protocol = req.url.startsWith('https') ? 'https' : 'http';
+        detectedOrigin = `${protocol}://${hostHeader}`;
+        console.log('Using host header as origin:', detectedOrigin);
+      }
+      
+      console.log('Detected origin for redirect URLs:', detectedOrigin);
+      
       const session = await createStripeSession(
         stripe,
         amountInCents,
-        origin,
+        detectedOrigin,
         payment,
         recipientId,
         recipientName,

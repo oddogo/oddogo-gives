@@ -28,8 +28,16 @@ export const createStripeSession = async (
     hasCampaignId: !!campaignId
   });
 
-  const successUrl = `${origin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
-  const cancelUrl = `${origin}/payment-cancelled?payment_id=${payment.id}`;
+  // Fix the origin URL to use the application domain rather than the edge function domain
+  // Extract the origin from the request or use a fallback from environment
+  const appUrl = Deno.env.get('APP_URL') || origin;
+  // Make sure we're not using the edge-runtime.supabase.com domain
+  const correctOrigin = appUrl.includes('edge-runtime.supabase.com') 
+    ? 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
+    : appUrl;
+  
+  const successUrl = `${correctOrigin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
+  const cancelUrl = `${correctOrigin}/payment-cancelled?payment_id=${payment.id}`;
   
   console.log('Payment success URL:', successUrl);
   console.log('Payment cancel URL:', cancelUrl);
