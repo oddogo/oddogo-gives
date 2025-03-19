@@ -29,6 +29,7 @@ export const createStripeSession = async (
   // Validate fingerprint ID is present
   if (!fingerprintId) {
     console.error('Missing fingerprint ID when creating Stripe session');
+    throw new Error('Missing fingerprint ID for payment');
   }
 
   try {

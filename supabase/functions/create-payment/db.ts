@@ -25,7 +25,7 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
         user_id: paymentData.user_id,
         currency: paymentData.currency,
         status: 'pending',
-        stripe_payment_email: paymentData.stripe_payment_email,
+        stripe_payment_email: paymentData.stripe_payment_email || null,
         message: paymentData.message || ''
       }])
       .select()
@@ -58,7 +58,7 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
         
       if (campaignPaymentError) {
         console.error('Error creating campaign payment record:', campaignPaymentError);
-        // We'll continue even if there's an error here, as the payment itself was successful
+        throw new Error(`Failed to create campaign payment record: ${campaignPaymentError.message}`);
       } else {
         console.log('Campaign payment record created successfully');
       }
