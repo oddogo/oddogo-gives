@@ -14,20 +14,15 @@ import { PaymentAmountSelector } from "./PaymentAmountSelector";
 import { PaymentDetailsFields } from "./PaymentDetailsFields";
 import { PaymentFooter } from "./PaymentFooter";
 import { Textarea } from "@/components/ui/textarea";
+import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentFormContentProps {
-  form: UseFormReturn<{
-    amount: number;
-    name: string;
-    email: string;
-    message?: string;
-    campaign_id?: string;
-  }>;
+  form: UseFormReturn<PaymentFormValues>;
   isSubmitting: boolean;
   recipientName: string;
   campaignId?: string;
   campaignTitle?: string;
-  onSubmit: (values: any) => void;
+  onSubmit: (values: PaymentFormValues) => void;
 }
 
 export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({

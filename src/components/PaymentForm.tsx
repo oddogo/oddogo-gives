@@ -20,7 +20,7 @@ const paymentFormSchema = z.object({
   campaign_id: z.string().optional(),
 });
 
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
 interface PaymentFormProps {
   recipientId: string;
