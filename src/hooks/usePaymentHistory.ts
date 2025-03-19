@@ -105,7 +105,7 @@ export const usePaymentHistory = (userId: string) => {
             // Create a proper Payment object with all fields
             const enhancedPayment: Payment = {
               ...payment,
-              campaign_id: campaignInfo?.id || payment.campaign_id || undefined,
+              campaign_id: campaignInfo?.id || undefined,
               campaign_title: campaignInfo?.title || '',
               campaign_slug: campaignInfo?.slug || ''
             };
