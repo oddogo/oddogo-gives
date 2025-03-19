@@ -13,7 +13,15 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
   try {
     const { data: payment, error: paymentError } = await supabaseClient
       .from('stripe_payments')
-      .insert([paymentData])
+      .insert([{
+        amount: paymentData.amount,
+        fingerprint_id: paymentData.fingerprintId,
+        user_id: paymentData.userId,
+        currency: paymentData.currency,
+        status: 'pending',
+        stripe_payment_email: paymentData.email,
+        message: paymentData.message
+      }])
       .select()
       .single();
 
@@ -27,6 +35,29 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
     }
 
     console.log('Payment record created successfully:', payment);
+    
+    // If a campaign ID is provided, create a campaign payment record
+    if (paymentData.campaignId) {
+      console.log('Creating campaign payment record:', {
+        payment_id: payment.id,
+        campaign_id: paymentData.campaignId
+      });
+      
+      const { error: campaignPaymentError } = await supabaseClient
+        .from('campaign_payments')
+        .insert({
+          campaign_id: paymentData.campaignId,
+          payment_id: payment.id
+        });
+        
+      if (campaignPaymentError) {
+        console.error('Error creating campaign payment record:', campaignPaymentError);
+        // We'll continue even if there's an error here, as the payment itself was successful
+      } else {
+        console.log('Campaign payment record created successfully');
+      }
+    }
+    
     return payment;
   } catch (error) {
     console.error('Exception in createPaymentRecord:', error);

@@ -40,6 +40,8 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
   
   const handlePaymentSuccess = async (paymentId: string) => {
     try {
+      console.log("Linking payment to campaign:", {paymentId, campaignId});
+      
       const { error } = await supabase
         .from('campaign_payments')
         .insert({

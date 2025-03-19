@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Receipt, DollarSign, Clock, Award, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface Payment {
   id: string;
@@ -125,12 +124,6 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
     const pendingAmount = payments.filter(p => p.status === 'pending')
       .reduce((sum, p) => sum + p.amount, 0);
     const totalAmount = completedAmount + pendingAmount;
-
-    // For the pie chart data
-    const chartData = [
-      { name: 'Completed', value: completedAmount, color: '#10b981' },
-      { name: 'Pending', value: pendingAmount, color: '#f59e0b' }
-    ].filter(item => item.value > 0);
     
     return (
       <div key={campaignId} className="space-y-4 mb-8">
@@ -162,28 +155,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
           </div>
           
           <div className="col-span-1">
-            {chartData.length > 0 && (
-              <div className="h-[120px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={50}
-                      dataKey="value"
-                      labelLine={false}
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            {/* Pie chart removed */}
           </div>
         </div>
       </div>

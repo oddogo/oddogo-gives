@@ -1,6 +1,5 @@
 
 import { Progress } from "@/components/ui/progress";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface CampaignProgressChartProps {
   targetAmount: number;
@@ -14,7 +13,6 @@ export const CampaignProgressChart = ({
   targetAmount,
   completedAmount,
   pendingAmount,
-  showChart = true,
   showDetails = true
 }: CampaignProgressChartProps) => {
   // Calculate percentages
@@ -25,14 +23,6 @@ export const CampaignProgressChart = ({
   const formatCurrency = (amount: number) => {
     return `£${(amount / 100).toFixed(2)}`;
   };
-
-  // Prepare chart data
-  const remainingAmount = Math.max(targetAmount - completedAmount - pendingAmount, 0);
-  const chartData = [
-    { name: 'Completed', value: completedAmount, color: '#10b981' },
-    { name: 'Pending', value: pendingAmount, color: '#f59e0b' },
-    { name: 'Remaining', value: remainingAmount, color: '#e5e7eb' }
-  ].filter(item => item.value > 0);
   
   return (
     <div className="space-y-4">
@@ -59,31 +49,6 @@ export const CampaignProgressChart = ({
           <span className="text-gray-500">
             {percentTotal}% with pending payments
           </span>
-        </div>
-      )}
-
-      {showChart && chartData.length > 0 && (
-        <div className="h-[180px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                outerRadius={70}
-                innerRadius={40}
-                paddingAngle={2}
-                dataKey="value"
-                labelLine={false}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
         </div>
       )}
     </div>

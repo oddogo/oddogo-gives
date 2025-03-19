@@ -2,14 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-interface PaymentDetails {
-  amount: number;
-  name: string;
-  email: string;
-  message?: string;
-  campaign_id?: string;
-}
+import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentSubmitProps {
   recipientId: string;
@@ -29,7 +22,7 @@ export const usePaymentSubmit = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const submitPayment = async (values: PaymentDetails) => {
+  const submitPayment = async (values: PaymentFormValues) => {
     if (!stripePromise) {
       toast.error("Payment system is not available right now");
       setPaymentError("Payment system unavailable");
@@ -40,14 +33,16 @@ export const usePaymentSubmit = ({
       setIsSubmitting(true);
       setPaymentError(null);
       
-      // We send the amount as a number - the edge function will convert it to cents
+      // Ensure campaign_id is set correctly
+      const campaign_id = values.campaign_id || campaignId;
+
       console.log("Submitting payment with data:", {
         amount: values.amount,
         recipientId,
         email: values.email,
         name: values.name,
         message: values.message,
-        campaignId: values.campaign_id || campaignId
+        campaignId: campaign_id 
       });
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
@@ -57,7 +52,7 @@ export const usePaymentSubmit = ({
           email: values.email,
           name: values.name,
           message: values.message || "",
-          campaignId: values.campaign_id || campaignId || ""
+          campaignId: campaign_id || ""
         },
       });
       
