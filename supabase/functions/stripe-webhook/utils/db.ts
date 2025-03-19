@@ -85,3 +85,62 @@ export const markWebhookProcessed = async (eventId: string) => {
     // Don't throw here to prevent stopping the webhook processing flow
   }
 };
+
+// Helper to record payment logs
+export const recordPaymentLog = async (paymentId: string, status: string, message: string, metadata?: any) => {
+  console.log(`Recording payment log: ${status} - ${message} for payment ${paymentId}`);
+  
+  try {
+    // Make sure we're not trying to use 'none' as a UUID
+    const validPaymentId = paymentId && paymentId !== 'none' ? paymentId : null;
+    
+    const { error } = await supabaseClient
+      .from('stripe_payment_logs')
+      .insert({
+        payment_id: validPaymentId,
+        status,
+        message,
+        metadata
+      });
+
+    if (error) {
+      console.error('Error recording payment log:', error);
+    }
+  } catch (error) {
+    console.error('Exception recording payment log:', error);
+  }
+};
+
+// Utility to retry processing a failed webhook
+export const retryFailedWebhook = async (webhookId: string) => {
+  try {
+    // Get the webhook details
+    const { data, error } = await supabaseClient
+      .from('stripe_webhook_logs')
+      .select('*')
+      .eq('id', webhookId)
+      .single();
+      
+    if (error || !data) {
+      console.error('Error retrieving webhook for retry:', error);
+      return false;
+    }
+    
+    // Mark the webhook as being retried
+    await supabaseClient
+      .from('stripe_webhook_logs')
+      .update({ 
+        status: 'retrying',
+        retried_at: new Date().toISOString()
+      })
+      .eq('id', webhookId);
+      
+    // TODO: Implement actual retry logic based on event_type
+    // This would involve calling the appropriate handler with the event_data
+    
+    return true;
+  } catch (error) {
+    console.error('Error retrying webhook:', error);
+    return false;
+  }
+};
