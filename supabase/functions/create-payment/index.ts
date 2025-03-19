@@ -154,7 +154,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           url: session.url,
-          payment_id: payment.id,
+          paymentId: payment.id,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

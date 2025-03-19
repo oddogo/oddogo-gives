@@ -86,6 +86,24 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
     }
 
     console.log('Payment record updated successfully:', data);
+    
+    // If this is connected to a campaign, update the campaign_payments table
+    if (session.metadata?.campaign_id) {
+      console.log('Updating campaign payment for campaign:', session.metadata.campaign_id);
+      
+      const { error: campaignError } = await supabaseClient
+        .from('campaign_payments')
+        .insert({
+          campaign_id: session.metadata.campaign_id,
+          payment_id: paymentId
+        });
+        
+      if (campaignError) {
+        console.error('Error linking payment to campaign:', campaignError);
+      } else {
+        console.log('Payment successfully linked to campaign');
+      }
+    }
   } catch (error) {
     console.error('Exception in handleCheckoutSessionCompleted:', error);
   }

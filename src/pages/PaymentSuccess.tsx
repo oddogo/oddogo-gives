@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -15,54 +16,93 @@ const PaymentSuccess = () => {
   const [recipientId, setRecipientId] = useState<string | null>(searchParams.get("recipient_id"));
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
   useEffect(() => {
-    // If we have a payment_id but not a recipient_id, try to fetch the associated user_id
-    if (paymentId && !recipientId) {
-      const fetchPaymentDetails = async () => {
-        try {
-          console.log("Fetching payment details for payment ID:", paymentId);
-          setIsLoading(true);
+    const processPayment = async () => {
+      if (!paymentId) {
+        setError("No payment ID was provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log("Processing payment success for payment ID:", paymentId);
+        setIsLoading(true);
+        
+        // Fetch the payment details
+        const { data: paymentData, error: paymentError } = await supabase
+          .from('stripe_payments')
+          .select('*')
+          .eq('id', paymentId)
+          .single();
           
-          const { data, error } = await supabase
-            .from('stripe_payments')
-            .select('user_id')
-            .eq('id', paymentId)
-            .single();
-            
-          if (error) {
-            console.error("Error fetching payment details:", error);
-            setError(`Could not find payment details: ${error.message}`);
-            setIsLoading(false);
-            return;
-          }
-          
-          console.log("Payment details fetched:", data);
-          
-          if (data?.user_id) {
-            console.log("Setting recipient ID from user_id:", data.user_id);
-            // Use the user_id as recipient_id if available
-            setRecipientId(data.user_id);
-          } else {
-            setError("Payment found but no recipient was associated with it.");
-          }
-        } catch (error) {
-          console.error("Error in payment details fetch:", error);
-          setError(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
-        } finally {
+        if (paymentError) {
+          console.error("Error fetching payment details:", paymentError);
+          setError(`Could not find payment details: ${paymentError.message}`);
           setIsLoading(false);
+          return;
         }
-      };
-      
-      fetchPaymentDetails();
-    } else {
-      setIsLoading(false);
-    }
+        
+        console.log("Payment details fetched:", paymentData);
+        setPaymentDetails(paymentData);
+        
+        if (!recipientId && paymentData?.user_id) {
+          console.log("Setting recipient ID from payment user_id:", paymentData.user_id);
+          setRecipientId(paymentData.user_id);
+        }
+        
+        // Check if this payment is associated with a campaign
+        if (paymentData?.campaign_id) {
+          console.log("Payment associated with campaign:", paymentData.campaign_id);
+          
+          // Ensure payment is linked to campaign if not already
+          const { data: campaignPayment, error: campaignCheckError } = await supabase
+            .from('campaign_payments')
+            .select('id')
+            .eq('payment_id', paymentId)
+            .maybeSingle();
+            
+          if (campaignCheckError) {
+            console.error("Error checking campaign payment link:", campaignCheckError);
+          } else if (!campaignPayment) {
+            console.log("Linking payment to campaign:", paymentData.campaign_id);
+            
+            const { error: linkError } = await supabase
+              .from('campaign_payments')
+              .insert({
+                campaign_id: paymentData.campaign_id,
+                payment_id: paymentId
+              });
+              
+            if (linkError) {
+              console.error("Error linking payment to campaign:", linkError);
+            } else {
+              console.log("Payment successfully linked to campaign");
+              toast.success("Your donation has been linked to the campaign!");
+            }
+          } else {
+            console.log("Payment already linked to campaign");
+          }
+        }
+        
+        toast.success("Payment processed successfully!");
+      } catch (error) {
+        console.error("Error processing payment success:", error);
+        setError(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    processPayment();
   }, [paymentId, recipientId]);
 
   const handleReturnClick = () => {
     if (recipientId) {
       navigate(`/profile/${recipientId}`);
+    } else if (paymentDetails?.campaign_id) {
+      navigate(`/campaign/${paymentDetails.campaign_id}`);
     } else {
       navigate('/');
     }
@@ -131,10 +171,16 @@ const PaymentSuccess = () => {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-gray-600">
-            Thank you for your donation. Your payment has been processed successfully.
+            Thank you for your donation of 
+            {paymentDetails && (
+              <span className="font-semibold">
+                {" "}£{(paymentDetails.amount / 100).toFixed(2)}
+              </span>
+            )}.
+            Your payment has been processed successfully.
           </p>
           <Button onClick={handleReturnClick}>
-            Return to Profile
+            Return to {recipientId ? "Profile" : "Home"}
           </Button>
         </CardContent>
       </Card>

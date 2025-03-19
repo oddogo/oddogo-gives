@@ -33,7 +33,7 @@ export const createStripeSession = async (
   const appUrl = Deno.env.get('APP_URL') || origin;
   // Make sure we're not using the edge-runtime.supabase.com domain
   const correctOrigin = appUrl.includes('edge-runtime.supabase.com') 
-    ? 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
+    ? Deno.env.get('SUPABASE_URL') || 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
     : appUrl;
   
   const successUrl = `${correctOrigin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
