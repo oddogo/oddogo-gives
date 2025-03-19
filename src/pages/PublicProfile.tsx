@@ -34,37 +34,6 @@ const PublicProfile = () => {
     <div className="min-h-screen bg-white">
       <ProfileHero profile={profile} userId={id || ''} />
       <ProfileNavigation />
-      
-      <div id="about" className="py-12 w-full">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 text-primary mb-2">
-              <HandHeart className="w-5 h-5" />
-              <span className="font-medium">About</span>
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              {profile.display_name}
-            </h2>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
-                <p className="text-gray-600">
-                  {profile.bio || "No bio provided"}
-                </p>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Important Causes</h3>
-                <p className="text-gray-600">
-                  {profile.causes_description || "No causes specified"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div id="allocations">
         {allocations.length > 0 ? (
@@ -85,9 +54,9 @@ const PublicProfile = () => {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 text-primary mb-2">
                 <HandHeart className="w-5 h-5" />
-                <span className="font-medium">Support These Important Causes</span>
+                <span className="font-medium">Make a better impact today</span>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl animate-pulse">
                 Donate Today
               </h2>
               <p className="mt-4 text-lg text-gray-600">

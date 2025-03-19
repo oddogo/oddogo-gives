@@ -1,3 +1,4 @@
+
 import { Profile } from "@/hooks/usePublicProfile";
 import { Avatar } from "@/components/Avatar";
 import { MapPin, Trophy, Coins, Flag } from "lucide-react";
@@ -29,20 +30,20 @@ export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
             <span>{profile.location || "London, UK"}</span>
           </div>
 
-          <h1 className="text-4xl font-bold mb-8 text-white">
+          <h1 className="text-4xl font-bold mb-6 text-white">
             {profile.display_name}
           </h1>
 
-          <div className="flex flex-col md:flex-row gap-8 max-w-4xl mb-12">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mb-12 w-full">
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-white/90 mb-2">About</h3>
-              <p className={`text-white/80 leading-relaxed ${profile.bio?.length > 100 ? 'text-justify' : 'text-center'}`}>
+              <p className="text-white/80 leading-relaxed">
                 {profile.bio || "No bio provided"}
               </p>
             </div>
-            <div className="flex-1">
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-white/90 mb-2">Important Causes</h3>
-              <p className={`text-white/80 leading-relaxed ${profile.causes_description?.length > 100 ? 'text-justify' : 'text-center'}`}>
+              <p className="text-white/80 leading-relaxed">
                 {profile.causes_description || "No causes specified"}
               </p>
             </div>

@@ -15,6 +15,7 @@ import { PaymentDetailsFields } from "./PaymentDetailsFields";
 import { PaymentFooter } from "./PaymentFooter";
 import { Textarea } from "@/components/ui/textarea";
 import { PaymentFormValues } from "@/components/PaymentForm";
+import { HandHeart } from "lucide-react";
 
 interface PaymentFormContentProps {
   form: UseFormReturn<PaymentFormValues>;
@@ -72,10 +73,11 @@ export const PaymentFormContent: React.FC<PaymentFormContentProps> = ({
 
         <Button
           type="submit"
-          className="w-full py-6 text-lg"
+          className="w-full py-6 text-lg font-bold bg-teal-600 hover:bg-teal-700 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Processing..." : "Make Payment"}
+          <HandHeart className="w-5 h-5" />
+          {isSubmitting ? "Processing..." : "Donate Now"}
         </Button>
 
         <PaymentFooter 
