@@ -1,127 +1,63 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { PaymentData } from './types.ts';
 
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export const createPaymentRecord = async (paymentData: PaymentData) => {
-  console.log('Creating payment record with data:', paymentData);
+  console.log('Creating payment record with data:', JSON.stringify(paymentData));
   
   try {
-    // Ensure fingerprint_id is present
-    if (!paymentData.fingerprint_id) {
-      throw new Error('Missing fingerprint_id in payment data');
-    }
-    
-    // Create the payment record with all required fields
-    const { data: payment, error: paymentError } = await supabaseClient
+    const { data, error } = await supabase
       .from('stripe_payments')
-      .insert([{
+      .insert({
         amount: paymentData.amount,
+        currency: paymentData.currency,
         fingerprint_id: paymentData.fingerprint_id,
         user_id: paymentData.user_id,
-        currency: paymentData.currency,
-        status: 'pending',
-        stripe_payment_email: paymentData.stripe_payment_email || null,
-        message: paymentData.message || '',
-        donor_name: paymentData.donor_name || null
-      }])
+        status: paymentData.status,
+        stripe_payment_email: paymentData.stripe_payment_email,
+        stripe_payment_method_id: paymentData.stripe_payment_method_id,
+        stripe_charge_id: paymentData.stripe_charge_id,
+        message: paymentData.message,
+        donor_name: paymentData.donor_name || 'Anonymous'
+      })
       .select()
       .single();
 
-    if (paymentError) {
-      console.error('Error creating payment record:', paymentError);
-      throw new Error(`Failed to create payment record: ${paymentError.message}`);
-    }
-
-    if (!payment) {
-      throw new Error('No payment record was created');
-    }
-
-    console.log('Payment record created successfully:', payment);
-    
-    // If a campaign ID is provided, create a campaign payment record
-    if (paymentData.campaignId) {
-      console.log('Creating campaign payment record:', {
-        payment_id: payment.id,
-        campaign_id: paymentData.campaignId
-      });
-      
-      const { error: campaignPaymentError } = await supabaseClient
-        .from('campaign_payments')
-        .insert({
-          campaign_id: paymentData.campaignId,
-          payment_id: payment.id
-        });
-        
-      if (campaignPaymentError) {
-        console.error('Error creating campaign payment record:', campaignPaymentError);
-        // Continue even if campaign payment association fails - don't block the main payment
-        console.log('Continuing despite campaign payment error');
-      } else {
-        console.log('Campaign payment record created successfully');
-      }
-    }
-    
-    return payment;
-  } catch (error) {
-    console.error('Exception in createPaymentRecord:', error);
-    throw error;
-  }
-};
-
-export const getFingerprintId = async (recipientId: string) => {
-  console.log('Getting fingerprint for recipient ID:', recipientId);
-  
-  try {
-    const { data: fingerprint, error: fingerprintError } = await supabaseClient
-      .from('fingerprints_users')
-      .select('fingerprint_id')
-      .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (fingerprintError) {
-      console.error('Error fetching fingerprint:', fingerprintError);
-      throw new Error(`Failed to fetch recipient fingerprint: ${fingerprintError.message}`);
-    }
-
-    if (!fingerprint?.fingerprint_id) {
-      console.error('No fingerprint found for recipient:', recipientId);
-      throw new Error(`No fingerprint found for recipient ID: ${recipientId}`);
-    }
-
-    console.log(`Found fingerprint ID ${fingerprint.fingerprint_id} for recipient ${recipientId}`);
-    return fingerprint.fingerprint_id;
-  } catch (error) {
-    console.error(`Error in getFingerprintId for ${recipientId}:`, error);
-    throw error;
-  }
-};
-
-export const getUserId = async (authHeader: string | null) => {
-  console.log('Getting user ID from auth header:', !!authHeader);
-  
-  if (!authHeader) {
-    console.log('No auth header provided, proceeding as anonymous');
-    return null;
-  }
-  
-  try {
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabaseClient.auth.getUser(token);
-    
     if (error) {
-      console.error('Error getting user from token:', error);
-      return null;
+      console.error('Error creating payment record:', error);
+      throw new Error(`Failed to create payment record: ${error.message}`);
     }
-    
-    console.log('Retrieved user ID:', user?.id || 'none');
-    return user?.id || null;
+
+    console.log('Payment record created successfully with ID:', data.id);
+    return data;
   } catch (error) {
-    console.error('Exception in getUserId:', error);
-    return null;
+    console.error('Exception creating payment record:', error);
+    throw new Error(`Failed to create payment record: ${error.message}`);
+  }
+};
+
+export const recordPaymentLog = async (paymentId: string, status: string, message: string, metadata?: any) => {
+  console.log(`Recording payment log: ${status} - ${message} for payment ${paymentId}`);
+  
+  try {
+    const { error } = await supabase
+      .from('stripe_payment_logs')
+      .insert({
+        payment_id: paymentId,
+        status,
+        message,
+        metadata
+      });
+
+    if (error) {
+      console.error('Error recording payment log:', error);
+    }
+  } catch (error) {
+    console.error('Exception recording payment log:', error);
   }
 };
