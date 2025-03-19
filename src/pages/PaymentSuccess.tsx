@@ -14,21 +14,27 @@ const PaymentSuccess = () => {
   const [recipientId, setRecipientId] = useState<string | null>(searchParams.get("recipient_id"));
 
   useEffect(() => {
-    // If we have a payment_id but not a recipient_id, try to fetch it from the payment
+    // If we have a payment_id but not a recipient_id, try to fetch the associated user_id
     if (paymentId && !recipientId) {
       const fetchPaymentDetails = async () => {
         try {
           const { data, error } = await supabase
             .from('stripe_payments')
-            .select('metadata')
+            .select('user_id')
             .eq('id', paymentId)
             .single();
             
-          if (data?.metadata?.recipient_id) {
-            setRecipientId(data.metadata.recipient_id);
+          if (error) {
+            console.error("Error fetching payment details:", error);
+            return;
+          }
+          
+          if (data?.user_id) {
+            // Use the user_id as recipient_id if available
+            setRecipientId(data.user_id);
           }
         } catch (error) {
-          console.error("Error fetching payment details:", error);
+          console.error("Error in payment details fetch:", error);
         }
       };
       
