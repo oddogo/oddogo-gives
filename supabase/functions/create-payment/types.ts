@@ -16,6 +16,7 @@ export interface PaymentData {
   status: string;
   stripe_payment_email?: string;
   message?: string;
+  campaignId?: string;
 }
 
 export const corsHeaders = {

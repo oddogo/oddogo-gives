@@ -81,7 +81,8 @@ serve(async (req) => {
           fingerprint_id: fingerprintId,
           status: 'pending',
           stripe_payment_email: email,
-          message: message
+          message: message,
+          campaignId: campaignId
         });
         console.log('Payment record created:', payment.id);
       } catch (paymentError) {

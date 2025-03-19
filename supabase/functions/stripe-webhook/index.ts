@@ -133,21 +133,25 @@ serve(async (req) => {
             );
           }
 
-          // If a campaign ID is provided, create a campaign payment record
-          if (campaignId) {
+          // If a campaign ID is directly in the payment record or in metadata, handle it
+          const paymentCampaignId = updatedPayment?.campaign_id || paymentIntent.metadata?.campaign_id;
+          
+          if (paymentCampaignId) {
             try {
               const { error: campaignPaymentError } = await supabaseClient
                 .from('campaign_payments')
                 .insert({
-                  campaign_id: campaignId,
+                  campaign_id: paymentCampaignId,
                   payment_id: paymentId
-                });
+                })
+                .onConflict(['campaign_id', 'payment_id'])
+                .ignore();
                 
               if (campaignPaymentError) {
                 console.error('Error creating campaign payment record:', campaignPaymentError);
                 // Continue processing - campaign payment failures shouldn't stop the webhook
               } else {
-                console.log('Successfully created campaign payment record');
+                console.log('Successfully created campaign payment record for campaign:', paymentCampaignId);
               }
             } catch (err) {
               console.error('Exception creating campaign payment:', err);
@@ -253,13 +257,15 @@ serve(async (req) => {
 
           console.log('Successfully updated payment status to completed', updatedPayment);
 
-          // If a campaign ID is provided, create a campaign payment record
-          if (campaignId) {
+          // If a campaign ID is directly in the payment record or in metadata, handle it
+          const paymentCampaignId = updatedPayment?.campaign_id || paymentIntent.metadata?.campaign_id;
+          
+          if (paymentCampaignId) {
             try {
               const { error: campaignPaymentError } = await supabaseClient
                 .from('campaign_payments')
                 .insert({
-                  campaign_id: campaignId,
+                  campaign_id: paymentCampaignId,
                   payment_id: paymentId
                 })
                 .onConflict(['campaign_id', 'payment_id'])
@@ -269,7 +275,7 @@ serve(async (req) => {
                 console.error('Error creating campaign payment record:', campaignPaymentError);
                 // Continue processing - campaign payment failures shouldn't stop the webhook
               } else {
-                console.log('Successfully created campaign payment record');
+                console.log('Successfully created campaign payment record for campaign:', paymentCampaignId);
               }
             } catch (err) {
               console.error('Exception creating campaign payment:', err);

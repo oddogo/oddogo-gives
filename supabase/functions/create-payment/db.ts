@@ -11,16 +11,18 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
   console.log('Creating payment record with data:', paymentData);
   
   try {
+    // Add campaign_id directly to the payment record
     const { data: payment, error: paymentError } = await supabaseClient
       .from('stripe_payments')
       .insert([{
         amount: paymentData.amount,
-        fingerprint_id: paymentData.fingerprintId,
-        user_id: paymentData.userId,
+        fingerprint_id: paymentData.fingerprint_id,
+        user_id: paymentData.user_id,
         currency: paymentData.currency,
         status: 'pending',
-        stripe_payment_email: paymentData.email,
-        message: paymentData.message
+        stripe_payment_email: paymentData.stripe_payment_email,
+        message: paymentData.message,
+        campaign_id: paymentData.campaignId // Store campaign_id directly in stripe_payments
       }])
       .select()
       .single();
@@ -36,7 +38,7 @@ export const createPaymentRecord = async (paymentData: PaymentData) => {
 
     console.log('Payment record created successfully:', payment);
     
-    // If a campaign ID is provided, create a campaign payment record
+    // If a campaign ID is provided, still create a campaign payment record for backward compatibility
     if (paymentData.campaignId) {
       console.log('Creating campaign payment record:', {
         payment_id: payment.id,

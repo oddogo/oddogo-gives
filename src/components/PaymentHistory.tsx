@@ -71,9 +71,9 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
       
       console.log('Fetching payments for fingerprint ID:', fingerprintId);
       
-      // First, try to get all payments directed to this user's fingerprint
+      // Use v_stripe_payments view which has the necessary related data
       const { data: paymentsData, error: paymentsError } = await supabase
-        .from('stripe_payments')
+        .from('v_stripe_payments')
         .select('*')
         .eq('fingerprint_id', fingerprintId)
         .order('created_at', { ascending: false });
@@ -84,92 +84,93 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
         return;
       }
 
-      // Also get campaign payments info
-      const { data: campaignPaymentsData, error: campaignError } = await supabase
-        .from('campaign_payments')
-        .select(`
-          campaign_id,
-          payment_id,
-          campaigns (
-            id,
-            title,
-            slug
-          )
-        `)
-        .in('payment_id', paymentsData?.map(p => p.id) || []);
+      console.log('Fetched payments data:', paymentsData);
 
-      if (campaignError) {
-        console.error('Error fetching campaign payment associations:', campaignError);
-      }
+      // Get campaign info for payments
+      const paymentIds = paymentsData?.map(p => p.id) || [];
+      
+      if (paymentIds.length > 0) {
+        const { data: campaignPaymentsData, error: campaignError } = await supabase
+          .from('campaign_payments')
+          .select(`
+            campaign_id,
+            payment_id,
+            campaigns (
+              id,
+              title,
+              slug
+            )
+          `)
+          .in('payment_id', paymentIds);
 
-      // Get profile info for donor names
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', paymentsData?.filter(p => p.user_id).map(p => p.user_id) || []);
-
-      if (profilesError) {
-        console.error('Error fetching profiles for donor names:', profilesError);
-      }
-
-      // Create a map of payment IDs to campaign info for quick lookups
-      const campaignMap: Record<string, { id: string, title: string, slug: string }> = {};
-      campaignPaymentsData?.forEach(cp => {
-        if (cp.campaigns) {
-          campaignMap[cp.payment_id] = {
-            id: cp.campaign_id,
-            title: cp.campaigns.title,
-            slug: cp.campaigns.slug
-          };
-        }
-      });
-
-      // Create a map of user IDs to display names
-      const profileMap: Record<string, string> = {};
-      profilesData?.forEach(profile => {
-        profileMap[profile.id] = profile.display_name;
-      });
-
-      // Enhance payment data with campaign info and donor names
-      const enhancedPayments = paymentsData?.map(payment => {
-        const campaignInfo = campaignMap[payment.id];
-        return {
-          ...payment,
-          campaign_id: campaignInfo?.id,
-          campaign_title: campaignInfo?.title,
-          campaign_slug: campaignInfo?.slug,
-          donor_name: payment.user_id ? profileMap[payment.user_id] : undefined
-        };
-      }) || [];
-
-      console.log('Enhanced payments data:', enhancedPayments);
-      setPayments(enhancedPayments);
-
-      const completed = enhancedPayments.filter(p => p.status === 'completed')
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-      const pending = enhancedPayments.filter(p => p.status === 'pending')
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      setTotalReceived(completed);
-      setPendingAmount(pending);
-
-      // Organize payments by campaign
-      const byCampaign: {[key: string]: Payment[]} = {};
-      const standalone: Payment[] = [];
-
-      enhancedPayments.forEach(payment => {
-        if (payment.campaign_id) {
-          if (!byCampaign[payment.campaign_id]) {
-            byCampaign[payment.campaign_id] = [];
-          }
-          byCampaign[payment.campaign_id].push(payment);
+        if (campaignError) {
+          console.error('Error fetching campaign payment associations:', campaignError);
         } else {
-          standalone.push(payment);
-        }
-      });
+          console.log('Campaign payments data:', campaignPaymentsData);
+          
+          // Create a map of payment IDs to campaign info
+          const campaignMap: Record<string, { id: string, title: string, slug: string }> = {};
+          campaignPaymentsData?.forEach(cp => {
+            if (cp.campaigns) {
+              campaignMap[cp.payment_id] = {
+                id: cp.campaign_id,
+                title: cp.campaigns.title,
+                slug: cp.campaigns.slug
+              };
+            }
+          });
 
-      setCampaignPayments(byCampaign);
-      setStandalonePayments(standalone);
+          // Enhance payment data with campaign info
+          const enhancedPayments = paymentsData?.map(payment => {
+            const campaignInfo = campaignMap[payment.id];
+            return {
+              ...payment,
+              campaign_id: campaignInfo?.id,
+              campaign_title: campaignInfo?.title,
+              campaign_slug: campaignInfo?.slug
+            };
+          }) || [];
+
+          console.log('Enhanced payments with campaign data:', enhancedPayments);
+          setPayments(enhancedPayments);
+
+          // Calculate amounts
+          const completed = enhancedPayments
+            .filter(p => p.status === 'completed')
+            .reduce((sum, p) => sum + p.amount, 0) || 0;
+          const pending = enhancedPayments
+            .filter(p => p.status === 'pending')
+            .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+          setTotalReceived(completed);
+          setPendingAmount(pending);
+
+          // Organize payments by campaign
+          const byCampaign: {[key: string]: Payment[]} = {};
+          const standalone: Payment[] = [];
+
+          enhancedPayments.forEach(payment => {
+            if (payment.campaign_id) {
+              if (!byCampaign[payment.campaign_id]) {
+                byCampaign[payment.campaign_id] = [];
+              }
+              byCampaign[payment.campaign_id].push(payment);
+            } else {
+              standalone.push(payment);
+            }
+          });
+
+          setCampaignPayments(byCampaign);
+          setStandalonePayments(standalone);
+        }
+      } else {
+        // If no payments, set empty arrays
+        setPayments([]);
+        setCampaignPayments({});
+        setStandalonePayments([]);
+        setTotalReceived(0);
+        setPendingAmount(0);
+      }
     } catch (error) {
       console.error('Error in fetchPayments:', error);
       toast.error('Failed to load payment history');

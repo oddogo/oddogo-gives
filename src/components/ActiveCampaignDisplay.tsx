@@ -45,9 +45,9 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         setCampaign(campaignData);
         
         // Get all payments associated with this campaign
-        const { data: campaignPayments, error: paymentsError } = await supabase
-          .from('campaign_payments')
-          .select('payment_id')
+        const { data: campaignPaymentsData, error: paymentsError } = await supabase
+          .from('v_stripe_payments')
+          .select('*')
           .eq('campaign_id', campaignData.id);
           
         if (paymentsError) {
@@ -56,35 +56,19 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
           return;
         }
         
-        console.log("Campaign payment associations:", campaignPayments);
+        console.log("Campaign payments:", campaignPaymentsData);
         
-        if (campaignPayments.length === 0) {
+        if (!campaignPaymentsData || campaignPaymentsData.length === 0) {
           console.log("No payments associated with this campaign yet");
           setLoading(false);
           return;
         }
         
-        // Get the details of those payments
-        const paymentIds = campaignPayments.map(p => p.payment_id);
-        
-        const { data: payments, error: paymentDetailsError } = await supabase
-          .from('stripe_payments')
-          .select('id, amount, status')
-          .in('id', paymentIds);
-          
-        if (paymentDetailsError) {
-          console.error("Error fetching payment details:", paymentDetailsError);
-          setLoading(false);
-          return;
-        }
-        
-        console.log("Campaign payments details:", payments);
-        
         // Calculate completed and pending amounts
         let completed = 0;
         let pending = 0;
         
-        payments.forEach((payment: any) => {
+        campaignPaymentsData.forEach((payment: any) => {
           if (payment.status === 'completed') {
             completed += payment.amount;
           } else if (payment.status === 'pending') {
