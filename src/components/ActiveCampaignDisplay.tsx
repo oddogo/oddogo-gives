@@ -68,7 +68,7 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         let completed = 0;
         let pending = 0;
         
-        campaignPaymentsData.forEach((payment: any) => {
+        campaignPaymentsData.forEach((payment) => {
           if (payment.status === 'completed') {
             completed += payment.amount;
           } else if (payment.status === 'pending') {
