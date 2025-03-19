@@ -29,7 +29,7 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
       }
     }
     
-    // Create a new payment record
+    // Create a new payment record with proper field mapping
     const { data, error } = await supabaseClient
       .from('stripe_payments')
       .insert({

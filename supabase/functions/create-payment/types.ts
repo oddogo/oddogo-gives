@@ -23,8 +23,10 @@ export interface PaymentRequest {
   amount: number;
   recipientId: string;
   recipientName: string;
-  email?: string;
+  email: string;
   name?: string;
   message?: string;
   campaignId?: string;
+  campaignTitle?: string;
+  campaignSlug?: string;
 }

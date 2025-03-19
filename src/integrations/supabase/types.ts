@@ -1480,6 +1480,8 @@ export type Database = {
         Row: {
           amount: number
           campaign_id: string | null
+          campaign_slug: string | null
+          campaign_title: string | null
           created_at: string
           currency: string
           donor_name: string | null
@@ -1498,6 +1500,8 @@ export type Database = {
         Insert: {
           amount: number
           campaign_id?: string | null
+          campaign_slug?: string | null
+          campaign_title?: string | null
           created_at?: string
           currency?: string
           donor_name?: string | null
@@ -1516,6 +1520,8 @@ export type Database = {
         Update: {
           amount?: number
           campaign_id?: string | null
+          campaign_slug?: string | null
+          campaign_title?: string | null
           created_at?: string
           currency?: string
           donor_name?: string | null
