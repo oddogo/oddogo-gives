@@ -18,13 +18,7 @@ export const CampaignProgress = ({ campaignId, payments }: CampaignProgressProps
     payments: payments.length,
     completed: completedAmount,
     pending: pendingAmount,
-    total: totalAmount,
-    paymentDetails: payments.map(p => ({
-      id: p.id,
-      amount: p.amount,
-      status: p.status,
-      campaign_id: p.campaign_id
-    }))
+    total: totalAmount
   });
   
   return (
