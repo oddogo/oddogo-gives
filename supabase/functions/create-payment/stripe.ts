@@ -1,75 +1,43 @@
 
-import { PaymentData } from './types.ts';
+import { Stripe } from "https://esm.sh/stripe@12.5.0?target=deno";
+import { PaymentRequest } from "./types.ts";
 
-export const createStripeSession = async (
-  stripe: any,
-  amountInCents: number,
-  origin: string,
-  payment: any,
-  recipientId: string,
-  recipientName: string,
-  fingerprintId: string | null,
-  userId: string | null,
-  email?: string,
-  name?: string, 
-  message?: string,
-  campaignId?: string
-) => {
-  console.log('Creating Stripe session with parameters:', {
-    amountInCents,
-    paymentId: payment.id,
-    recipientId,
-    recipientName,
-    fingerprintId,
-    userId,
-    email,
-    name,
-    hasMessage: !!message,
-    hasCampaignId: !!campaignId
-  });
-
-  // Fix the origin URL to use the application domain rather than the edge function domain
-  // Extract the origin from the request or use a fallback from environment
-  const appUrl = Deno.env.get('APP_URL') || origin;
-  // Make sure we're not using the edge-runtime.supabase.com domain
-  const correctOrigin = appUrl.includes('edge-runtime.supabase.co') 
-    ? Deno.env.get('SUPABASE_URL') || 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
-    : appUrl;
-  
-  const successUrl = `${correctOrigin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
-  const cancelUrl = `${correctOrigin}/payment-cancelled?payment_id=${payment.id}`;
-  
-  console.log('Payment success URL:', successUrl);
-  console.log('Payment cancel URL:', cancelUrl);
-
+export async function createStripeCheckoutSession(
+  paymentRequest: PaymentRequest & { internalPaymentId: string }
+) {
   try {
-    // Prepare metadata with only valid values - ENSURE payment_id is always included
-    const metadata: Record<string, string> = {
-      payment_id: payment.id, // Critical - ensure this is always present
-      recipient_id: recipientId,
-      recipient_name: recipientName,
-      user_id: userId || 'anonymous',
-      donor_name: name || 'Anonymous'
-    };
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      return { session: null, error: 'Stripe key not configured' };
+    }
     
-    // Only add these fields if they exist and are not empty
-    if (fingerprintId) metadata.fingerprint_id = fingerprintId;
-    if (message && message.trim() !== '') metadata.message = message;
-    if (campaignId && campaignId.trim() !== '') metadata.campaign_id = campaignId;
+    const stripe = new Stripe(stripeKey);
+    const { amount, name, email, recipientId, campaignId, campaignTitle, campaignSlug, internalPaymentId } = paymentRequest;
     
-    console.log('Creating Stripe session with metadata:', metadata);
+    // Domain for success/cancel URLs
+    const domain = Deno.env.get('PUBLIC_APP_URL') || 'http://localhost:5173';
     
+    // Build success URL with query parameters
+    const successParams = new URLSearchParams();
+    successParams.append('payment_id', internalPaymentId);
+    if (campaignId) successParams.append('campaign_id', campaignId);
+    if (recipientId) successParams.append('recipient_id', recipientId);
+    
+    const successUrl = `${domain}/payment-success?${successParams.toString()}`;
+    const cancelUrl = `${domain}/payment-cancelled`;
+    
+    // Create Stripe checkout session with metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: 'gbp',
+            currency: 'usd',
             product_data: {
-              name: 'Donation',
-              description: `Donation to ${recipientName}`
+              name: campaignTitle || `Donation to ${name || 'charity causes'}`,
+              description: campaignTitle ? `Supporting ${campaignTitle}` : 'Thank you for your donation',
             },
-            unit_amount: amountInCents,
+            unit_amount: amount * 100, // convert to cents
           },
           quantity: 1,
         },
@@ -78,13 +46,20 @@ export const createStripeSession = async (
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: email,
-      metadata: metadata
+      metadata: {
+        payment_id: internalPaymentId,
+        user_id: recipientId || '',
+        campaign_id: campaignId || '',
+        campaign_slug: campaignSlug || '',
+        campaign_title: campaignTitle || '',
+        donor_name: name || ''
+      }
     });
     
     console.log('Stripe session created:', session.id);
-    return session;
+    return { session, error: null };
   } catch (error) {
-    console.error('Error creating Stripe session:', error);
-    throw error;
+    console.error('Error creating checkout session:', error);
+    return { session: null, error: error.message };
   }
-};
+}

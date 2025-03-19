@@ -1,11 +1,12 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Stripe } from "https://esm.sh/stripe@12.5.0?target=deno";
+
 import { 
   logWebhookEvent, 
   markWebhookProcessed, 
-  supabaseClient
+  supabaseClient,
+  recordPaymentLog
 } from './utils/db.ts';
 import { 
   handleCheckoutSessionCompleted, 
@@ -15,166 +16,125 @@ import {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-deno-subhost, x-supabase-client',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2023-10-16',
-});
-
-// Helper function to record errors in stripe_payment_logs
-const recordErrorInLogs = async (error: Error, eventId?: string, paymentId?: string) => {
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    await supabase
-      .from('stripe_payment_logs')
-      .insert({
-        payment_id: paymentId || null,
-        status: 'error',
-        message: `Webhook error: ${error.message}`,
-        metadata: { event_id: eventId, stack: error.stack }
-      });
-      
-    console.log('Error recorded in payment logs');
-  } catch (logError) {
-    console.error('Failed to record error in logs:', logError);
-  }
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  console.log('Received webhook request');
-  console.log('Method:', req.method);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
-
-  // Handle CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: corsHeaders
-    });
+    return new Response(null, { headers: corsHeaders });
   }
-
-  // Validate request method
-  if (req.method !== 'POST') {
-    console.error('Invalid request method:', req.method);
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 405 }
-    );
-  }
-
+  
   try {
+    // Get the stripe-signature header for verification
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
-      console.error('No Stripe signature found in headers');
       return new Response(
-        JSON.stringify({ error: 'No Stripe signature found' }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'Missing stripe-signature header' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-    if (!webhookSecret) {
-      console.error('Webhook secret not configured');
+    
+    // Get the webhook secret from environment variables
+    const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    if (!stripeWebhookSecret) {
       return new Response(
-        JSON.stringify({ error: 'Webhook secret not configured' }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        JSON.stringify({ error: 'Webhook secret not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
+    
+    // Create Stripe client
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      return new Response(
+        JSON.stringify({ error: 'Stripe key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const stripe = new Stripe(stripeKey);
+    
+    // Get the raw request body for verification
     const body = await req.text();
-    console.log('Raw webhook body length:', body.length);
-    console.log('Raw webhook body preview:', body.substring(0, 200) + '...');
-
+    
+    // Construct the event from the raw body and signature
     let event;
     try {
-      // Using asynchronous constructEventAsync instead of synchronous constructEvent
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Event constructed successfully:', event.type);
+      event = stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
-      await recordErrorInLogs(err, 'signature_verification_failed');
+      console.error(`Webhook signature verification failed: ${err.message}`);
       return new Response(
         JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Extract payment_id from metadata for logging purposes
-    const paymentId = event.data.object.metadata?.payment_id || null;
     
-    // Store webhook event in database - wrap in try/catch to prevent failure
+    console.log(`Webhook received: ${event.type}`);
+    
+    // Log the webhook event
+    await logWebhookEvent(event);
+    
+    // Handle different event types
+    let result;
     try {
-      await logWebhookEvent(
-        event.type,
-        event.id,
-        paymentId,
-        event,
-        !event.livemode
-      );
-    } catch (logError) {
-      console.error('Failed to log webhook event:', logError);
-      // Continue processing even if logging fails
-    }
-
-    console.log('Processing webhook event:', event.type);
-    console.log('Event metadata:', JSON.stringify(event.data.object.metadata || {}));
-
-    try {
-      // Process different event types
       switch (event.type) {
         case 'checkout.session.completed':
-          await handleCheckoutSessionCompleted(event.data.object);
+          result = await handleCheckoutSessionCompleted(event);
           break;
           
         case 'payment_intent.succeeded':
-          await handlePaymentIntentSucceeded(event.data.object);
+          result = await handlePaymentIntentSucceeded(event);
           break;
           
         case 'payment_intent.payment_failed':
-          await handlePaymentIntentFailed(event.data.object);
+          result = await handlePaymentIntentFailed(event);
           break;
           
         default:
-          console.log('Unhandled event type:', event.type);
+          console.log(`Unhandled event type: ${event.type}`);
+          result = { status: 'ignored', message: `Event type ${event.type} not handled` };
       }
-
-      // Mark webhook as processed - wrap in try/catch to prevent failure
-      try {
-        await markWebhookProcessed(event.id);
-      } catch (markError) {
-        console.error('Failed to mark webhook as processed:', markError);
-        // Continue to return success even if marking fails
-      }
-
-      return new Response(JSON.stringify({ received: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    } catch (processError) {
-      console.error('Error processing webhook event:', processError);
-      await recordErrorInLogs(processError, event.id, paymentId);
       
-      // Still return 200 to prevent Stripe from retrying, but include error details
+      // Mark the webhook as processed
+      await markWebhookProcessed(event.id, true);
+      
       return new Response(
-        JSON.stringify({ received: true, warning: processError.message }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200, // Return 200 even on processing errors to prevent retries
+        JSON.stringify({ received: true, result }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      console.error(`Error processing webhook: ${error.message}`);
+      
+      // Mark the webhook as failed
+      await markWebhookProcessed(event.id, false, error.message);
+      
+      // Record the error in payment logs if it's a payment-related event
+      if (event.type.startsWith('payment_intent.') || event.type.startsWith('checkout.')) {
+        try {
+          const metadata = event.data?.object?.metadata || {};
+          const paymentId = metadata.payment_id || 'none';
+          await recordPaymentLog(paymentId, 'webhook_error', `Error processing ${event.type} webhook`, {
+            error: error.message,
+            event_type: event.type
+          });
+        } catch (logError) {
+          console.error('Failed to log payment error:', logError);
         }
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          received: true, 
+          error: `Error processing webhook: ${error.message}` 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    await recordErrorInLogs(error);
-    
+    console.error(`Unexpected error: ${error.message}`);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: `Unexpected error: ${error.message}` }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
