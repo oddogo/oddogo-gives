@@ -21,6 +21,8 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
     const getCampaign = async () => {
       if (!campaignId) return;
       
+      console.log("Fetching campaign details for campaign ID:", campaignId);
+      
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
@@ -32,6 +34,7 @@ export const CampaignPaymentWrapper: React.FC<CampaignPaymentWrapperProps> = ({
         return;
       }
       
+      console.log("Campaign data loaded:", data);
       setCampaign(data);
     };
     

@@ -38,27 +38,116 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   const [pendingAmount, setPendingAmount] = useState(0);
   const [campaignPayments, setCampaignPayments] = useState<{[key: string]: Payment[]}>({});
   const [standalonePayments, setStandalonePayments] = useState<Payment[]>([]);
+  const [userFingerprint, setUserFingerprint] = useState<string | null>(null);
 
-  const fetchPayments = async () => {
+  const fetchFingerprint = async () => {
     try {
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('v_stripe_payments_extended')
-        .select('*')
+      const { data, error } = await supabase
+        .from('fingerprints_users')
+        .select('fingerprint_id')
         .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching fingerprint:', error);
+        return null;
+      }
+      
+      console.log('Fetched fingerprint for user:', data?.fingerprint_id);
+      setUserFingerprint(data?.fingerprint_id || null);
+      return data?.fingerprint_id;
+    } catch (error) {
+      console.error('Error in fetchFingerprint:', error);
+      return null;
+    }
+  };
+
+  const fetchPayments = async (fingerprintId: string | null) => {
+    try {
+      if (!fingerprintId) {
+        console.log('No fingerprint ID available, cannot fetch payments');
+        return;
+      }
+      
+      console.log('Fetching payments for fingerprint ID:', fingerprintId);
+      
+      // First, try to get all payments directed to this user's fingerprint
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('stripe_payments')
+        .select('*')
+        .eq('fingerprint_id', fingerprintId)
         .order('created_at', { ascending: false });
 
       if (paymentsError) {
-        console.error('Error fetching payments:', paymentsError);
+        console.error('Error fetching payments by fingerprint:', paymentsError);
         toast.error('Failed to load payment history');
         return;
       }
 
-      console.log('Fetched extended payments:', paymentsData);
-      setPayments(paymentsData || []);
+      // Also get campaign payments info
+      const { data: campaignPaymentsData, error: campaignError } = await supabase
+        .from('campaign_payments')
+        .select(`
+          campaign_id,
+          payment_id,
+          campaigns (
+            id,
+            title,
+            slug
+          )
+        `)
+        .in('payment_id', paymentsData?.map(p => p.id) || []);
 
-      const completed = paymentsData?.filter(p => p.status === 'completed')
+      if (campaignError) {
+        console.error('Error fetching campaign payment associations:', campaignError);
+      }
+
+      // Get profile info for donor names
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', paymentsData?.filter(p => p.user_id).map(p => p.user_id) || []);
+
+      if (profilesError) {
+        console.error('Error fetching profiles for donor names:', profilesError);
+      }
+
+      // Create a map of payment IDs to campaign info for quick lookups
+      const campaignMap: Record<string, { id: string, title: string, slug: string }> = {};
+      campaignPaymentsData?.forEach(cp => {
+        if (cp.campaigns) {
+          campaignMap[cp.payment_id] = {
+            id: cp.campaign_id,
+            title: cp.campaigns.title,
+            slug: cp.campaigns.slug
+          };
+        }
+      });
+
+      // Create a map of user IDs to display names
+      const profileMap: Record<string, string> = {};
+      profilesData?.forEach(profile => {
+        profileMap[profile.id] = profile.display_name;
+      });
+
+      // Enhance payment data with campaign info and donor names
+      const enhancedPayments = paymentsData?.map(payment => {
+        const campaignInfo = campaignMap[payment.id];
+        return {
+          ...payment,
+          campaign_id: campaignInfo?.id,
+          campaign_title: campaignInfo?.title,
+          campaign_slug: campaignInfo?.slug,
+          donor_name: payment.user_id ? profileMap[payment.user_id] : undefined
+        };
+      }) || [];
+
+      console.log('Enhanced payments data:', enhancedPayments);
+      setPayments(enhancedPayments);
+
+      const completed = enhancedPayments.filter(p => p.status === 'completed')
         .reduce((sum, p) => sum + p.amount, 0) || 0;
-      const pending = paymentsData?.filter(p => p.status === 'pending')
+      const pending = enhancedPayments.filter(p => p.status === 'pending')
         .reduce((sum, p) => sum + p.amount, 0) || 0;
 
       setTotalReceived(completed);
@@ -68,7 +157,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
       const byCampaign: {[key: string]: Payment[]} = {};
       const standalone: Payment[] = [];
 
-      paymentsData?.forEach(payment => {
+      enhancedPayments.forEach(payment => {
         if (payment.campaign_id) {
           if (!byCampaign[payment.campaign_id]) {
             byCampaign[payment.campaign_id] = [];
@@ -88,29 +177,41 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
   };
 
   useEffect(() => {
-    if (userId) {
-      fetchPayments();
-    }
-
-    const channel = supabase
-      .channel('stripe_payments_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'v_stripe_payments_extended',
-          filter: `user_id=eq.${userId}`
-        },
-        () => {
-          fetchPayments();
+    const init = async () => {
+      if (userId) {
+        const fingerprintId = await fetchFingerprint();
+        if (fingerprintId) {
+          fetchPayments(fingerprintId);
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+      }
     };
+    
+    init();
+
+    // Setup subscription for real-time updates
+    if (userId) {
+      const channel = supabase
+        .channel('stripe_payments_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'stripe_payments'
+          },
+          async () => {
+            const fingerprintId = await fetchFingerprint();
+            if (fingerprintId) {
+              fetchPayments(fingerprintId);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [userId]);
 
   const formatCurrency = (amount: number) => {
@@ -133,7 +234,7 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="col-span-2 space-y-3">
+          <div className="col-span-3 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="font-medium">Total received</span>
               <span>{formatCurrency(totalAmount)}</span>
@@ -152,10 +253,6 @@ export const PaymentHistory = ({ userId }: PaymentHistoryProps) => {
               </div>
               <Progress value={(pendingAmount / totalAmount) * 100} className="h-2 bg-gray-200" />
             </div>
-          </div>
-          
-          <div className="col-span-1">
-            {/* Pie chart removed */}
           </div>
         </div>
       </div>

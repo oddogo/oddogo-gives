@@ -33,12 +33,13 @@ export const usePaymentSubmit = ({
       setIsSubmitting(true);
       setPaymentError(null);
       
-      // Ensure campaign_id is set correctly
-      const campaign_id = values.campaign_id || campaignId;
+      // Use the campaign_id from form values or props, ensuring it's a string
+      const campaign_id = values.campaign_id || campaignId || "";
 
       console.log("Submitting payment with data:", {
         amount: values.amount,
         recipientId,
+        recipientName,
         email: values.email,
         name: values.name,
         message: values.message,
@@ -49,10 +50,11 @@ export const usePaymentSubmit = ({
         body: {
           amount: values.amount,
           recipientId: recipientId,
+          recipientName: recipientName,
           email: values.email,
           name: values.name,
           message: values.message || "",
-          campaignId: campaign_id || ""
+          campaignId: campaign_id
         },
       });
       
@@ -71,6 +73,7 @@ export const usePaymentSubmit = ({
       }
       
       console.log("Payment session created, redirecting to:", data.url);
+      console.log("Payment ID created:", data.paymentId);
       
       // Redirect to Stripe Checkout
       window.location.href = data.url;

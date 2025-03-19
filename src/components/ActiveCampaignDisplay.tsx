@@ -21,47 +21,82 @@ export const ActiveCampaignDisplay = ({ userId }: ActiveCampaignDisplayProps) =>
         
         console.log("Loading active campaign for user:", userId);
         
-        const { data, error } = await supabase
+        // Get the active campaign for this user
+        const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
-          .select('*, campaign_payments(payment_id, stripe_payments:payment_id(amount, status))')
+          .select('*')
           .eq('user_id', userId)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
           
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error loading campaign:", error);
+        if (campaignError) {
+          if (campaignError.code !== 'PGRST116') { // Not found error
+            console.error("Error loading campaign:", campaignError);
+          } else {
+            console.log("No active campaign found for user:", userId);
+          }
+          setLoading(false);
           return;
         }
         
-        if (data) {
-          console.log("Found active campaign:", data);
-          setCampaign(data);
+        console.log("Found active campaign:", campaignData);
+        setCampaign(campaignData);
+        
+        // Get all payments associated with this campaign
+        const { data: campaignPayments, error: paymentsError } = await supabase
+          .from('campaign_payments')
+          .select('payment_id')
+          .eq('campaign_id', campaignData.id);
           
-          // Calculate completed and pending amounts
-          let completed = 0;
-          let pending = 0;
-          
-          if (data.campaign_payments && data.campaign_payments.length > 0) {
-            console.log("Campaign payments:", data.campaign_payments);
-            data.campaign_payments.forEach((payment: any) => {
-              if (payment.stripe_payments) {
-                if (payment.stripe_payments.status === 'completed') {
-                  completed += payment.stripe_payments.amount;
-                } else if (payment.stripe_payments.status === 'pending') {
-                  pending += payment.stripe_payments.amount;
-                }
-              }
-            });
-          }
-          
-          console.log("Campaign payment amounts:", { completed, pending });
-          setCompletedAmount(completed);
-          setPendingAmount(pending);
+        if (paymentsError) {
+          console.error("Error fetching campaign payments:", paymentsError);
+          setLoading(false);
+          return;
         }
+        
+        console.log("Campaign payment associations:", campaignPayments);
+        
+        if (campaignPayments.length === 0) {
+          console.log("No payments associated with this campaign yet");
+          setLoading(false);
+          return;
+        }
+        
+        // Get the details of those payments
+        const paymentIds = campaignPayments.map(p => p.payment_id);
+        
+        const { data: payments, error: paymentDetailsError } = await supabase
+          .from('stripe_payments')
+          .select('id, amount, status')
+          .in('id', paymentIds);
+          
+        if (paymentDetailsError) {
+          console.error("Error fetching payment details:", paymentDetailsError);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Campaign payments details:", payments);
+        
+        // Calculate completed and pending amounts
+        let completed = 0;
+        let pending = 0;
+        
+        payments.forEach((payment: any) => {
+          if (payment.status === 'completed') {
+            completed += payment.amount;
+          } else if (payment.status === 'pending') {
+            pending += payment.amount;
+          }
+        });
+        
+        console.log("Campaign payment amounts:", { completed, pending });
+        setCompletedAmount(completed);
+        setPendingAmount(pending);
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error loading campaign data:", error);
       } finally {
         setLoading(false);
       }
