@@ -54,12 +54,12 @@ export const markWebhookProcessed = async (eventId: string) => {
 
 export const handleCheckoutSessionCompleted = async (session: any) => {
   console.log('Processing checkout.session.completed event');
-  console.log('Session:', JSON.stringify(session, null, 2));
+  console.log('Session metadata:', JSON.stringify(session.metadata || {}, null, 2));
   
   // Extract payment ID from metadata
   const paymentId = session.metadata?.payment_id;
   if (!paymentId) {
-    console.error('No payment_id found in session metadata');
+    console.error('No payment_id found in session metadata. Full session:', JSON.stringify(session, null, 2));
     return;
   }
 
@@ -128,14 +128,34 @@ export const handleCheckoutSessionCompleted = async (session: any) => {
 
 export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
   console.log('Processing payment_intent.succeeded event');
-  console.log('Payment Intent:', JSON.stringify(paymentIntent, null, 2));
+  console.log('Payment Intent metadata:', JSON.stringify(paymentIntent.metadata || {}, null, 2));
   
   const paymentId = paymentIntent.metadata?.payment_id;
   if (!paymentId) {
-    console.error('No payment_id found in payment intent metadata');
-    return;
+    console.error('No payment_id found in payment intent metadata. Full payment intent:', JSON.stringify(paymentIntent, null, 2));
+    
+    // Try to find the payment by payment_intent_id as fallback
+    console.log('Attempting to find payment by payment_intent_id:', paymentIntent.id);
+    const { data: paymentByIntentId, error: findError } = await supabaseClient
+      .from('stripe_payments')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .maybeSingle();
+      
+    if (findError || !paymentByIntentId) {
+      console.error('Unable to find payment by payment_intent_id:', findError || 'No payment found');
+      return;
+    }
+    
+    console.log('Found payment by payment_intent_id:', paymentByIntentId.id);
+    return handlePaymentSuccessById(paymentByIntentId.id, paymentIntent);
   }
 
+  return handlePaymentSuccessById(paymentId, paymentIntent);
+};
+
+// Helper function to handle payment success by ID
+const handlePaymentSuccessById = async (paymentId: string, paymentIntent: any) => {
   try {
     // Find the payment charge
     const chargeId = paymentIntent.latest_charge;
@@ -204,18 +224,33 @@ export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
       }
     }
   } catch (error) {
-    console.error('Exception in handlePaymentIntentSucceeded:', error);
+    console.error('Exception in handlePaymentSuccessById:', error);
   }
 };
 
 export const handlePaymentIntentFailed = async (paymentIntent: any) => {
   console.log('Processing payment_intent.payment_failed event');
-  console.log('Payment Intent:', JSON.stringify(paymentIntent, null, 2));
+  console.log('Payment Intent metadata:', JSON.stringify(paymentIntent.metadata || {}, null, 2));
   
   const paymentId = paymentIntent.metadata?.payment_id;
   if (!paymentId) {
-    console.error('No payment_id found in payment intent metadata');
-    return;
+    console.error('No payment_id found in payment intent metadata. Full payment intent:', JSON.stringify(paymentIntent, null, 2));
+    
+    // Try to find the payment by payment_intent_id as fallback
+    console.log('Attempting to find payment by payment_intent_id:', paymentIntent.id);
+    const { data: paymentByIntentId, error: findError } = await supabaseClient
+      .from('stripe_payments')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .maybeSingle();
+      
+    if (findError || !paymentByIntentId) {
+      console.error('Unable to find payment by payment_intent_id:', findError || 'No payment found');
+      return;
+    }
+    
+    console.log('Found payment by payment_intent_id:', paymentByIntentId.id);
+    paymentId = paymentByIntentId.id;
   }
 
   try {

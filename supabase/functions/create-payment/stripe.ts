@@ -43,19 +43,21 @@ export const createStripeSession = async (
   console.log('Payment cancel URL:', cancelUrl);
 
   try {
-    // Prepare metadata with only valid values
+    // Prepare metadata with only valid values - ENSURE payment_id is always included
     const metadata: Record<string, string> = {
-      payment_id: payment.id,
+      payment_id: payment.id, // Critical - ensure this is always present
       recipient_id: recipientId,
       recipient_name: recipientName,
       user_id: userId || 'anonymous',
       donor_name: name || 'Anonymous'
     };
     
-    // Only add these fields if they exist
+    // Only add these fields if they exist and are not empty
     if (fingerprintId) metadata.fingerprint_id = fingerprintId;
-    if (message) metadata.message = message;
-    if (campaignId) metadata.campaign_id = campaignId;
+    if (message && message.trim() !== '') metadata.message = message;
+    if (campaignId && campaignId.trim() !== '') metadata.campaign_id = campaignId;
+    
+    console.log('Creating Stripe session with metadata:', metadata);
     
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
