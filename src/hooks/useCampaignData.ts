@@ -48,40 +48,85 @@ export function useCampaignData(userId: string): CampaignData {
         setCampaign(campaignData as Campaign);
         console.log("Found active campaign:", campaignData.id, campaignData.title);
         
-        // Directly query stripe_payments table for completed and pending payments
+        // For public profiles, use a direct approach to get total payments from the stripe_payments table
+        // This avoids potential RLS issues with the campaign_payments junction table
         if (campaignData.id) {
           const campaignId = campaignData.id;
           
-          // Get completed payments amount
-          const { data: completedPayments, error: completedError } = await supabase
-            .from('stripe_payments')
-            .select('amount')
-            .eq('campaign_id', campaignId)
-            .eq('status', 'completed');
-            
-          if (completedError) {
-            console.error("Error fetching completed payments:", completedError);
-          } else {
-            const completedAmount = completedPayments.reduce((sum, payment) => 
-              sum + (payment.amount || 0), 0);
-            setTotalAmount(completedAmount);
-            console.log(`Campaign ${campaignId} completed amount:`, completedAmount);
-          }
+          console.log(`Attempting direct query for payments with campaign_id: ${campaignId}`);
           
-          // Get pending payments amount
-          const { data: pendingPayments, error: pendingError } = await supabase
+          // First, try a direct query to stripe_payments table
+          const { data: directPayments, error: directError } = await supabase
             .from('stripe_payments')
-            .select('amount')
-            .eq('campaign_id', campaignId)
-            .in('status', ['pending', 'processing']);
+            .select('id, amount, status')
+            .eq('campaign_id', campaignId);
             
-          if (pendingError) {
-            console.error("Error fetching pending payments:", pendingError);
+          // If we get direct payment data, use it
+          if (!directError && directPayments && directPayments.length > 0) {
+            console.log(`Found ${directPayments.length} payments directly linked to campaign ${campaignId}`);
+            
+            let completedAmount = 0;
+            let pendingAmount = 0;
+            
+            for (const payment of directPayments) {
+              if (payment.amount && typeof payment.amount === 'number') {
+                if (payment.status === 'completed') {
+                  completedAmount += payment.amount;
+                } else if (payment.status === 'pending' || payment.status === 'processing') {
+                  pendingAmount += payment.amount;
+                }
+              }
+            }
+            
+            setTotalAmount(completedAmount);
+            setPendingAmount(pendingAmount);
           } else {
-            const calculatedPendingAmount = pendingPayments.reduce((sum, payment) => 
-              sum + (payment.amount || 0), 0);
-            setPendingAmount(calculatedPendingAmount);
-            console.log(`Campaign ${campaignId} pending amount:`, calculatedPendingAmount);
+            // Fallback to the junction table approach
+            console.log(`No direct payments found, trying campaign_payments junction table for campaign: ${campaignId}`);
+            
+            // Get the campaign's total amount from its current_amount field (which is updated by triggers)
+            const completedAmount = campaignData.current_amount || 0;
+            setTotalAmount(completedAmount);
+            
+            // Query the campaign_payments table to get payment IDs
+            const { data: campaignPaymentsData, error: cpError } = await supabase
+              .from('campaign_payments')
+              .select('payment_id')
+              .eq('campaign_id', campaignId);
+              
+            if (cpError) {
+              console.error("Error fetching campaign payment IDs:", cpError);
+              setLoading(false);
+              return;
+            }
+            
+            if (!campaignPaymentsData || campaignPaymentsData.length === 0) {
+              console.log("No payments found for campaign:", campaignId);
+              setPendingAmount(0);
+              setLoading(false);
+              return;
+            }
+            
+            // Extract the payment IDs
+            const paymentIds = campaignPaymentsData.map(cp => cp.payment_id);
+            console.log(`Found ${paymentIds.length} payments linked to campaign ${campaignId} through junction table:`, paymentIds);
+            
+            // Now fetch pending payments only
+            const { data: pendingPayments, error: pendingError } = await supabase
+              .from('stripe_payments')
+              .select('id, amount, status')
+              .in('id', paymentIds)
+              .in('status', ['pending', 'processing']);
+              
+            if (!pendingError && pendingPayments && pendingPayments.length > 0) {
+              const calculatedPendingAmount = pendingPayments.reduce((sum, payment) => 
+                sum + (payment.amount && typeof payment.amount === 'number' ? payment.amount : 0), 0);
+              
+              setPendingAmount(calculatedPendingAmount);
+              console.log(`Campaign ${campaignId} pending amount:`, calculatedPendingAmount);
+            } else {
+              setPendingAmount(0);
+            }
           }
         }
       } catch (error) {
