@@ -1,88 +1,86 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { PaymentData } from './types.ts';
 
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-);
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export const createPaymentRecord = async (paymentData: PaymentData) => {
-  console.log('Creating payment record with data:', paymentData);
+  console.log('Creating payment record with data:', JSON.stringify(paymentData));
   
   try {
-    const { data: payment, error: paymentError } = await supabaseClient
+    // Prepare the payment data, ensuring fingerprint_id is only included if it's a valid UUID
+    const paymentRecord = {
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      user_id: paymentData.user_id,
+      status: paymentData.status,
+      stripe_payment_email: paymentData.stripe_payment_email,
+      stripe_payment_method_id: paymentData.stripe_payment_method_id,
+      stripe_charge_id: paymentData.stripe_charge_id,
+      message: paymentData.message,
+      donor_name: paymentData.donor_name || 'Anonymous'
+    };
+
+    // Only add fingerprint_id if it exists and is not null/undefined
+    if (paymentData.fingerprint_id && isValidUUID(paymentData.fingerprint_id)) {
+      // @ts-ignore - TypeScript won't allow adding properties to the object after creation
+      paymentRecord.fingerprint_id = paymentData.fingerprint_id;
+    }
+
+    // Add campaignId if it exists
+    if (paymentData.campaignId) {
+      // @ts-ignore
+      paymentRecord.campaign_id = paymentData.campaignId;
+    }
+
+    const { data, error } = await supabase
       .from('stripe_payments')
-      .insert([paymentData])
+      .insert(paymentRecord)
       .select()
       .single();
 
-    if (paymentError) {
-      console.error('Error creating payment record:', paymentError);
-      throw new Error(`Failed to create payment record: ${paymentError.message}`);
-    }
-
-    if (!payment) {
-      throw new Error('No payment record was created');
-    }
-
-    console.log('Payment record created successfully:', payment);
-    return payment;
-  } catch (error) {
-    console.error('Exception in createPaymentRecord:', error);
-    throw error;
-  }
-};
-
-export const getFingerprintId = async (recipientId: string) => {
-  console.log('Getting fingerprint for recipient ID:', recipientId);
-  
-  try {
-    const { data: fingerprint, error: fingerprintError } = await supabaseClient
-      .from('fingerprints_users')
-      .select('fingerprint_id')
-      .eq('user_id', recipientId)
-      .maybeSingle();
-
-    if (fingerprintError) {
-      console.error('Error fetching fingerprint:', fingerprintError);
-      throw new Error(`Failed to fetch recipient fingerprint: ${fingerprintError.message}`);
-    }
-
-    if (!fingerprint?.fingerprint_id) {
-      console.error('No fingerprint found for recipient:', recipientId);
-      throw new Error(`No fingerprint found for recipient ID: ${recipientId}`);
-    }
-
-    console.log(`Found fingerprint ID ${fingerprint.fingerprint_id} for recipient ${recipientId}`);
-    return fingerprint.fingerprint_id;
-  } catch (error) {
-    console.error(`Error in getFingerprintId for ${recipientId}:`, error);
-    throw error;
-  }
-};
-
-export const getUserId = async (authHeader: string | null) => {
-  console.log('Getting user ID from auth header:', !!authHeader);
-  
-  if (!authHeader) {
-    console.log('No auth header provided, proceeding as anonymous');
-    return null;
-  }
-  
-  try {
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabaseClient.auth.getUser(token);
-    
     if (error) {
-      console.error('Error getting user from token:', error);
-      return null;
+      console.error('Error creating payment record:', error);
+      throw new Error(`Failed to create payment record: ${error.message}`);
     }
-    
-    console.log('Retrieved user ID:', user?.id || 'none');
-    return user?.id || null;
+
+    console.log('Payment record created successfully with ID:', data.id);
+    return data;
   } catch (error) {
-    console.error('Exception in getUserId:', error);
-    return null;
+    console.error('Exception creating payment record:', error);
+    throw new Error(`Failed to create payment record: ${error.message}`);
   }
 };
+
+export const recordPaymentLog = async (paymentId: string, status: string, message: string, metadata?: any) => {
+  console.log(`Recording payment log: ${status} - ${message} for payment ${paymentId}`);
+  
+  try {
+    // Make sure we're not trying to use 'none' as a UUID
+    const validPaymentId = paymentId && paymentId !== 'none' ? paymentId : null;
+    
+    const { error } = await supabase
+      .from('stripe_payment_logs')
+      .insert({
+        payment_id: validPaymentId,
+        status,
+        message,
+        metadata
+      });
+
+    if (error) {
+      console.error('Error recording payment log:', error);
+    }
+  } catch (error) {
+    console.error('Exception recording payment log:', error);
+  }
+};
+
+// Helper function to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}

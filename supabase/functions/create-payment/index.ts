@@ -1,141 +1,254 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
-import { corsHeaders } from './types.ts';
-import { validatePaymentRequest } from './validators.ts';
-import { createPaymentRecord, getFingerprintId, getUserId } from './db.ts';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno';
+import { corsHeaders, PaymentRequest } from './types.ts';
+import { createPaymentRecord, recordPaymentLog } from './db.ts';
 import { createStripeSession } from './stripe.ts';
+import { validatePaymentRequest } from './validators.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+
+const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+if (!stripeKey) {
+  console.error('STRIPE_SECRET_KEY is not set');
+}
+
+const stripe = new Stripe(stripeKey || '', {
+  apiVersion: '2023-10-16',
+  httpClient: Stripe.createFetchHttpClient(),
+});
+
+const corsResponse = () => {
+  return new Response('OK', {
+    headers: corsHeaders,
+    status: 200,
+  });
+};
 
 serve(async (req) => {
-  console.log('Payment request received');
-
-  // Handle CORS preflight request
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
-    return new Response(null, { 
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-      }
+    return corsResponse();
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', {
+      headers: corsHeaders,
+      status: 405,
     });
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    });
-    
-    console.log('Stripe initialized');
-
     const requestData = await req.json();
-    console.log('Received request data:', requestData);
-    
-    const validation = validatePaymentRequest(requestData);
-    if (!validation.isValid) {
-      console.error('Validation error:', validation.error);
-      return new Response(
-        JSON.stringify({ error: validation.error }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+    console.log('Received payment request:', JSON.stringify(requestData));
+
+    // Validate the payment request
+    const validationResult = validatePaymentRequest(requestData);
+    if (!validationResult.isValid) {
+      console.error('Payment validation failed:', validationResult.error);
+      return new Response(JSON.stringify({ error: validationResult.error }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
-    const { amount, recipientId, email, name, campaignId } = requestData;
-    const amountInCents = Math.round(Number(amount) * 100);
-
-    const origin = req.headers.get('origin');
-    if (!origin) {
-      console.error('Missing origin header');
-      return new Response(
-        JSON.stringify({ error: 'Missing origin header' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    const authHeader = req.headers.get('Authorization');
-    console.log('Auth header present:', !!authHeader);
+    // Extract payment request data
+    const { amount, recipientId, recipientName, email, name, message, campaignId } = requestData as PaymentRequest;
+    const amountInCents = Math.round(amount * 100);
     
+    // Try to get user's fingerprint or create a fallback
+    let fingerprint_id = null;
     try {
-      const userId = await getUserId(authHeader);
-      console.log('User authentication processed:', userId ? 'authenticated' : 'anonymous');
-
-      let fingerprintId;
-      try {
-        fingerprintId = await getFingerprintId(recipientId);
-        console.log('Found fingerprint:', fingerprintId);
-      } catch (fingerprintError) {
-        console.error('Fingerprint error:', fingerprintError);
-        return new Response(
-          JSON.stringify({ error: `Failed to get fingerprint: ${fingerprintError.message}` }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        );
-      }
-
-      let payment;
-      try {
-        payment = await createPaymentRecord({
-          amount: amountInCents,
-          currency: 'gbp',
-          user_id: userId,
-          fingerprint_id: fingerprintId,
-          status: 'pending',
-          stripe_payment_email: email,
-          campaign_id: campaignId || null
-        });
-        console.log('Payment record created:', payment.id);
-      } catch (paymentError) {
-        console.error('Payment record creation error:', paymentError);
-        return new Response(
-          JSON.stringify({ error: `Failed to create payment record: ${paymentError.message}` }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        );
-      }
-
-      try {
-        const session = await createStripeSession(
-          stripe,
-          amountInCents,
-          origin,
-          payment,
-          recipientId,
-          fingerprintId,
-          userId,
-          email,
-          campaignId
-        );
-
-        console.log('Stripe session created successfully');
-        
-        return new Response(
-          JSON.stringify({ 
-            url: session.url,
-            paymentId: payment.id 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
-      } catch (stripeError) {
-        console.error('Stripe session creation error:', stripeError);
-        return new Response(
-          JSON.stringify({ error: `Failed to create Stripe session: ${stripeError.message}` }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        );
+      const fingerprintResult = await getRecipientFingerprint(recipientId);
+      if (fingerprintResult) {
+        fingerprint_id = fingerprintResult;
+        console.log(`Found fingerprint ID for recipient: ${fingerprint_id}`);
+      } else {
+        console.log(`No fingerprint found for recipient ${recipientId}, will use null`);
       }
     } catch (error) {
-      console.error('User authentication error:', error);
+      console.warn(`Error getting fingerprint for recipient: ${error.message}`);
+    }
+    
+    const user_id = await getUserIdFromRequest(req);
+    
+    console.log('Processing payment with data:', {
+      amount,
+      amountInCents,
+      recipientId,
+      recipientName,
+      email,
+      name,
+      messageExists: !!message,
+      campaignIdExists: !!campaignId,
+      fingerprint_id,
+      user_id
+    });
+
+    try {
+      // Create payment record in database
+      const payment = await createPaymentRecord({
+        amount: amountInCents,
+        currency: 'gbp',
+        fingerprint_id,
+        user_id,
+        status: 'pending',
+        stripe_payment_email: email,
+        message,
+        campaignId,
+        donor_name: name
+      });
+
+      console.log('Payment record created:', payment.id);
+      
+      // Create Stripe checkout session
+      const origin = new URL(req.url).origin;
+      // Check if we need to override the origin (for development or edge function environment)
+      const hostHeader = req.headers.get('host');
+      const refererHeader = req.headers.get('referer');
+      let detectedOrigin = origin;
+      
+      // Try to get a better origin from headers if we're in edge function environment
+      if (origin.includes('edge-runtime.supabase.com') && refererHeader) {
+        try {
+          detectedOrigin = new URL(refererHeader).origin;
+          console.log('Using referer as origin:', detectedOrigin);
+        } catch (e) {
+          console.warn('Failed to parse referer URL:', e);
+        }
+      } else if (hostHeader && !hostHeader.includes('edge-runtime.supabase.com')) {
+        // Use host header as fallback
+        const protocol = req.url.startsWith('https') ? 'https' : 'http';
+        detectedOrigin = `${protocol}://${hostHeader}`;
+        console.log('Using host header as origin:', detectedOrigin);
+      }
+      
+      console.log('Detected origin for redirect URLs:', detectedOrigin);
+      
+      const session = await createStripeSession(
+        stripe,
+        amountInCents,
+        detectedOrigin,
+        payment,
+        recipientId,
+        recipientName,
+        fingerprint_id,
+        user_id,
+        email,
+        name,
+        message,
+        campaignId
+      );
+
+      console.log('Stripe session created successfully:', session.id);
+      
+      // Record success in logs
+      await recordPaymentLog(
+        payment.id,
+        'created',
+        'Stripe session created successfully',
+        { session_id: session.id }
+      );
+      
+      // Return success response with session URL
       return new Response(
-        JSON.stringify({ error: `Authentication error: ${error.message}` }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        JSON.stringify({
+          success: true,
+          url: session.url,
+          paymentId: payment.id,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      
+      // Record error in logs
+      await recordPaymentLog(
+        'none',
+        'error',
+        `Error creating payment: ${error.message}`,
+        { error: String(error) }
+      );
+      
+      return new Response(
+        JSON.stringify({ error: `Payment processing error: ${error.message}` }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
       );
     }
   } catch (error) {
-    console.error('Global error:', error);
+    console.error('Server error processing payment request:', error);
+    
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: `Server error: ${error.message}` }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
     );
   }
 });
+
+async function getUserIdFromRequest(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return null;
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.warn('Failed to get user from token:', error);
+      return null;
+    }
+    
+    return user.id;
+  } catch (error) {
+    console.error('Error getting user ID from token:', error);
+    return null;
+  }
+}
+
+// Function to get recipient's fingerprint_id
+async function getRecipientFingerprint(recipientId: string): Promise<string | null> {
+  console.log(`Getting fingerprint for recipient ID: ${recipientId}`);
+  
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Try to find the fingerprint for this user
+    const { data, error } = await supabase
+      .from('fingerprints_users')
+      .select('fingerprint_id')
+      .eq('user_id', recipientId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching fingerprint:', error);
+      return null;
+    }
+    
+    if (!data) {
+      console.log(`No fingerprint found for user ${recipientId}`);
+      return null;
+    }
+    
+    return data.fingerprint_id;
+  } catch (error) {
+    console.error('Exception getting recipient fingerprint:', error);
+    return null;
+  }
+}

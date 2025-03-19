@@ -20,12 +20,13 @@ const paymentFormSchema = z.object({
   campaign_id: z.string().optional(),
 });
 
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
 interface PaymentFormProps {
   recipientId: string;
   recipientName: string;
   campaignId?: string;
+  campaignTitle?: string;
   onSuccess?: (paymentId: string) => void;
 }
 
@@ -33,6 +34,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   recipientId,
   recipientName,
   campaignId,
+  campaignTitle,
   onSuccess,
 }) => {
   const { stripePromise, isStripeLoading, stripeError } = useStripeInitialization();
@@ -57,7 +59,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   useEffect(() => {
-    form.setValue("campaign_id", campaignId || "");
+    if (campaignId) {
+      form.setValue("campaign_id", campaignId);
+    }
   }, [campaignId, form]);
 
   if (isStripeLoading) {
@@ -94,6 +98,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         isSubmitting={isSubmitting}
         recipientName={recipientName}
         campaignId={campaignId}
+        campaignTitle={campaignTitle}
         onSubmit={submitPayment}
       />
     </div>

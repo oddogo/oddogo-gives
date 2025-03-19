@@ -2,14 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-interface PaymentDetails {
-  amount: number;
-  name: string;
-  email: string;
-  message?: string;
-  campaign_id?: string;
-}
+import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentSubmitProps {
   recipientId: string;
@@ -29,7 +22,7 @@ export const usePaymentSubmit = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const submitPayment = async (values: PaymentDetails) => {
+  const submitPayment = async (values: PaymentFormValues) => {
     if (!stripePromise) {
       toast.error("Payment system is not available right now");
       setPaymentError("Payment system unavailable");
@@ -40,24 +33,35 @@ export const usePaymentSubmit = ({
       setIsSubmitting(true);
       setPaymentError(null);
       
-      // We send the amount as a number - the edge function will convert it to cents
-      console.log("Submitting payment for amount:", values.amount);
+      // Use the campaign_id from form values or props, ensuring it's a string
+      const campaign_id = values.campaign_id || campaignId || "";
+
+      console.log("Submitting payment with data:", {
+        amount: values.amount,
+        recipientId,
+        recipientName,
+        email: values.email,
+        name: values.name,
+        message: values.message,
+        campaignId: campaign_id 
+      });
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           amount: values.amount,
           recipientId: recipientId,
+          recipientName: recipientName,
           email: values.email,
           name: values.name,
           message: values.message || "",
-          campaignId: values.campaign_id || campaignId || ""
+          campaignId: campaign_id
         },
       });
       
       if (error) {
         console.error("Payment service error:", error);
         setPaymentError(error.message || "Payment service error");
-        toast.error("Payment service error");
+        toast.error(`Payment service error: ${error.message || "Unknown error"}`);
         return;
       }
       
@@ -69,6 +73,7 @@ export const usePaymentSubmit = ({
       }
       
       console.log("Payment session created, redirecting to:", data.url);
+      console.log("Payment ID created:", data.paymentId);
       
       // Redirect to Stripe Checkout
       window.location.href = data.url;
@@ -79,7 +84,7 @@ export const usePaymentSubmit = ({
       
     } catch (error: any) {
       console.error("Payment error:", error);
-      toast.error(error.message || "Payment failed");
+      toast.error(`Payment error: ${error.message || "Unknown error"}`);
       setPaymentError(error.message || "Payment processing error");
     } finally {
       setIsSubmitting(false);

@@ -1,185 +1,244 @@
-import { supabaseClient, updatePaymentWithSession, getPayment, updatePaymentStatus, logPaymentActivity, findPaymentByIntentId, createCampaignPayment } from './db.ts';
-import { StripeSession, PaymentIntent } from './types.ts';
 
-export const handleCheckoutSessionCompleted = async (session: StripeSession) => {
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+export const logWebhookEvent = async (eventType: string, eventId: string, paymentId: string | null, eventData: any, isTestMode: boolean) => {
+  console.log('Logging webhook event:', { eventType, eventId, paymentId, isTestMode });
+
+  try {
+    const { error } = await supabaseClient
+      .from('stripe_webhook_logs')
+      .insert({
+        event_type: eventType,
+        event_id: eventId,
+        payment_id: paymentId,
+        event_data: eventData,
+        is_test: isTestMode,
+        status: 'received'
+      });
+
+    if (error) {
+      console.error('Error logging webhook event:', error);
+    } else {
+      console.log('Webhook event logged successfully');
+    }
+  } catch (error) {
+    console.error('Exception in logWebhookEvent:', error);
+  }
+};
+
+export const markWebhookProcessed = async (eventId: string) => {
+  console.log('Marking webhook as processed:', eventId);
+
+  try {
+    const { error } = await supabaseClient
+      .from('stripe_webhook_logs')
+      .update({ 
+        status: 'processed',
+        processed_at: new Date().toISOString() 
+      })
+      .eq('event_id', eventId);
+
+    if (error) {
+      console.error('Error marking webhook as processed:', error);
+    } else {
+      console.log('Webhook marked as processed successfully');
+    }
+  } catch (error) {
+    console.error('Exception in markWebhookProcessed:', error);
+  }
+};
+
+export const handleCheckoutSessionCompleted = async (session: any) => {
+  console.log('Processing checkout.session.completed event');
+  console.log('Session:', JSON.stringify(session, null, 2));
+  
+  // Extract payment ID from metadata
   const paymentId = session.metadata?.payment_id;
-  const campaignId = session.metadata?.campaign_id;
-  
-  console.log('Processing checkout session completed:', paymentId);
-  console.log('Session details:', {
-    id: session.id,
-    email: session.customer_email,
-    customer: session.customer,
-    payment_intent: session.payment_intent,
-    payment_method: session.payment_method,
-    campaign_id: campaignId
-  });
-  
   if (!paymentId) {
-    console.log('No payment ID in session metadata, skipping database update');
+    console.error('No payment_id found in session metadata');
     return;
   }
-  
-  const updateData = { 
-    stripe_payment_intent_id: session.payment_intent,
-    stripe_payment_method_id: session.payment_method,
-    stripe_payment_email: session.customer_email,
-    stripe_customer_id: session.customer,
-    updated_at: new Date().toISOString()
-  };
-  
-  // Only set campaign_id if it exists and isn't an empty string
-  if (campaignId && campaignId.trim() !== '') {
-    updateData.campaign_id = campaignId;
-  }
-  
-  await updatePaymentWithSession(paymentId, updateData);
-};
 
-export const handlePaymentIntentSucceeded = async (paymentIntent: PaymentIntent) => {
-  const paymentId = paymentIntent.metadata?.payment_id;
-  const campaignId = paymentIntent.metadata?.campaign_id;
-  
-  console.log('Processing successful payment intent:', paymentIntent.id);
-  console.log('Payment details:', {
-    payment_intent_id: paymentIntent.id,
-    payment_method_id: paymentIntent.payment_method,
-    charge_id: paymentIntent.latest_charge,
-    metadata: paymentIntent.metadata || {},
-    campaign_id: campaignId
-  });
-  
-  // Try to find a payment record by payment intent ID if no metadata payment_id
-  if (!paymentId) {
-    console.log('No payment ID in metadata, trying to find payment by intent ID');
+  try {
+    // Get payment intent details
+    const paymentIntentId = session.payment_intent;
+    if (!paymentIntentId) {
+      console.error('No payment intent ID found in session');
+      return;
+    }
+
+    console.log('Updating payment record with payment intent ID:', paymentIntentId);
     
-    const paymentByIntent = await findPaymentByIntentId(paymentIntent.id);
+    // Update the payment record with session data
+    const { data, error } = await supabaseClient
+      .from('stripe_payments')
+      .update({
+        stripe_payment_intent_id: paymentIntentId,
+        status: 'processing'
+      })
+      .eq('id', paymentId)
+      .select();
+
+    if (error) {
+      console.error('Error updating payment record:', error);
+      return;
+    }
+
+    console.log('Payment record updated successfully:', data);
+    
+    // If this is connected to a campaign, update the campaign_payments table
+    if (session.metadata?.campaign_id) {
+      console.log('Updating campaign payment for campaign:', session.metadata.campaign_id);
+      
+      // First check if this payment is already linked to a campaign
+      const { data: existingLink, error: checkError } = await supabaseClient
+        .from('campaign_payments')
+        .select('id')
+        .eq('payment_id', paymentId)
+        .maybeSingle();
         
-    if (paymentByIntent) {
-      console.log(`Found payment record ${paymentByIntent.id} by intent ID`);
-      
-      // Update the payment record
-      const updateData = { 
-        status: 'completed',
-        stripe_payment_method_id: paymentIntent.payment_method,
-        stripe_charge_id: paymentIntent.latest_charge,
-        updated_at: new Date().toISOString()
-      };
-      
-      const updatedPayment = await updatePaymentStatus(paymentByIntent.id, updateData);
-      
-      console.log(`Successfully updated payment ${paymentByIntent.id} to completed`);
-      
-      // Create campaign payment record if there's a campaign_id
-      if (paymentByIntent.campaign_id) {
-        console.log(`Creating campaign payment link for campaign ${paymentByIntent.campaign_id}`);
-        await createCampaignPayment(paymentByIntent.campaign_id, paymentByIntent.id);
+      if (checkError) {
+        console.error('Error checking existing campaign link:', checkError);
+      } else if (!existingLink) {
+        // Only create the link if it doesn't exist yet
+        const { error: campaignError } = await supabaseClient
+          .from('campaign_payments')
+          .insert({
+            campaign_id: session.metadata.campaign_id,
+            payment_id: paymentId
+          });
+          
+        if (campaignError) {
+          console.error('Error linking payment to campaign:', campaignError);
+        } else {
+          console.log('Payment successfully linked to campaign');
+        }
+      } else {
+        console.log('Payment already linked to campaign, skipping');
       }
-      
-      // Log the payment status update
-      await logPaymentActivity(
-        paymentByIntent.id, 
-        {
-          payment_intent_id: paymentIntent.id,
-          payment_method_id: paymentIntent.payment_method,
-          charge_id: paymentIntent.latest_charge
-        },
-        'completed',
-        'Payment completed successfully (found by intent ID)'
-      );
-    } else {
-      console.log('No matching payment record found for intent ID:', paymentIntent.id);
-      // This might be a webhook from a different app or test event
     }
-  } else {
-    // We have a payment ID in metadata, proceed with regular update
-    
-    // First, get the current payment record to keep campaign_id if it exists
-    const currentPayment = await getPayment(paymentId);
-    
-    // Create update data with all the fields
-    const updateData = { 
-      status: 'completed',
-      stripe_payment_intent_id: paymentIntent.id,
-      stripe_payment_method_id: paymentIntent.payment_method,
-      stripe_charge_id: paymentIntent.latest_charge,
-      updated_at: new Date().toISOString()
-    };
-    
-    // Determine which campaign_id to use, prioritizing:
-    // 1. The campaign_id from Stripe metadata (if present)
-    // 2. The existing campaign_id in the database (if present)
-    // 3. Nothing (keep campaign_id as is)
-    if (campaignId && campaignId.trim() !== '') {
-      console.log(`Using campaign_id ${campaignId} from payment intent metadata`);
-      updateData.campaign_id = campaignId;
-    } else if (currentPayment?.campaign_id) {
-      console.log(`Preserving existing campaign_id ${currentPayment.campaign_id} from database`);
-      // We don't need to set it in updateData since we're not changing it
-    } else {
-      console.log('No campaign_id in metadata or database');
-    }
-
-    const updatedPayment = await updatePaymentStatus(paymentId, updateData);
-
-    // Create campaign payment record if there's a campaign_id
-    if (updatedPayment.campaign_id) {
-      console.log(`Creating campaign payment link for campaign ${updatedPayment.campaign_id}`);
-      await createCampaignPayment(updatedPayment.campaign_id, updatedPayment.id);
-    }
-
-    await logPaymentActivity(
-      paymentId,
-      {
-        payment_intent_id: paymentIntent.id,
-        payment_method_id: paymentIntent.payment_method,
-        charge_id: paymentIntent.latest_charge
-      },
-      'completed',
-      'Payment completed successfully'
-    );
+  } catch (error) {
+    console.error('Exception in handleCheckoutSessionCompleted:', error);
   }
 };
 
-export const handlePaymentIntentFailed = async (paymentIntent: PaymentIntent) => {
+export const handlePaymentIntentSucceeded = async (paymentIntent: any) => {
+  console.log('Processing payment_intent.succeeded event');
+  console.log('Payment Intent:', JSON.stringify(paymentIntent, null, 2));
+  
   const paymentId = paymentIntent.metadata?.payment_id;
-  
-  console.log('Processing failed payment:', paymentId || paymentIntent.id);
-  
-  // Similar to the succeeded case, try to find by intent ID if no metadata
   if (!paymentId) {
-    const paymentByIntent = await findPaymentByIntentId(paymentIntent.id);
-        
-    if (paymentByIntent) {
-      await updatePaymentStatus(paymentByIntent.id, { 
-        status: 'failed',
-        updated_at: new Date().toISOString()
-      });
-        
-      console.log(`Updated payment ${paymentByIntent.id} to failed status`);
-      
-      await logPaymentActivity(
-        paymentByIntent.id,
-        paymentIntent,
-        'failed',
-        paymentIntent.last_payment_error?.message || 'Payment failed'
-      );
-    } else {
-      console.log('No matching payment record found for failed intent:', paymentIntent.id);
+    console.error('No payment_id found in payment intent metadata');
+    return;
+  }
+
+  try {
+    // Find the payment charge
+    const chargeId = paymentIntent.latest_charge;
+    console.log('Latest charge ID:', chargeId);
+
+    // Get payment method details if available
+    const paymentMethodId = paymentIntent.payment_method;
+    console.log('Payment method ID:', paymentMethodId);
+
+    console.log('Updating payment record with completed status and charge details');
+    
+    // Update payment record with successful payment data
+    const updateData: any = {
+      status: 'completed',
+      completed_at: new Date().toISOString()
+    };
+
+    // Only add the charge ID if it exists
+    if (chargeId) {
+      updateData.stripe_charge_id = chargeId;
     }
-  } else if (paymentId) {
-    await updatePaymentStatus(paymentId, { 
-      status: 'failed',
-      updated_at: new Date().toISOString()
-    });
 
-    console.log('Successfully updated payment status to failed');
+    // Only add the payment method ID if it exists
+    if (paymentMethodId) {
+      updateData.stripe_payment_method_id = paymentMethodId;
+    }
 
-    await logPaymentActivity(
-      paymentId,
-      paymentIntent,
-      'failed',
-      paymentIntent.last_payment_error?.message || 'Payment failed'
-    );
+    const { data, error } = await supabaseClient
+      .from('stripe_payments')
+      .update(updateData)
+      .eq('id', paymentId)
+      .select();
+
+    if (error) {
+      console.error('Error updating payment with successful status:', error);
+      return;
+    }
+
+    console.log('Payment marked as completed successfully:', data);
+    
+    // If this payment is connected to a campaign, ensure it's properly linked
+    if (paymentIntent.metadata?.campaign_id) {
+      const { data: existingLink, error: checkError } = await supabaseClient
+        .from('campaign_payments')
+        .select('id')
+        .eq('payment_id', paymentId)
+        .eq('campaign_id', paymentIntent.metadata.campaign_id)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking existing campaign link:', checkError);
+      } else if (!existingLink) {
+        // Only create the link if it doesn't exist
+        const { error: campaignError } = await supabaseClient
+          .from('campaign_payments')
+          .insert({
+            campaign_id: paymentIntent.metadata.campaign_id,
+            payment_id: paymentId
+          });
+          
+        if (campaignError) {
+          console.error('Error linking payment to campaign:', campaignError);
+        } else {
+          console.log('Payment successfully linked to campaign');
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Exception in handlePaymentIntentSucceeded:', error);
+  }
+};
+
+export const handlePaymentIntentFailed = async (paymentIntent: any) => {
+  console.log('Processing payment_intent.payment_failed event');
+  console.log('Payment Intent:', JSON.stringify(paymentIntent, null, 2));
+  
+  const paymentId = paymentIntent.metadata?.payment_id;
+  if (!paymentId) {
+    console.error('No payment_id found in payment intent metadata');
+    return;
+  }
+
+  try {
+    const failureMessage = paymentIntent.last_payment_error?.message || 'Payment failed';
+    console.log('Payment failure reason:', failureMessage);
+    
+    // Update payment record with failed status
+    const { data, error } = await supabaseClient
+      .from('stripe_payments')
+      .update({
+        status: 'failed',
+        failure_message: failureMessage
+      })
+      .eq('id', paymentId)
+      .select();
+
+    if (error) {
+      console.error('Error updating payment with failed status:', error);
+      return;
+    }
+
+    console.log('Payment marked as failed successfully:', data);
+  } catch (error) {
+    console.error('Exception in handlePaymentIntentFailed:', error);
   }
 };

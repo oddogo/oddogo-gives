@@ -1479,7 +1479,6 @@ export type Database = {
       stripe_payments: {
         Row: {
           amount: number
-          campaign_id: string | null
           created_at: string
           currency: string
           donor_name: string | null
@@ -1497,7 +1496,6 @@ export type Database = {
         }
         Insert: {
           amount: number
-          campaign_id?: string | null
           created_at?: string
           currency?: string
           donor_name?: string | null
@@ -1515,7 +1513,6 @@ export type Database = {
         }
         Update: {
           amount?: number
-          campaign_id?: string | null
           created_at?: string
           currency?: string
           donor_name?: string | null
@@ -1532,20 +1529,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "stripe_payments_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stripe_payments_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "v_campaign_statistics"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "stripe_payments_fingerprint_id_fkey"
             columns: ["fingerprint_id"]

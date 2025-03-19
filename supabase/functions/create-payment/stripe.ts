@@ -1,32 +1,62 @@
 
-import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
+import { PaymentData } from './types.ts';
 
 export const createStripeSession = async (
-  stripe: Stripe,
+  stripe: any,
   amountInCents: number,
   origin: string,
   payment: any,
   recipientId: string,
-  fingerprintId: string,
+  recipientName: string,
+  fingerprintId: string | null,
   userId: string | null,
   email?: string,
+  name?: string, 
+  message?: string,
   campaignId?: string
 ) => {
-  console.log('Creating Stripe session with params:', {
-    amount: amountInCents,
+  console.log('Creating Stripe session with parameters:', {
+    amountInCents,
     paymentId: payment.id,
     recipientId,
+    recipientName,
     fingerprintId,
     userId,
     email,
-    campaignId
+    name,
+    hasMessage: !!message,
+    hasCampaignId: !!campaignId
   });
 
+  // Fix the origin URL to use the application domain rather than the edge function domain
+  // Extract the origin from the request or use a fallback from environment
+  const appUrl = Deno.env.get('APP_URL') || origin;
+  // Make sure we're not using the edge-runtime.supabase.com domain
+  const correctOrigin = appUrl.includes('edge-runtime.supabase.co') 
+    ? Deno.env.get('SUPABASE_URL') || 'https://ofeirlpnkavnkgjityjc.supabase.co' // Fallback to Supabase URL
+    : appUrl;
+  
+  const successUrl = `${correctOrigin}/payment-success?payment_id=${payment.id}&recipient_id=${recipientId}`;
+  const cancelUrl = `${correctOrigin}/payment-cancelled?payment_id=${payment.id}`;
+  
+  console.log('Payment success URL:', successUrl);
+  console.log('Payment cancel URL:', cancelUrl);
+
   try {
-    const successUrl = campaignId 
-      ? `${origin}/payment-success?recipient_id=${recipientId}&campaign_id=${campaignId}`
-      : `${origin}/payment-success?recipient_id=${recipientId}`;
-      
+    // Prepare metadata with only valid values
+    const metadata: Record<string, string> = {
+      payment_id: payment.id,
+      recipient_id: recipientId,
+      recipient_name: recipientName,
+      user_id: userId || 'anonymous',
+      donor_name: name || 'Anonymous'
+    };
+    
+    // Only add these fields if they exist
+    if (fingerprintId) metadata.fingerprint_id = fingerprintId;
+    if (message) metadata.message = message;
+    if (campaignId) metadata.campaign_id = campaignId;
+    
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -35,6 +65,7 @@ export const createStripeSession = async (
             currency: 'gbp',
             product_data: {
               name: 'Donation',
+              description: `Donation to ${recipientName}`
             },
             unit_amount: amountInCents,
           },
@@ -43,17 +74,11 @@ export const createStripeSession = async (
       ],
       mode: 'payment',
       success_url: successUrl,
-      cancel_url: `${origin}/payment-cancelled`,
+      cancel_url: cancelUrl,
       customer_email: email,
-      metadata: {
-        payment_id: payment.id,
-        recipient_id: recipientId,
-        fingerprint_id: fingerprintId,
-        user_id: userId || 'anonymous',
-        campaign_id: campaignId || ''
-      },
+      metadata: metadata
     });
-
+    
     console.log('Stripe session created:', session.id);
     return session;
   } catch (error) {

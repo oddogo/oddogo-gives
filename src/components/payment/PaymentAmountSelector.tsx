@@ -2,9 +2,10 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { PaymentFormValues } from "@/components/PaymentForm";
 
 interface PaymentAmountSelectorProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<PaymentFormValues>;
 }
 
 export const PaymentAmountSelector: React.FC<PaymentAmountSelectorProps> = ({ form }) => {
