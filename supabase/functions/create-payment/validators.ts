@@ -29,7 +29,7 @@ export function validatePaymentRequest(data: any): { valid: boolean; errors?: st
     return { valid: false, errors: 'Amount must be greater than 0' };
   }
 
-  // Check if recipientId is a valid string
+  // Check if recipientId is provided
   if (!data.recipientId || typeof data.recipientId !== 'string') {
     return { valid: false, errors: 'Recipient ID is required and must be a string' };
   }

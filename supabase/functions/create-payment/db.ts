@@ -8,7 +8,7 @@ const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function createPaymentRecord(paymentRequest: PaymentRequest) {
   try {
-    console.log('Creating payment record:', paymentRequest);
+    console.log('Creating payment record with data:', JSON.stringify(paymentRequest));
     
     // Get fingerprint_id for the recipient
     let fingerprintId: string | null = null;
@@ -25,6 +25,7 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
         console.warn('Error fetching fingerprint:', fingerprintError);
       } else if (fingerprintUser) {
         fingerprintId = fingerprintUser.fingerprint_id;
+        console.log('Found fingerprint ID:', fingerprintId);
       }
     }
     
@@ -51,8 +52,11 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
       return { paymentId: null, error: error.message };
     }
     
+    console.log('Payment record created successfully:', data);
+    
     // Also create a campaign_payment record if there's a campaign
     if (data && paymentRequest.campaignId) {
+      console.log('Creating campaign payment record for campaign:', paymentRequest.campaignId);
       const { error: campaignPaymentError } = await supabaseClient
         .from('campaign_payments')
         .insert({
@@ -63,6 +67,8 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
       if (campaignPaymentError) {
         console.error('Error creating campaign payment record:', campaignPaymentError);
         // We don't fail the whole operation for this
+      } else {
+        console.log('Campaign payment record created successfully');
       }
     }
     

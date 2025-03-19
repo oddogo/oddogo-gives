@@ -19,6 +19,12 @@ interface PaymentOptions {
   campaignSlug?: string;
 }
 
+interface PaymentResult {
+  success: boolean;
+  error: string | null;
+  paymentId: string | null;
+}
+
 export function usePaymentSubmit() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stripeInstance, setStripeInstance] = useState<Stripe | null>(null);
@@ -50,7 +56,7 @@ export function usePaymentSubmit() {
   const submitPayment = async (
     formData: PaymentFormData,
     options: PaymentOptions
-  ) => {
+  ): Promise<PaymentResult> => {
     try {
       setIsSubmitting(true);
       
@@ -89,6 +95,12 @@ export function usePaymentSubmit() {
       
       // Get the payment ID from the response
       const paymentId = data.paymentId;
+      
+      if (!paymentId) {
+        throw new Error('No payment ID returned from payment creation');
+      }
+      
+      console.log('Payment created successfully with ID:', paymentId);
       
       // Redirect to Stripe Checkout
       const { error: stripeError } = await stripe.redirectToCheckout({

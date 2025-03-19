@@ -19,6 +19,7 @@ serve(async (req) => {
   try {
     // Parse request
     const body = await req.json();
+    console.log('Received payment request:', JSON.stringify(body));
     
     // Validate request
     const validationResult = validatePaymentRequest(body);
@@ -31,7 +32,7 @@ serve(async (req) => {
     }
     
     const paymentRequest = body as PaymentRequest;
-    console.log('Payment request received:', paymentRequest);
+    console.log('Payment request validated successfully:', JSON.stringify(paymentRequest));
 
     // First create a payment record in our database 
     const { paymentId, error: dbError } = await createPaymentRecord(paymentRequest);
@@ -43,6 +44,8 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Payment record created with ID:', paymentId);
 
     // Create Stripe checkout session with our payment ID in metadata
     const { session, error: stripeError } = await createStripeCheckoutSession({
@@ -58,9 +61,6 @@ serve(async (req) => {
       );
     }
     
-    // Update our payment record with the Stripe session ID
-    // This step is handled by the checkout.session.completed webhook
-
     console.log('Stripe session created:', session.id);
     return new Response(
       JSON.stringify({ 

@@ -69,6 +69,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       campaignSlug
     };
     
+    console.log("Submitting payment with options:", options);
+    
     const result = await submitPayment(
       {
         amount: formData.amount,
@@ -79,7 +81,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       options
     );
     
+    console.log("Payment submission result:", result);
+    
     if (result.success && result.paymentId && onSuccess) {
+      console.log("Calling onSuccess with paymentId:", result.paymentId);
       onSuccess(result.paymentId);
     }
   };
