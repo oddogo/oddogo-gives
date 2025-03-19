@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from "https://esm.sh/stripe@13.10.0?target=deno";
@@ -236,6 +235,20 @@ serve(async (req) => {
           }
         } else {
           // We have a payment ID in metadata, proceed with regular update
+          // IMPORTANT FIX: The issue is here - we need to preserve campaign_id from payment record
+          
+          // First, get the current payment record to keep campaign_id if it exists
+          const { data: currentPayment, error: getError } = await supabaseClient
+            .from('stripe_payments')
+            .select('campaign_id')
+            .eq('id', paymentId)
+            .single();
+            
+          if (getError) {
+            console.error('Error retrieving current payment record:', getError);
+          }
+          
+          // Create update data with all the fields
           const updateData = { 
             status: 'completed',
             stripe_payment_intent_id: paymentIntent.id,
@@ -244,9 +257,18 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           };
           
-          // Only update campaign_id if it exists and isn't an empty string
+          // Determine which campaign_id to use, prioritizing:
+          // 1. The campaign_id from Stripe metadata (if present)
+          // 2. The existing campaign_id in the database (if present)
+          // 3. Nothing (keep campaign_id as is)
           if (campaignId && campaignId.trim() !== '') {
+            console.log(`Using campaign_id ${campaignId} from payment intent metadata`);
             updateData.campaign_id = campaignId;
+          } else if (currentPayment?.campaign_id) {
+            console.log(`Preserving existing campaign_id ${currentPayment.campaign_id} from database`);
+            // We don't need to set it in updateData since we're not changing it
+          } else {
+            console.log('No campaign_id in metadata or database');
           }
 
           const { data: updatedPayment, error: updateError } = await supabaseClient
@@ -270,18 +292,35 @@ serve(async (req) => {
           if (updatedPayment.campaign_id) {
             console.log(`Creating campaign payment link for campaign ${updatedPayment.campaign_id}`);
             
-            const { error: campaignPaymentError } = await supabaseClient
+            // Check if campaign payment record already exists
+            const { data: existingLink, error: checkError } = await supabaseClient
               .from('campaign_payments')
-              .insert({
-                campaign_id: updatedPayment.campaign_id,
-                payment_id: updatedPayment.id
-              });
+              .select('id')
+              .eq('campaign_id', updatedPayment.campaign_id)
+              .eq('payment_id', updatedPayment.id)
+              .maybeSingle();
               
-            if (campaignPaymentError) {
-              console.error('Error creating campaign payment link:', campaignPaymentError);
-              // Log the error but don't fail the webhook
+            if (checkError) {
+              console.error('Error checking existing campaign payment link:', checkError);
+            }
+            
+            // Only insert if no existing record found
+            if (!existingLink) {
+              const { error: campaignPaymentError } = await supabaseClient
+                .from('campaign_payments')
+                .insert({
+                  campaign_id: updatedPayment.campaign_id,
+                  payment_id: updatedPayment.id
+                });
+                
+              if (campaignPaymentError) {
+                console.error('Error creating campaign payment link:', campaignPaymentError);
+                // Log the error but don't fail the webhook
+              } else {
+                console.log('Successfully created campaign payment link');
+              }
             } else {
-              console.log('Successfully created campaign payment link');
+              console.log('Campaign payment link already exists, skipping creation');
             }
           }
 
