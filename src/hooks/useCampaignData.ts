@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Campaign } from "@/types/campaign";
@@ -42,24 +43,31 @@ export function useCampaignData(userId: string): CampaignData {
         
         setCampaign(campaignData as Campaign);
         
-        // Get payment data in a simplified manner
-        const { data: paymentData, error: paymentsError } = await supabase
-          .from('v_stripe_payments')
-          .select('amount')
-          .eq('campaign_id', campaignData.id);
+        // Get payment data
+        if (campaignData.id) {
+          const { data: paymentData, error: paymentsError } = await supabase
+            .from('v_stripe_payments')
+            .select('amount')
+            .eq('campaign_id', campaignData.id);
+            
+          if (paymentsError) {
+            console.error("Error fetching campaign payments:", paymentsError);
+            setLoading(false);
+            return;
+          }
           
-        if (paymentsError) {
-          console.error("Error fetching campaign payments:", paymentsError);
-          setLoading(false);
-          return;
+          // Calculate total using a simple approach to avoid complex type issues
+          let total = 0;
+          if (paymentData && paymentData.length > 0) {
+            for (const payment of paymentData) {
+              if (payment.amount && typeof payment.amount === 'number') {
+                total += payment.amount;
+              }
+            }
+          }
+          
+          setTotalAmount(total);
         }
-        
-        // Calculate total amount using reduce to keep it simple
-        const total = (paymentData || []).reduce((sum, payment) => {
-          return sum + (Number(payment.amount) || 0);
-        }, 0);
-        
-        setTotalAmount(total);
       } catch (error) {
         console.error("Error loading campaign data:", error);
       } finally {
