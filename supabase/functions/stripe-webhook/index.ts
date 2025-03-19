@@ -96,7 +96,7 @@ serve(async (req) => {
 
     console.log('Processing webhook event:', event.type);
     console.log('Event data:', JSON.stringify(event.data.object));
-    console.log('Event metadata:', JSON.stringify(event.data.object.metadata));
+    console.log('Event metadata:', JSON.stringify(event.data.object.metadata || {}));
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -133,6 +133,8 @@ serve(async (req) => {
           }
 
           console.log('Successfully updated payment with Stripe session details');
+        } else {
+          console.log('No payment ID in session metadata, skipping database update');
         }
         break;
       }
@@ -140,16 +142,70 @@ serve(async (req) => {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
         
-        console.log('Processing successful payment:', paymentId);
+        console.log('Processing successful payment intent:', paymentIntent.id);
         console.log('Payment details:', {
           payment_intent_id: paymentIntent.id,
           payment_method_id: paymentIntent.payment_method,
           charge_id: paymentIntent.latest_charge,
+          metadata: paymentIntent.metadata || {}
         });
         
-        if (paymentId) {
-          // The crucial update to ensure payment status is set to 'completed'
-          // and all IDs are properly stored
+        // Try to find a payment record by payment intent ID if no metadata payment_id
+        if (!paymentId) {
+          console.log('No payment ID in metadata, trying to find payment by intent ID');
+          
+          const { data: paymentByIntent, error: findError } = await supabaseClient
+            .from('stripe_payments')
+            .select('id')
+            .eq('stripe_payment_intent_id', paymentIntent.id)
+            .maybeSingle();
+            
+          if (findError) {
+            console.error('Error looking up payment by intent ID:', findError);
+            // Log the error but don't fail the webhook
+          } else if (paymentByIntent) {
+            console.log(`Found payment record ${paymentByIntent.id} by intent ID`);
+            
+            // Update the payment record
+            const { error: updateError } = await supabaseClient
+              .from('stripe_payments')
+              .update({ 
+                status: 'completed',
+                stripe_payment_method_id: paymentIntent.payment_method,
+                stripe_charge_id: paymentIntent.latest_charge,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', paymentByIntent.id);
+
+            if (updateError) {
+              console.error('Error updating payment by intent ID:', updateError);
+              return new Response(
+                JSON.stringify({ error: 'Failed to update payment record' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+              );
+            }
+            
+            console.log(`Successfully updated payment ${paymentByIntent.id} to completed`);
+            
+            // Log the payment status update
+            await supabaseClient
+              .from('stripe_payment_logs')
+              .insert({
+                payment_id: paymentByIntent.id,
+                metadata: {
+                  payment_intent_id: paymentIntent.id,
+                  payment_method_id: paymentIntent.payment_method,
+                  charge_id: paymentIntent.latest_charge
+                },
+                status: 'completed',
+                message: 'Payment completed successfully (found by intent ID)'
+              });
+          } else {
+            console.log('No matching payment record found for intent ID:', paymentIntent.id);
+            // This might be a webhook from a different app or test event
+          }
+        } else {
+          // We have a payment ID in metadata, proceed with regular update
           const { data: updatedPayment, error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
@@ -178,7 +234,6 @@ serve(async (req) => {
             .insert({
               payment_id: paymentId,
               metadata: {
-                ...paymentIntent,
                 payment_intent_id: paymentIntent.id,
                 payment_method_id: paymentIntent.payment_method,
                 charge_id: paymentIntent.latest_charge
@@ -189,19 +244,10 @@ serve(async (req) => {
 
           if (logError) {
             console.error('Error logging payment status:', logError);
-            return new Response(
-              JSON.stringify({ error: 'Failed to log payment status' }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-            );
+            // Continue processing - log failures shouldn't stop the webhook
+          } else {
+            console.log('Successfully logged payment completion');
           }
-
-          console.log('Successfully logged payment completion');
-        } else {
-          console.error('No payment ID found in metadata');
-          return new Response(
-            JSON.stringify({ error: 'No payment ID found in metadata' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-          );
         }
         break;
       }
@@ -209,18 +255,46 @@ serve(async (req) => {
         const paymentIntent = event.data.object;
         const paymentId = paymentIntent.metadata?.payment_id;
         
-        console.log('Processing failed payment:', paymentId);
+        console.log('Processing failed payment:', paymentId || paymentIntent.id);
         
-        if (paymentId) {
+        // Similar to the succeeded case, try to find by intent ID if no metadata
+        if (!paymentId) {
+          const { data: paymentByIntent, error: findError } = await supabaseClient
+            .from('stripe_payments')
+            .select('id')
+            .eq('stripe_payment_intent_id', paymentIntent.id)
+            .maybeSingle();
+            
+          if (!findError && paymentByIntent) {
+            await supabaseClient
+              .from('stripe_payments')
+              .update({ 
+                status: 'failed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', paymentByIntent.id);
+              
+            console.log(`Updated payment ${paymentByIntent.id} to failed status`);
+            
+            await supabaseClient
+              .from('stripe_payment_logs')
+              .insert({
+                payment_id: paymentByIntent.id,
+                metadata: paymentIntent,
+                status: 'failed',
+                message: paymentIntent.last_payment_error?.message || 'Payment failed'
+              });
+          } else {
+            console.log('No matching payment record found for failed intent:', paymentIntent.id);
+          }
+        } else if (paymentId) {
           const { error: updateError } = await supabaseClient
             .from('stripe_payments')
             .update({ 
               status: 'failed',
               updated_at: new Date().toISOString()
             })
-            .eq('id', paymentId)
-            .select()
-            .single();
+            .eq('id', paymentId);
 
           if (updateError) {
             console.error('Error updating payment status:', updateError);
@@ -243,13 +317,10 @@ serve(async (req) => {
 
           if (logError) {
             console.error('Error logging payment failure:', logError);
-            return new Response(
-              JSON.stringify({ error: 'Failed to log payment failure' }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-            );
+            // Continue processing - log failures shouldn't stop the webhook
+          } else {
+            console.log('Successfully logged payment failure');
           }
-
-          console.log('Successfully logged payment failure');
         }
         break;
       }
