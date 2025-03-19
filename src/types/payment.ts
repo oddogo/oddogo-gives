@@ -13,6 +13,8 @@ export interface Payment {
   campaign_title?: string;
   campaign_slug?: string;
   donor_name?: string;
+  fingerprint_id?: string;
+  user_id?: string;
 }
 
 export interface CampaignPaymentGroup {

@@ -53,8 +53,10 @@ const PaymentSuccess = () => {
         }
         
         // Check if this payment is associated with a campaign
-        if (paymentData?.campaign_id) {
-          console.log("Payment associated with campaign:", paymentData.campaign_id);
+        // Use optional chaining to safely access campaign_id which might not exist in the type
+        const campaignId = (paymentData as any)?.campaign_id;
+        if (campaignId) {
+          console.log("Payment associated with campaign:", campaignId);
           
           // Ensure payment is linked to campaign if not already
           const { data: campaignPayment, error: campaignCheckError } = await supabase
@@ -66,12 +68,12 @@ const PaymentSuccess = () => {
           if (campaignCheckError) {
             console.error("Error checking campaign payment link:", campaignCheckError);
           } else if (!campaignPayment) {
-            console.log("Linking payment to campaign:", paymentData.campaign_id);
+            console.log("Linking payment to campaign:", campaignId);
             
             const { error: linkError } = await supabase
               .from('campaign_payments')
               .insert({
-                campaign_id: paymentData.campaign_id,
+                campaign_id: campaignId,
                 payment_id: paymentId
               });
               
@@ -99,10 +101,11 @@ const PaymentSuccess = () => {
   }, [paymentId, recipientId]);
 
   const handleReturnClick = () => {
+    // Use optional chaining and type assertion to safely access campaign_id property
     if (recipientId) {
       navigate(`/profile/${recipientId}`);
-    } else if (paymentDetails?.campaign_id) {
-      navigate(`/campaign/${paymentDetails.campaign_id}`);
+    } else if ((paymentDetails as any)?.campaign_id) {
+      navigate(`/campaign/${(paymentDetails as any).campaign_id}`);
     } else {
       navigate('/');
     }
