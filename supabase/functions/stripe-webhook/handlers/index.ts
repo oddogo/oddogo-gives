@@ -1,3 +1,3 @@
 
 export { handleCheckoutSessionCompleted } from './checkout/index.ts';
-export { handlePaymentIntentSucceeded, handlePaymentIntentFailed } from './payment-intent.ts';
+export { handlePaymentIntentSucceeded, handlePaymentIntentFailed } from './payment-intent/index.ts';
