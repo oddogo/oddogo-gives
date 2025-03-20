@@ -1,4 +1,3 @@
-
 import { Stripe } from "https://esm.sh/stripe@12.5.0?target=deno";
 import { recordPaymentLog } from "../../utils/db.ts";
 import { findPaymentByIntentId, findPaymentById, updatePaymentSuccess, updatePaymentFailed } from "./payment-utils.ts";
@@ -38,14 +37,45 @@ export const handlePaymentIntentSucceeded = async (event: Stripe.Event) => {
             payment_intent_id: paymentIntentId,
             error: 'No error details'
           });
-          return { success: false, error: "Payment record not found" };
+          
+          // NEW: Try to find by email as a last resort
+          if (paymentIntent.receipt_email) {
+            console.log(`Trying to find payment by email: ${paymentIntent.receipt_email}`);
+            payment = await findPaymentByEmail(paymentIntent.receipt_email);
+            
+            if (!payment) {
+              console.error(`Could not find payment with email: ${paymentIntent.receipt_email}`);
+              return { success: false, error: "Payment record not found" };
+            } else {
+              console.log(`Found payment by email: ${payment.id}`);
+            }
+          } else {
+            return { success: false, error: "Payment record not found" };
+          }
         }
       } else {
         console.error('No payment ID in metadata and could not find by payment intent ID');
-        await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID', {
-          payment_intent_id: paymentIntentId
-        });
-        return { success: false, error: "Payment record not found" };
+        
+        // NEW: Try to find by email as a last resort
+        if (paymentIntent.receipt_email) {
+          console.log(`Trying to find payment by email: ${paymentIntent.receipt_email}`);
+          payment = await findPaymentByEmail(paymentIntent.receipt_email);
+          
+          if (!payment) {
+            console.error(`Could not find payment with email: ${paymentIntent.receipt_email}`);
+            await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID or email', {
+              payment_intent_id: paymentIntentId
+            });
+            return { success: false, error: "Payment record not found" };
+          } else {
+            console.log(`Found payment by email: ${payment.id}`);
+          }
+        } else {
+          await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID', {
+            payment_intent_id: paymentIntentId
+          });
+          return { success: false, error: "Payment record not found" };
+        }
       }
     }
     
@@ -101,18 +131,53 @@ export const handlePaymentIntentFailed = async (event: Stripe.Event) => {
         
         if (!payment) {
           console.error(`Could not find payment with ID: ${paymentId}`);
-          await recordPaymentLog(paymentId, 'payment_not_found', `Payment record not found for ID: ${paymentId}`, {
-            payment_intent_id: paymentIntentId,
-            error: 'No error details' 
-          });
-          return { success: false, error: "Payment record not found" };
+          
+          // NEW: Try to find by email as a last resort
+          if (paymentIntent.receipt_email) {
+            console.log(`Trying to find payment by email: ${paymentIntent.receipt_email}`);
+            payment = await findPaymentByEmail(paymentIntent.receipt_email);
+            
+            if (!payment) {
+              console.error(`Could not find payment with email: ${paymentIntent.receipt_email}`);
+              await recordPaymentLog(paymentId, 'payment_not_found', `Payment record not found for ID: ${paymentId}`, {
+                payment_intent_id: paymentIntentId,
+                error: 'No error details' 
+              });
+              return { success: false, error: "Payment record not found" };
+            } else {
+              console.log(`Found payment by email: ${payment.id}`);
+            }
+          } else {
+            await recordPaymentLog(paymentId, 'payment_not_found', `Payment record not found for ID: ${paymentId}`, {
+              payment_intent_id: paymentIntentId,
+              error: 'No error details' 
+            });
+            return { success: false, error: "Payment record not found" };
+          }
         }
       } else {
         console.error('No payment ID in metadata and could not find by payment intent ID');
-        await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID', {
-          payment_intent_id: paymentIntentId
-        });
-        return { success: false, error: "Payment record not found" };
+        
+        // NEW: Try to find by email as a last resort
+        if (paymentIntent.receipt_email) {
+          console.log(`Trying to find payment by email: ${paymentIntent.receipt_email}`);
+          payment = await findPaymentByEmail(paymentIntent.receipt_email);
+          
+          if (!payment) {
+            console.error(`Could not find payment with email: ${paymentIntent.receipt_email}`);
+            await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID or email', {
+              payment_intent_id: paymentIntentId
+            });
+            return { success: false, error: "Payment record not found" };
+          } else {
+            console.log(`Found payment by email: ${payment.id}`);
+          }
+        } else {
+          await recordPaymentLog('unknown', 'payment_not_found', 'No payment ID in metadata and could not find by payment intent ID', {
+            payment_intent_id: paymentIntentId
+          });
+          return { success: false, error: "Payment record not found" };
+        }
       }
     }
     

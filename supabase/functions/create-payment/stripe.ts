@@ -50,6 +50,7 @@ export async function createStripeCheckoutSession(
     console.log('- Payment ID:', internalPaymentId);
     console.log('- Amount (pounds):', validAmount);
     console.log('- Amount (pence for Stripe):', amountInPence);
+    console.log('- Customer email:', email);
     
     // Create Stripe checkout session with metadata
     const session = await stripe.checkout.sessions.create({
@@ -71,6 +72,7 @@ export async function createStripeCheckoutSession(
       success_url: fullSuccessUrl,
       cancel_url: fullCancelUrl,
       customer_email: email,
+      receipt_email: email, // Add receipt_email so we can find by email if needed
       metadata: {
         payment_id: internalPaymentId,
         user_id: recipientId || '',
@@ -78,6 +80,7 @@ export async function createStripeCheckoutSession(
         campaign_slug: campaignSlug || '',
         campaign_title: campaignTitle || '',
         donor_name: name || '',
+        donor_email: email || '', // Add donor email to metadata for easier lookup
         amount_pounds: validAmount.toString() // Store the original amount in pounds for reference
       }
     });

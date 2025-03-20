@@ -60,6 +60,40 @@ export async function findPaymentById(paymentId: string) {
 }
 
 /**
+ * Finds a payment record by email address
+ * This is a fallback method when payment ID and intent ID lookup fails
+ */
+export async function findPaymentByEmail(email: string) {
+  if (!email) {
+    console.error('Missing email in findPaymentByEmail function');
+    return null;
+  }
+
+  // Look for the most recent payment with this email and status pending or processing
+  const { data: payment, error } = await supabaseClient
+    .from('stripe_payments')
+    .select('*')
+    .eq('stripe_payment_email', email)
+    .in('status', ['pending', 'processing'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    
+  if (error) {
+    console.error(`Error finding payment with email ${email}:`, error);
+    return null;
+  }
+  
+  if (!payment) {
+    console.log(`No pending payment found with email: ${email}`);
+  } else {
+    console.log(`Found payment with ID ${payment.id} for email ${email}`);
+  }
+  
+  return payment;
+}
+
+/**
  * Updates a payment record with successful payment info
  */
 export async function updatePaymentSuccess(paymentId: string, paymentIntent: any) {
@@ -72,6 +106,7 @@ export async function updatePaymentSuccess(paymentId: string, paymentIntent: any
         status: 'completed',
         stripe_charge_id: paymentIntent.latest_charge || null,
         stripe_payment_method_id: paymentIntent.payment_method || null,
+        stripe_payment_intent_id: paymentIntent.id || null, // Ensure we save the intent ID
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentId);
@@ -107,6 +142,7 @@ export async function updatePaymentFailed(paymentId: string, paymentIntent: any,
       .from('stripe_payments')
       .update({
         status: 'failed',
+        stripe_payment_intent_id: paymentIntent.id || null, // Ensure we save the intent ID
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentId);
@@ -130,4 +166,3 @@ export async function updatePaymentFailed(paymentId: string, paymentIntent: any,
     throw error;
   }
 }
-
