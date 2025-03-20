@@ -12,7 +12,18 @@ export async function createStripeCheckoutSession(
     }
     
     const stripe = new Stripe(stripeKey);
-    const { amount, name, email, recipientId, campaignId, campaignTitle, campaignSlug, internalPaymentId } = paymentRequest;
+    const { 
+      amount, 
+      name, 
+      email, 
+      recipientId, 
+      campaignId, 
+      campaignTitle, 
+      campaignSlug, 
+      internalPaymentId,
+      successUrl,
+      cancelUrl
+    } = paymentRequest;
     
     // Build success URL with query parameters
     const successParams = new URLSearchParams();
@@ -20,16 +31,13 @@ export async function createStripeCheckoutSession(
     if (campaignId) successParams.append('campaign_id', campaignId);
     if (recipientId) successParams.append('recipient_id', recipientId);
     
-    // For Stripe, we need to use absolute URLs with the correct domain
-    // Use the current deployment URL with fallback to Vercel URL
-    const baseUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://oddogo-app.vercel.app';
-    const successUrl = `${baseUrl}/payment-success?${successParams.toString()}`;
-    const cancelUrl = `${baseUrl}/payment-cancelled`;
+    // Use the client-provided URLs
+    const fullSuccessUrl = `${successUrl}?${successParams.toString()}`;
+    const fullCancelUrl = cancelUrl;
     
     console.log('Payment configuration:');
-    console.log('- Base URL for redirects:', baseUrl);
-    console.log('- Success URL:', successUrl);
-    console.log('- Cancel URL:', cancelUrl);
+    console.log('- Success URL:', fullSuccessUrl);
+    console.log('- Cancel URL:', fullCancelUrl);
     console.log('- Payment ID:', internalPaymentId);
     
     // Create Stripe checkout session with metadata
@@ -49,8 +57,8 @@ export async function createStripeCheckoutSession(
         },
       ],
       mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: fullSuccessUrl,
+      cancel_url: fullCancelUrl,
       customer_email: email,
       metadata: {
         payment_id: internalPaymentId,

@@ -29,4 +29,6 @@ export interface PaymentRequest {
   campaignId?: string;
   campaignTitle?: string;
   campaignSlug?: string;
+  successUrl: string;
+  cancelUrl: string;
 }

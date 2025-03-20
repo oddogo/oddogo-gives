@@ -66,6 +66,9 @@ export function usePaymentSubmit() {
         throw new Error('Could not initialize Stripe');
       }
       
+      // Get origin for absolute URLs
+      const origin = window.location.origin;
+      
       // Create payment record and get checkout session from our API
       const payload = {
         amount: formData.amount,
@@ -76,10 +79,12 @@ export function usePaymentSubmit() {
         recipientName: options.recipientName,
         campaignId: options.campaignId,
         campaignTitle: options.campaignTitle,
-        campaignSlug: options.campaignSlug
+        campaignSlug: options.campaignSlug,
+        successUrl: `${origin}/payment-success`,
+        cancelUrl: `${origin}/payment-cancelled`
       };
 
-      console.log('Submitting payment:', payload);
+      console.log('Submitting payment with options:', payload);
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: payload

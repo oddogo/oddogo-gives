@@ -39,6 +39,15 @@ export function validatePaymentRequest(data: any): { valid: boolean; errors?: st
     return { valid: false, errors: 'Invalid email format' };
   }
 
+  // Check if URLs are provided
+  if (!data.successUrl || typeof data.successUrl !== 'string') {
+    return { valid: false, errors: 'Success URL is required and must be a string' };
+  }
+
+  if (!data.cancelUrl || typeof data.cancelUrl !== 'string') {
+    return { valid: false, errors: 'Cancel URL is required and must be a string' };
+  }
+
   console.log('Validation successful');
   return { valid: true };
 }
