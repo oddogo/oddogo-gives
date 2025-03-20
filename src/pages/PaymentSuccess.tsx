@@ -4,7 +4,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Loader2, AlertCircle, Home } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Home, User } from "lucide-react";
 import { toast } from "sonner";
 
 const PaymentSuccess = () => {
@@ -126,9 +126,13 @@ const PaymentSuccess = () => {
     return () => clearInterval(intervalId);
   }, [paymentId, paymentStatus, pollingCount]);
 
-  // Handle manual redirect to home if needed
-  const handleReturnHome = () => {
-    navigate("/");
+  // Handle returning to donor's profile or home
+  const handleReturnToDonor = () => {
+    if (recipientId) {
+      navigate(`/profile/${recipientId}`);
+    } else {
+      navigate("/");
+    }
   };
 
   return (
@@ -209,11 +213,12 @@ const PaymentSuccess = () => {
             </Button>
           )}
           
-          <Button asChild variant={paymentStatus === "completed" ? "outline" : "default"}>
-            <Link to="/">
-              <Home className="w-4 h-4 mr-2" />
-              Return Home
-            </Link>
+          <Button 
+            onClick={handleReturnToDonor} 
+            variant={paymentStatus === "completed" ? "outline" : "default"}
+          >
+            <User className="w-4 h-4 mr-2" />
+            {recipientId ? "Return to Profile" : "Return Home"}
           </Button>
         </CardFooter>
       </Card>
