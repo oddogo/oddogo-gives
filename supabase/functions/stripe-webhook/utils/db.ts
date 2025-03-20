@@ -59,11 +59,27 @@ export const markWebhookProcessed = async (eventId: string, success = true, erro
     }
     
     if (!existingRecord) {
-      console.warn(`No webhook record found with event_id: ${eventId}, skipping update`);
-      return; // Exit early if no record exists, don't throw an error
+      console.warn(`No webhook record found with event_id: ${eventId}, creating a new one`);
+      
+      // Create a new record since one doesn't exist
+      const { error: insertError } = await supabaseClient
+        .from('stripe_webhook_logs')
+        .insert({ 
+          event_id: eventId,
+          status: success ? 'processed' : 'failed',
+          processed_at: new Date().toISOString(),
+          error_message: errorMessage
+        });
+        
+      if (insertError) {
+        console.error('Error creating webhook record:', insertError);
+        throw new Error(`Failed to create webhook record: ${insertError.message || 'Unknown database error'}`);
+      }
+      
+      return;
     }
     
-    // Now update the record
+    // Now update the existing record
     const { error } = await supabaseClient
       .from('stripe_webhook_logs')
       .update({ 
@@ -106,11 +122,13 @@ export const recordPaymentLog = async (paymentId: string, status: string, messag
 
     if (error) {
       console.error('Error recording payment log:', error);
+    } else {
+      console.log('Payment log recorded successfully');
     }
   } catch (error) {
     console.error('Exception recording payment log:', error);
   }
 };
 
-// Export supabaseClient only once (removing the duplicate export)
+// Export supabaseClient
 export { supabaseClient };

@@ -25,6 +25,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   
+  console.log("Received webhook request");
+  
   try {
     // Get the stripe-signature header for verification
     const signature = req.headers.get('stripe-signature');
@@ -79,7 +81,7 @@ serve(async (req) => {
     const event = payload;
     const eventId = event.id || 'unknown_event_id';
     
-    // Log the webhook event immediately, before verification
+    // Log the webhook event immediately, before processing
     await logWebhookEvent(event);
     
     // Simple verification check that the event is from Stripe
@@ -93,6 +95,10 @@ serve(async (req) => {
     }
     
     console.log(`Processing webhook event: ${event.type} (${event.id})`);
+    
+    // Extract payment ID from metadata if available, for additional logging
+    const metadata = event.data?.object?.metadata || {};
+    const paymentId = metadata.payment_id || 'none';
     
     // Handle different event types
     let result;
@@ -118,9 +124,12 @@ serve(async (req) => {
           result = { status: 'ignored', message: `Event type ${event.type} not handled` };
       }
       
-      // Mark the webhook as processed
+      // Mark the webhook as processed successfully
       await markWebhookProcessed(event.id, true);
       
+      console.log(`Webhook ${event.id} processed successfully: ${JSON.stringify(result)}`);
+      
+      // Always return a 200 response to Stripe to acknowledge receipt
       return new Response(
         JSON.stringify({ received: true, result }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -134,8 +143,6 @@ serve(async (req) => {
       // Record the error in payment logs if it's a payment-related event
       if (event.type.startsWith('payment_intent.') || event.type.startsWith('checkout.')) {
         try {
-          const metadata = event.data?.object?.metadata || {};
-          const paymentId = metadata.payment_id || 'none';
           await recordPaymentLog(paymentId, 'webhook_error', `Error processing ${event.type} webhook`, {
             error: error.message,
             event_type: event.type
@@ -145,12 +152,14 @@ serve(async (req) => {
         }
       }
       
+      // Always return a 200 response to Stripe to acknowledge receipt
+      // Even though we had an error processing it, we don't want Stripe to retry
       return new Response(
         JSON.stringify({ 
           received: true, 
           error: `Error processing webhook: ${error.message}` 
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
