@@ -32,11 +32,15 @@ const PaymentSuccess = () => {
     
     const checkPaymentStatus = async () => {
       try {
+        // Use maybeSingle() instead of single() to handle the case where the record isn't found
         const { data, error } = await supabase
           .from("stripe_payments")
           .select("*")
           .eq("id", paymentId)
-          .single();
+          .maybeSingle();
+
+        // Log the response for debugging
+        console.log("Payment query response:", { data, error });
 
         if (error) {
           console.error("Error fetching payment status:", error);
@@ -48,16 +52,34 @@ const PaymentSuccess = () => {
           return;
         }
 
+        // Handle the case where no payment was found
+        if (!data) {
+          console.log(`No payment found with ID: ${paymentId}, attempt: ${pollingCount + 1}`);
+          if (pollingCount < 15) { // Continue polling for ~30 seconds
+            setPollingCount(prev => prev + 1);
+          } else {
+            // After 15 attempts, assume something went wrong
+            setPaymentStatus("failed");
+            setErrorMessage("Payment not found. It may still be processing. Please check your email for confirmation or contact support.");
+            toast.error("Payment verification timed out. Please check your email for confirmation.");
+          }
+          return;
+        }
+
         console.log("Payment data:", data);
         setPaymentDetails(data);
         
         if (data.status === "completed") {
           setPaymentStatus("completed");
           toast.success("Payment completed successfully!");
+          // Clear the interval since we're done
+          return true;
         } else if (data.status === "failed") {
           setPaymentStatus("failed");
           setErrorMessage("Payment processing failed. Please try again or contact support.");
           toast.error("Payment failed. Please contact support.");
+          // Clear the interval since we're done
+          return true;
         } else {
           // Still processing, keep polling
           setPaymentStatus("processing");
@@ -69,26 +91,38 @@ const PaymentSuccess = () => {
             setPaymentStatus("failed");
             setErrorMessage("Payment verification timed out. The payment might still be processing. Please check your email for confirmation or contact support.");
             toast.error("Payment verification timed out. Please check your email for confirmation.");
+            return true;
           }
         }
+        return false;
       } catch (error) {
         console.error("Error checking payment status:", error);
         if (pollingCount > 10) {
           setPaymentStatus("failed");
           setErrorMessage("An unexpected error occurred while verifying payment. Please contact support.");
+          return true;
         }
+        return false;
       }
     };
 
+    // Check payment status immediately
     checkPaymentStatus();
     
-    // Poll every 2 seconds if payment is still processing
-    const intervalId = setInterval(() => {
+    // Set up polling at intervals of 2 seconds
+    const intervalId = setInterval(async () => {
       if (paymentStatus === "loading" || paymentStatus === "processing") {
-        checkPaymentStatus();
+        const shouldStopPolling = await checkPaymentStatus();
+        if (shouldStopPolling) {
+          clearInterval(intervalId);
+        }
+      } else {
+        // If we're already in a terminal state, clear the interval
+        clearInterval(intervalId);
       }
     }, 2000);
 
+    // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, [paymentId, paymentStatus, pollingCount]);
 
