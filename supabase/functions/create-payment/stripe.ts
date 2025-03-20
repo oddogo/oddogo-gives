@@ -39,6 +39,7 @@ export async function createStripeCheckoutSession(
     console.log('- Success URL:', fullSuccessUrl);
     console.log('- Cancel URL:', fullCancelUrl);
     console.log('- Payment ID:', internalPaymentId);
+    console.log('- Amount:', amount);
     
     // Create Stripe checkout session with metadata
     const session = await stripe.checkout.sessions.create({
@@ -51,7 +52,7 @@ export async function createStripeCheckoutSession(
               name: campaignTitle || `Donation to ${name || 'charity causes'}`,
               description: campaignTitle ? `Supporting ${campaignTitle}` : 'Thank you for your donation',
             },
-            unit_amount: amount * 100, // convert to cents
+            unit_amount: Math.round(amount * 100), // Convert to cents and ensure it's an integer
           },
           quantity: 1,
         },
@@ -71,6 +72,7 @@ export async function createStripeCheckoutSession(
     });
     
     console.log('Stripe session created:', session.id);
+    console.log('Session amount:', session.amount_total);
     return { session, error: null };
   } catch (error) {
     console.error('Error creating checkout session:', error);

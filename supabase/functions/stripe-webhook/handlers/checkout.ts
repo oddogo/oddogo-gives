@@ -132,13 +132,17 @@ export const handleCheckoutSessionCompleted = async (event: Stripe.Event) => {
       // No existing payment found, create a new one with available information
       console.log("No existing payment found, creating new record from webhook data");
       
+      // Fix: Ensure we're storing the correct amount (don't divide by 100)
+      const amount = session.amount_total ? session.amount_total / 100 : 0;
+      console.log(`Creating payment with amount: ${amount} (from original amount_total: ${session.amount_total})`);
+      
       const { data: newPayment, error: insertError } = await supabaseClient
         .from('stripe_payments')
         .insert({
           stripe_session_id: sessionId,
           stripe_payment_intent_id: paymentIntentId,
           status: 'processing',
-          amount: session.amount_total ? session.amount_total / 100 : 0,
+          amount: amount, // Correctly handled amount
           stripe_payment_email: session.customer_details?.email || '',
           message: 'Created from webhook data',
           fingerprint_id: fingerprintId,

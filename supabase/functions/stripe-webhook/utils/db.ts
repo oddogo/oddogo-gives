@@ -19,12 +19,12 @@ export const logWebhookEvent = async (event: any) => {
     const paymentId = metadata.payment_id || null;
     
     const { error } = await supabaseClient
-      .from('stripe_webhook_logs')
+      .from('stripe_webhook_events')
       .insert({
         event_type: event.type,
-        event_id: event.id,
+        stripe_event_id: event.id,
         payment_id: paymentId,
-        event_data: JSON.parse(JSON.stringify(event)),
+        raw_event: JSON.parse(JSON.stringify(event)),
         is_test: event.livemode === false,
         status: 'received'
       });
@@ -48,9 +48,9 @@ export const markWebhookProcessed = async (eventId: string, success = true, erro
   try {
     // First, check if the record exists
     const { data: existingRecord, error: checkError } = await supabaseClient
-      .from('stripe_webhook_logs')
+      .from('stripe_webhook_events')
       .select('id')
-      .eq('event_id', eventId)
+      .eq('stripe_event_id', eventId)
       .maybeSingle();
       
     if (checkError) {
@@ -63,12 +63,12 @@ export const markWebhookProcessed = async (eventId: string, success = true, erro
       
       // Create a new record since one doesn't exist
       const { error: insertError } = await supabaseClient
-        .from('stripe_webhook_logs')
+        .from('stripe_webhook_events')
         .insert({ 
-          event_id: eventId,
+          stripe_event_id: eventId,
           status: success ? 'processed' : 'failed',
           processed_at: new Date().toISOString(),
-          error_message: errorMessage
+          event_type: 'unknown' // Required field
         });
         
       if (insertError) {
@@ -81,13 +81,12 @@ export const markWebhookProcessed = async (eventId: string, success = true, erro
     
     // Now update the existing record
     const { error } = await supabaseClient
-      .from('stripe_webhook_logs')
+      .from('stripe_webhook_events')
       .update({ 
         status: success ? 'processed' : 'failed',
         processed_at: new Date().toISOString(),
-        error_message: errorMessage
       })
-      .eq('event_id', eventId);
+      .eq('stripe_event_id', eventId);
 
     if (error) {
       console.error('Error marking webhook as processed:', error);
