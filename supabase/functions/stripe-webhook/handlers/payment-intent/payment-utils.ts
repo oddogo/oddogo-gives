@@ -2,115 +2,91 @@
 import { supabaseClient, recordPaymentLog } from "../../utils/db.ts";
 
 /**
- * Find a payment record by payment intent ID
+ * Finds a payment record by payment intent ID
  */
-export async function findPaymentByIntent(paymentIntentId: string) {
-  console.log(`Looking for payment with intent ID: ${paymentIntentId}`);
-  
-  const { data: payment, error: fetchError } = await supabaseClient
+export async function findPaymentByIntentId(paymentIntentId: string) {
+  const { data: payment, error } = await supabaseClient
     .from('stripe_payments')
     .select('*')
     .eq('stripe_payment_intent_id', paymentIntentId)
     .maybeSingle();
-  
-  if (fetchError) {
-    console.error(`Error finding payment by intent ID: ${fetchError.message}`);
-    return null;
-  }
-  
-  if (payment) {
-    console.log(`Found payment with ID: ${payment.id} by intent ID`);
-  } else {
-    console.log(`No payment found with intent ID: ${paymentIntentId}`);
-  }
-  
-  return payment;
-}
-
-/**
- * Find a payment record by internal payment ID
- */
-export async function findPaymentById(paymentId: string) {
-  console.log(`Looking for payment with internal ID: ${paymentId}`);
-  
-  const { data: payment, error: internalIdFetchError } = await supabaseClient
-    .from('stripe_payments')
-    .select('*')
-    .eq('id', paymentId)
-    .maybeSingle();
     
-  if (internalIdFetchError) {
-    console.error(`Error finding payment by internal ID: ${internalIdFetchError.message}`);
+  if (error) {
+    console.error(`Error finding payment with payment intent ID ${paymentIntentId}:`, error);
     return null;
-  }
-  
-  if (payment) {
-    console.log(`Found payment with ID: ${payment.id} by internal ID`);
-  } else {
-    console.log(`No payment found with internal ID: ${paymentId}`);
   }
   
   return payment;
 }
 
 /**
- * Update payment record to completed status
+ * Updates a payment record with successful payment info
  */
-export async function updatePaymentSuccess(paymentId: string, paymentIntentId: string, paymentMethodId: string, chargeId: string) {
+export async function updatePaymentSuccess(paymentId: string, paymentIntent: any) {
+  console.log(`Updating payment ${paymentId} status to completed`);
+  
   try {
-    const { error: updateError } = await supabaseClient
+    const { error } = await supabaseClient
       .from('stripe_payments')
       .update({
         status: 'completed',
-        stripe_payment_intent_id: paymentIntentId,
-        stripe_payment_method_id: paymentMethodId,
-        stripe_charge_id: chargeId,
+        stripe_charge_id: paymentIntent.latest_charge || null,
+        stripe_payment_method_id: paymentIntent.payment_method || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentId);
       
-    if (updateError) {
-      console.error('Error updating payment record:', updateError);
-      await recordPaymentLog(paymentId, 'update_error', 'Failed to update payment record', {
-        error: updateError.message,
-        payment_id: paymentId
+    if (error) {
+      console.error(`Error updating payment ${paymentId} to completed:`, error);
+      await recordPaymentLog(paymentId, 'update_error', 'Failed to update payment to completed', {
+        error: error.message
       });
-      return { success: false, error: updateError.message };
+      throw error;
     }
+    
+    await recordPaymentLog(paymentId, 'payment_completed', 'Payment processed successfully', {
+      payment_intent_id: paymentIntent.id,
+      amount: paymentIntent.amount / 100 // Convert back to pounds for logging
+    });
     
     return { success: true };
   } catch (error) {
-    console.error(`Error updating payment success: ${error.message}`);
-    return { success: false, error: error.message };
+    console.error(`Error updating payment ${paymentId}:`, error);
+    throw error;
   }
 }
 
 /**
- * Update payment record to failed status
+ * Updates a payment record with failed payment info
  */
-export async function updatePaymentFailed(paymentId: string, errorMessage: string) {
+export async function updatePaymentFailed(paymentId: string, paymentIntent: any, errorMessage: string) {
+  console.log(`Updating payment ${paymentId} status to failed`);
+  
   try {
-    const { error: updateError } = await supabaseClient
+    const { error } = await supabaseClient
       .from('stripe_payments')
       .update({
         status: 'failed',
-        message: `Payment failed: ${errorMessage}`,
         updated_at: new Date().toISOString()
       })
       .eq('id', paymentId);
       
-    if (updateError) {
-      console.error('Error updating payment record to failed status:', updateError);
-      await recordPaymentLog(paymentId, 'update_error', 'Failed to update payment record to failed status', {
-        error: updateError.message,
-        payment_id: paymentId
+    if (error) {
+      console.error(`Error updating payment ${paymentId} to failed:`, error);
+      await recordPaymentLog(paymentId, 'update_error', 'Failed to update payment to failed', {
+        error: error.message
       });
-      return { success: false, error: updateError.message };
+      throw error;
     }
+    
+    await recordPaymentLog(paymentId, 'payment_failed', errorMessage, {
+      payment_intent_id: paymentIntent.id,
+      last_payment_error: paymentIntent.last_payment_error
+    });
     
     return { success: true };
   } catch (error) {
-    console.error(`Error updating payment failed status: ${error.message}`);
-    return { success: false, error: error.message };
+    console.error(`Error updating failed payment ${paymentId}:`, error);
+    throw error;
   }
 }

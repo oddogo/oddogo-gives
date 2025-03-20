@@ -30,14 +30,16 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
     }
     
     // Create a new payment record with proper field mapping
+    // Important: Store the amount in pounds as received from the client
+    // The conversion to pence happens in the Stripe checkout session creation
     const { data, error } = await supabaseClient
       .from('stripe_payments')
       .insert({
-        amount: paymentRequest.amount,
+        amount: paymentRequest.amount, // Store amount in pounds
         stripe_payment_email: paymentRequest.email,
         message: paymentRequest.message || null,
         status: 'pending',
-        campaign_id: paymentRequest.campaignId || null,
+        campaign_id: paymentRequest.campaignId || null, // Ensure campaign_id is stored correctly
         campaign_title: paymentRequest.campaignTitle || null,
         campaign_slug: paymentRequest.campaignSlug || null,
         donor_name: paymentRequest.name || null,
