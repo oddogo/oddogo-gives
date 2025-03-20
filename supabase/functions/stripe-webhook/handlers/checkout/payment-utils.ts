@@ -75,9 +75,24 @@ export async function updateExistingPayment(existingPayment: any, sessionId: str
  * Creates a new payment record from checkout session data
  */
 export async function createNewPayment(session: any, sessionId: string, paymentIntentId: string, fingerprintId: string, userId: string, campaignId: string) {
-  // Ensure we're storing the correct amount in POUNDS (convert from pence)
-  const amount = session.amount_total ? session.amount_total / 100 : 0;
-  console.log(`Creating payment with amount £${amount} (from original amount_total: ${session.amount_total} pence)`);
+  // Get the amount from metadata if available, otherwise calculate from session amount_total
+  let amount: number;
+  
+  if (session.metadata?.amount_pounds) {
+    // Use the original amount in pounds from metadata (most accurate)
+    amount = Number(session.metadata.amount_pounds);
+    console.log(`Using amount from metadata: £${amount}`);
+  } else if (session.amount_total) {
+    // Convert from pence to pounds
+    amount = session.amount_total / 100;
+    console.log(`Converting session amount_total from pence: ${session.amount_total} to pounds: £${amount}`);
+  } else {
+    // Fallback - should rarely happen
+    amount = 0;
+    console.warn('No amount information available in session');
+  }
+  
+  console.log(`Creating payment with amount £${amount} (stored in pounds)`);
   
   const { data: newPayment, error: insertError } = await supabaseClient
     .from('stripe_payments')
@@ -85,7 +100,7 @@ export async function createNewPayment(session: any, sessionId: string, paymentI
       stripe_session_id: sessionId,
       stripe_payment_intent_id: paymentIntentId,
       status: 'processing',
-      amount: amount, // Correctly handled amount in pounds
+      amount: amount, // Stored in pounds
       stripe_payment_email: session.customer_details?.email || '',
       message: 'Created from webhook data',
       fingerprint_id: fingerprintId,

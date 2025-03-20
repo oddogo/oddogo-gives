@@ -2,7 +2,8 @@
 import { Payment } from "@/types/payment";
 
 export const formatCurrency = (amount: number): string => {
-  return `£${(amount / 100).toFixed(2)}`;
+  // Amount is already stored in pounds in the database
+  return `£${amount.toFixed(2)}`;
 };
 
 export const formatDate = (date: string): string => {

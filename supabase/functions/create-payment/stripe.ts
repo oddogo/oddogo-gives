@@ -35,14 +35,20 @@ export async function createStripeCheckoutSession(
     const fullSuccessUrl = `${successUrl}?${successParams.toString()}`;
     const fullCancelUrl = cancelUrl;
     
+    // Validate the amount
+    const validAmount = Number(amount);
+    if (isNaN(validAmount) || validAmount <= 0) {
+      return { session: null, error: 'Invalid amount' };
+    }
+    
     // Convert amount from pounds to pence (ensure it's an integer)
-    const amountInPence = Math.round(amount * 100);
+    const amountInPence = Math.round(validAmount * 100);
     
     console.log('Payment configuration:');
     console.log('- Success URL:', fullSuccessUrl);
     console.log('- Cancel URL:', fullCancelUrl);
     console.log('- Payment ID:', internalPaymentId);
-    console.log('- Amount (pounds):', amount);
+    console.log('- Amount (pounds):', validAmount);
     console.log('- Amount (pence for Stripe):', amountInPence);
     
     // Create Stripe checkout session with metadata
@@ -71,14 +77,15 @@ export async function createStripeCheckoutSession(
         campaign_id: campaignId || '',
         campaign_slug: campaignSlug || '',
         campaign_title: campaignTitle || '',
-        donor_name: name || ''
+        donor_name: name || '',
+        amount_pounds: validAmount.toString() // Store the original amount in pounds for reference
       }
     });
     
     console.log('Stripe session created:', session.id);
     console.log('Session payment intent:', session.payment_intent);
-    console.log('Session amount (pence):', session.amount_total);
-    console.log('Original amount (pounds):', amount);
+    console.log('Session amount total (pence):', session.amount_total);
+    console.log('Original amount (pounds):', validAmount);
 
     // After creating the session, update our payment record with the payment_intent_id
     if (session.payment_intent) {
@@ -96,7 +103,7 @@ export async function createStripeCheckoutSession(
   }
 }
 
-// New helper function to update payment with session information
+// Helper function to update payment with session information
 async function updatePaymentWithSessionInfo(paymentId: string, session: any) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';

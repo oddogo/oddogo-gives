@@ -86,7 +86,7 @@ export async function updatePaymentSuccess(paymentId: string, paymentIntent: any
     
     await recordPaymentLog(paymentId, 'payment_completed', 'Payment processed successfully', {
       payment_intent_id: paymentIntent.id,
-      amount: paymentIntent.amount / 100 // Convert back to pounds for logging
+      amount: paymentIntent.amount / 100 // Convert to pounds for logging purposes only
     });
     
     return { success: true };
@@ -130,3 +130,4 @@ export async function updatePaymentFailed(paymentId: string, paymentIntent: any,
     throw error;
   }
 }
+

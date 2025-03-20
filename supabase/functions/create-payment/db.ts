@@ -29,17 +29,25 @@ export async function createPaymentRecord(paymentRequest: PaymentRequest) {
       }
     }
     
-    // Create a new payment record with proper field mapping
+    // Validate amount to ensure it's a valid number
+    const amount = Number(paymentRequest.amount);
+    if (isNaN(amount) || amount <= 0) {
+      console.error('Invalid amount:', paymentRequest.amount);
+      return { paymentId: null, error: 'Invalid amount' };
+    }
+    
+    console.log(`Creating payment record with amount £${amount} (stored in pounds)`);
+    
+    // Create a new payment record
     // Important: Store the amount in pounds as received from the client
-    // The conversion to pence happens in the Stripe checkout session creation
     const { data, error } = await supabaseClient
       .from('stripe_payments')
       .insert({
-        amount: paymentRequest.amount, // Store amount in pounds
+        amount: amount, // Store amount in pounds
         stripe_payment_email: paymentRequest.email,
         message: paymentRequest.message || null,
         status: 'pending',
-        campaign_id: paymentRequest.campaignId || null, // Ensure campaign_id is stored correctly
+        campaign_id: paymentRequest.campaignId || null,
         campaign_title: paymentRequest.campaignTitle || null,
         campaign_slug: paymentRequest.campaignSlug || null,
         donor_name: paymentRequest.name || null,
