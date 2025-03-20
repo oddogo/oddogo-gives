@@ -1,7 +1,7 @@
 
 import { Stripe } from "https://esm.sh/stripe@12.5.0?target=deno";
 import { recordPaymentLog } from "../../utils/db.ts";
-import { findPaymentByIntent, findPaymentById, updatePaymentSuccess, updatePaymentFailed } from "./payment-utils.ts";
+import { findPaymentByIntentId, findPaymentById, updatePaymentSuccess, updatePaymentFailed } from "./payment-utils.ts";
 
 // Handler for payment_intent.succeeded events
 export const handlePaymentIntentSucceeded = async (event: Stripe.Event) => {
@@ -23,7 +23,7 @@ export const handlePaymentIntentSucceeded = async (event: Stripe.Event) => {
     console.log(`Processing payment intent succeeded for payment_id: ${paymentId}, intent_id: ${paymentIntentId}`);
     
     // First try to find the payment by payment_intent_id
-    let payment = await findPaymentByIntent(paymentIntentId);
+    let payment = await findPaymentByIntentId(paymentIntentId);
     
     // If not found, try finding by our internal payment_id from metadata
     if (!payment) {
@@ -52,10 +52,10 @@ export const handlePaymentIntentSucceeded = async (event: Stripe.Event) => {
     console.log(`Updating payment record ${payment.id} to completed status`);
     
     // Update the payment record with the final success status
-    const result = await updatePaymentSuccess(payment.id, paymentIntentId, paymentIntent.payment_method as string, chargeId);
+    const result = await updatePaymentSuccess(payment.id, paymentIntent);
     
     if (!result.success) {
-      throw new Error(result.error);
+      throw new Error(result.error || "Unknown error updating payment");
     }
     
     console.log(`Successfully marked payment ${payment.id} as completed`);
@@ -68,10 +68,10 @@ export const handlePaymentIntentSucceeded = async (event: Stripe.Event) => {
   } catch (error) {
     console.error('Error handling payment intent succeeded:', error);
     await recordPaymentLog(paymentId, 'payment_intent_error', 'Error handling payment intent succeeded', {
-      error: error.message,
+      error: error.message || "Unknown error",
       payment_intent_id: paymentIntentId
     });
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || "Unknown error" };
   }
 };
 
@@ -93,7 +93,7 @@ export const handlePaymentIntentFailed = async (event: Stripe.Event) => {
     });
     
     // Find the payment by payment_intent_id or internal payment_id
-    let payment = await findPaymentByIntent(paymentIntentId);
+    let payment = await findPaymentByIntentId(paymentIntentId);
     
     if (!payment) {
       if (paymentId && paymentId !== 'none') {
@@ -119,10 +119,10 @@ export const handlePaymentIntentFailed = async (event: Stripe.Event) => {
     console.log(`Updating payment record ${payment.id} to failed status`);
     
     // Update the payment record to reflect the failure
-    const result = await updatePaymentFailed(payment.id, lastPaymentError);
+    const result = await updatePaymentFailed(payment.id, paymentIntent, lastPaymentError);
     
     if (!result.success) {
-      throw new Error(result.error);
+      throw new Error(result.error || "Unknown error updating payment");
     }
     
     console.log(`Marked payment ${payment.id} as failed`);
@@ -136,9 +136,9 @@ export const handlePaymentIntentFailed = async (event: Stripe.Event) => {
   } catch (error) {
     console.error('Error handling payment intent failed:', error);
     await recordPaymentLog(paymentId, 'payment_failed_error', 'Error handling payment intent failed event', {
-      error: error.message,
+      error: error.message || "Unknown error",
       payment_intent_id: paymentIntentId
     });
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || "Unknown error" };
   }
 };

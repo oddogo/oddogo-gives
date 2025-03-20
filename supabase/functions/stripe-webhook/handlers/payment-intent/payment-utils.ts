@@ -31,6 +31,35 @@ export async function findPaymentByIntentId(paymentIntentId: string) {
 }
 
 /**
+ * Finds a payment record by internal payment ID
+ */
+export async function findPaymentById(paymentId: string) {
+  if (!paymentId) {
+    console.error('Missing payment ID in findPaymentById function');
+    return null;
+  }
+
+  const { data: payment, error } = await supabaseClient
+    .from('stripe_payments')
+    .select('*')
+    .eq('id', paymentId)
+    .maybeSingle();
+    
+  if (error) {
+    console.error(`Error finding payment with ID ${paymentId}:`, error);
+    return null;
+  }
+  
+  if (!payment) {
+    console.log(`No payment found with ID: ${paymentId}`);
+  } else {
+    console.log(`Found payment with ID ${paymentId}`);
+  }
+  
+  return payment;
+}
+
+/**
  * Updates a payment record with successful payment info
  */
 export async function updatePaymentSuccess(paymentId: string, paymentIntent: any) {
