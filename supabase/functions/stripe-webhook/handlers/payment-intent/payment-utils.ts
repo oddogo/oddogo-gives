@@ -5,6 +5,11 @@ import { supabaseClient, recordPaymentLog } from "../../utils/db.ts";
  * Finds a payment record by payment intent ID
  */
 export async function findPaymentByIntentId(paymentIntentId: string) {
+  if (!paymentIntentId) {
+    console.error('Missing payment intent ID in findPaymentByIntentId function');
+    return null;
+  }
+
   const { data: payment, error } = await supabaseClient
     .from('stripe_payments')
     .select('*')
@@ -14,6 +19,12 @@ export async function findPaymentByIntentId(paymentIntentId: string) {
   if (error) {
     console.error(`Error finding payment with payment intent ID ${paymentIntentId}:`, error);
     return null;
+  }
+  
+  if (!payment) {
+    console.log(`No payment found with payment intent ID: ${paymentIntentId}`);
+  } else {
+    console.log(`Found payment with ID ${payment.id} for payment intent ${paymentIntentId}`);
   }
   
   return payment;
