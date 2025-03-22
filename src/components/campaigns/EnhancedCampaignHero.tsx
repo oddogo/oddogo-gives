@@ -29,9 +29,9 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
   };
 
   return (
-    <div className="relative rounded-t-xl overflow-hidden">
-      {/* Teal Navigation Header */}
-      <div className="bg-teal-600 text-white py-3 px-4 sticky top-0 z-30 shadow-md">
+    <div className="relative overflow-hidden">
+      {/* Dark Teal Fixed Navigation Header */}
+      <div className="bg-teal-700 bg-opacity-95 backdrop-blur-sm text-white py-3 px-4 sticky top-0 z-30 shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="w-32">
             <Logo variant="white" />
@@ -41,7 +41,7 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className="flex items-center space-x-1 px-3 py-1 rounded-full hover:bg-teal-500 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1 hover:bg-teal-600 transition-colors"
               >
                 <span className="hidden sm:inline">{item.name}</span>
                 {item.icon}
