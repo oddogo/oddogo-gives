@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
@@ -20,6 +21,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { differenceInDays } from "date-fns";
+import { SupportersTicker } from "./SupportersTicker";
+import { CompactFingerprintList } from "./CompactFingerprintList";
 
 interface EnhancedCampaignDisplayProps {
   userId: string;
@@ -77,6 +80,15 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
     setIsDonationOpen(true);
   };
 
+  // Mock recent supporters for the ticker
+  const recentSupporters = [
+    { name: "Anonymous", amount: 5000, timeAgo: "5 minutes ago", message: "Keep up the great work!" },
+    { name: "Sarah M.", amount: 2500, timeAgo: "20 minutes ago" },
+    { name: "Michael T.", amount: 10000, timeAgo: "1 hour ago", message: "Happy to support this cause" },
+    { name: "Anonymous", amount: 1500, timeAgo: "3 hours ago" },
+    { name: "Jamie W.", amount: 7500, timeAgo: "5 hours ago", message: "This is so important" }
+  ];
+
   return (
     <div className="bg-white min-h-screen">
       {/* Inject ID for the donate section to allow smooth scrolling */}
@@ -94,6 +106,9 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         campaignTitle={campaign.title}
         onSupportClick={handleSupportClick}
       />
+      
+      {/* Recent Supporters Ticker */}
+      <SupportersTicker supporters={recentSupporters} />
       
       {/* Campaign Section - 80% width with two-column layout */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -167,23 +182,12 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
                 <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
                 <div className="p-6">
                   <div className="space-y-6">
-                    {/* Supporters section */}
+                    {/* Charity Fingerprint section - replaced the Supporters section */}
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Recent Supporters</h3>
-                      <div className="space-y-3">
-                        {/* Mock supporters - In a real app, these would come from the database */}
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-semibold">
-                              {String.fromCharCode(65 + i)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Anonymous Supporter</p>
-                              <p className="text-xs text-gray-500">{(donorsCount - i) * 100} minutes ago</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <CompactFingerprintList 
+                        allocations={allocations}
+                        firstName={firstName}
+                      />
                     </div>
                     
                     {/* Campaign organizer */}
