@@ -1,28 +1,12 @@
-
 import React, { useState } from "react";
 import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
-import { EnhancedCampaignStory } from "./EnhancedCampaignStory";
-import { PaymentForm } from "@/components/PaymentForm";
-import { HeartHandshake, Heart, List, Award, History, Mail, Share2 } from "lucide-react";
-import { RegisterInterestForm } from "@/components/RegisterInterestForm";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
-import { AllocationsSection } from "@/components/AllocationsSection";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { differenceInDays } from "date-fns";
 import { SupportersTicker } from "./SupportersTicker";
-import { CompactFingerprintList } from "./CompactFingerprintList";
+import { CampaignLayout } from "./CampaignLayout";
+import { FingerprintSection } from "./FingerprintSection";
+import { RegisterInterestSection } from "./RegisterInterestSection";
+import { HeartHandshake, Heart, List, Award, History } from "lucide-react";
+import { differenceInDays } from "date-fns";
 
 interface EnhancedCampaignDisplayProps {
   userId: string;
@@ -113,98 +97,22 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
       {/* Campaign Section - Full width for consistency with hero section */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div id="campaign" className="w-full mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Main content area - 2/3 width */}
-            <div className="md:col-span-2">
-              <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-                <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
-                <div className="p-8">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">About This Campaign</h2>
-                  </div>
-                  
-                  <EnhancedCampaignStory description={campaign.description} />
-                  
-                  <div className="mt-8 flex justify-center gap-4">
-                    <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
-                        >
-                          <HeartHandshake className="w-5 h-5" />
-                          <span>Support {firstName}</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl font-bold text-center mb-2">
-                            Support {firstName}'s Campaign
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4">
-                          <PaymentForm 
-                            recipientId={userId} 
-                            recipientName={recipientName}
-                          />
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Button 
-                      variant="outline"
-                      className="border-teal-200 text-teal-700 hover:bg-teal-50 font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({
-                            title: `Help Support ${recipientName}`,
-                            text: `Check out ${recipientName}'s fundraising campaign`,
-                            url: window.location.href,
-                          }).catch(err => console.error('Error sharing:', err));
-                        } else {
-                          // Fallback for browsers that don't support navigator.share
-                          navigator.clipboard.writeText(window.location.href)
-                            .then(() => alert('Link copied to clipboard!'))
-                            .catch(err => console.error('Error copying link:', err));
-                        }
-                      }}
-                    >
-                      <Share2 className="w-5 h-5" />
-                      <span>Share Campaign</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Sidebar - 1/3 width */}
-            <div className="md:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-                <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
-                <div className="p-6">
-                  {/* Expanded Fingerprint section */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <CompactFingerprintList 
-                      allocations={allocations}
-                      firstName={firstName}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CampaignLayout 
+            campaign={campaign}
+            userId={userId}
+            recipientName={recipientName}
+            firstName={firstName}
+            allocations={allocations}
+            isDonationOpen={isDonationOpen}
+            setIsDonationOpen={setIsDonationOpen}
+          />
         </div>
         
         {/* Allocations Section - Renamed to "FirstName's Fingerprint" */}
-        <div id="fingerprint" className="mb-16 mt-16">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">{firstName}'s Fingerprint</h2>
-            <p className="text-gray-600 mt-2">See how {firstName}'s donations will be allocated across charities and causes</p>
-          </div>
-          <AllocationsSection 
-            allocations={allocations} 
-            firstName={firstName} 
-          />
-        </div>
+        <FingerprintSection 
+          allocations={allocations}
+          firstName={firstName}
+        />
         
         {/* About Section */}
         <div id="about" className="mb-16">
@@ -217,31 +125,10 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         </div>
         
         {/* Register Interest Section */}
-        <div className="my-16 bg-white shadow-sm overflow-hidden rounded-lg">
-          <Collapsible
-            open={isInterestOpen}
-            onOpenChange={setIsInterestOpen}
-            className="w-full"
-          >
-            <CollapsibleTrigger asChild>
-              <Button 
-                className="w-full flex items-center justify-center gap-2 py-6 bg-teal-700 hover:bg-teal-800"
-              >
-                <Mail className="h-5 w-5" />
-                <span>{isInterestOpen ? "Close Form" : "Register Interest in Oddogo"}</span>
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-6">
-              <div className="max-w-lg mx-auto">
-                <h2 className="text-2xl font-bold mb-4 text-gray-900">Get Early Access</h2>
-                <p className="mb-6 text-gray-600">
-                  Join our waitlist to be one of the first to experience Oddogo when we launch.
-                </p>
-                <RegisterInterestForm initialType="Donor" />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        <RegisterInterestSection
+          isOpen={isInterestOpen}
+          onOpenChange={setIsInterestOpen}
+        />
       </div>
     </div>
   );
