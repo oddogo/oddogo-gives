@@ -4,7 +4,7 @@ import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
 import { EnhancedCampaignStory } from "./EnhancedCampaignStory";
 import { PaymentForm } from "@/components/PaymentForm";
-import { HeartHandshake, Heart, List, Award, History, Mail, Users, Share2 } from "lucide-react";
+import { HeartHandshake, Heart, List, Award, History, Mail, Share2 } from "lucide-react";
 import { RegisterInterestForm } from "@/components/RegisterInterestForm";
 import { 
   Collapsible,
@@ -110,9 +110,9 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
       {/* Recent Supporters Ticker */}
       <SupportersTicker supporters={recentSupporters} />
       
-      {/* Campaign Section - 80% width with two-column layout */}
+      {/* Campaign Section - Full width for consistency with hero section */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div id="campaign" className="w-4/5 mx-auto">
+        <div id="campaign" className="w-full mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Main content area - 2/3 width */}
             <div className="md:col-span-2">
@@ -181,30 +181,12 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                 <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
                 <div className="p-6">
-                  <div className="space-y-6">
-                    {/* Charity Fingerprint section - replaced the Supporters section */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <CompactFingerprintList 
-                        allocations={allocations}
-                        firstName={firstName}
-                      />
-                    </div>
-                    
-                    {/* Campaign organizer */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Campaign Organizer</h3>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-semibold">
-                          {recipientName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium">{recipientName}</p>
-                          <Button variant="link" className="p-0 h-auto text-sm text-teal-600">
-                            Contact
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Expanded Fingerprint section */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <CompactFingerprintList 
+                      allocations={allocations}
+                      firstName={firstName}
+                    />
                   </div>
                 </div>
               </div>

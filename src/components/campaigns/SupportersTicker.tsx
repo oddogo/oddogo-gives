@@ -19,14 +19,14 @@ export const SupportersTicker: React.FC<SupportersTickerProps> = ({ supporters }
   useEffect(() => {
     if (!scrollRef.current) return;
     
-    // Auto-scroll animation
+    // Auto-scroll animation - increased speed from 0.5 to 1.5
     const scrollElement = scrollRef.current;
     let scrollPosition = 0;
     
     const scroll = () => {
       if (!scrollElement) return;
       
-      scrollPosition += 0.5;
+      scrollPosition += 1.5;
       if (scrollPosition >= scrollElement.scrollWidth / 2) {
         scrollPosition = 0;
       }

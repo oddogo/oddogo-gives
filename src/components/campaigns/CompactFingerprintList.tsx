@@ -25,35 +25,29 @@ export const CompactFingerprintList: React.FC<CompactFingerprintListProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2 mb-2">
-        <PieChart size={18} className="text-teal-600" />
-        <h3 className="text-sm font-medium text-gray-700">{firstName}'s Fingerprint</h3>
+        <PieChart size={20} className="text-teal-600" />
+        <h3 className="text-base font-medium text-gray-700">{firstName}'s Fingerprint</h3>
       </div>
       
-      <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
-        {allocations.slice(0, 5).map((allocation, index) => (
+      <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
+        {allocations.map((allocation, index) => (
           <div 
             key={index}
-            className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0"
+            className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
           >
             <div className="flex items-center gap-2">
               {getAllocationIcon(allocation.allocation_type)}
-              <span className="text-xs text-gray-700 truncate max-w-[110px]">
+              <span className="text-sm text-gray-700 truncate max-w-[180px]">
                 {allocation.allocation_name}
               </span>
             </div>
-            <span className="text-xs font-medium text-gray-800">
+            <span className="text-sm font-medium text-gray-800">
               {(allocation.allocation_percentage * 100).toFixed(0)}%
             </span>
           </div>
         ))}
-        
-        {allocations.length > 5 && (
-          <div className="text-xs text-center text-teal-600 pt-1">
-            +{allocations.length - 5} more allocations
-          </div>
-        )}
       </div>
     </div>
   );
