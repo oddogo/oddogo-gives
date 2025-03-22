@@ -2,7 +2,7 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { Heart, Calendar, Users, Share2, PieChart } from "lucide-react";
+import { Heart, Calendar, Users, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -74,21 +74,23 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
       
       {/* Campaign badges moved outside the hero container */}
       <div className="max-w-6xl mx-auto px-4 mb-4 flex justify-between items-center">
-        <div className="bg-teal-50 px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
-          <Heart size={16} className="text-teal-600 fill-teal-600" />
-          <span className="text-sm font-medium text-teal-700">{recipientName.split(' ')[0]}'s Campaign</span>
-        </div>
-        
-        {daysRemaining !== null && (
-          <div className="flex items-center gap-1.5 text-sm bg-gray-100 px-3 py-1 rounded-full">
-            <Calendar size={14} className="text-teal-600" />
-            <span className="font-medium text-gray-700">
-              {daysRemaining > 0 
-                ? `${daysRemaining} days left` 
-                : 'Campaign ended'}
-            </span>
+        <div className="flex items-center space-x-3">
+          <div className="bg-teal-50 px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
+            <Heart size={16} className="text-teal-600 fill-teal-600" />
+            <span className="text-sm font-medium text-teal-700">{recipientName.split(' ')[0]}'s Campaign</span>
           </div>
-        )}
+          
+          {daysRemaining !== null && (
+            <div className="flex items-center gap-1.5 text-sm bg-gray-100 px-3 py-1 rounded-full">
+              <Calendar size={14} className="text-teal-600" />
+              <span className="font-medium text-gray-700">
+                {daysRemaining > 0 
+                  ? `${daysRemaining} days left` 
+                  : 'Campaign ended'}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Hero section with grid layout in a bordered container with teal border */}
@@ -102,7 +104,7 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
                 src={imageUrl || defaultImage}
                 alt="Campaign Hero"
                 className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
-                style={{ minHeight: "300px" }}
+                style={{ minHeight: "100%", height: "100%" }}
               />
             </div>
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 md:hidden"></div>
