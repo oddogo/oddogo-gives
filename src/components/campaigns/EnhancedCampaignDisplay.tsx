@@ -73,13 +73,11 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   // Mock data for demonstration (in a real app, these would come from the backend)
   const donorsCount = Math.floor(totalAmount / 2500) + 1; // Just a mock formula
 
-  // Function to handle donation dialog opening
-  const handleDonationClick = () => {
-    setIsDonationOpen(true);
-  };
-
   return (
     <div className="bg-gray-50 min-h-screen">
+      {/* Inject ID for the donate section to allow smooth scrolling */}
+      <div id="donate-section" className="invisible"></div>
+      
       <EnhancedCampaignHero 
         imageUrl={campaign.image_url}
         recipientName={recipientName}
