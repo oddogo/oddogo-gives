@@ -1,26 +1,21 @@
 
 import React from "react";
-import { Heart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
 interface EnhancedCampaignHeroProps {
-  title: string;
   imageUrl?: string | null;
   recipientName: string;
   navigationItems: Array<{id: string, name: string, icon: React.ReactNode}>;
 }
 
 export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
-  title,
   imageUrl,
   recipientName,
   navigationItems
 }) => {
   const defaultImage = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1600&q=80";
   
-  const firstName = recipientName.split(' ')[0];
-
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -33,7 +28,7 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
       {/* Dark Teal Fixed Navigation Header - Using the same color as ProfileHero */}
       <div className="bg-gradient-to-b from-teal-950 to-teal-900 text-white py-3 px-4 sticky top-0 z-30 shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="w-32">
+          <div className="w-40">
             <Logo />
           </div>
           <div className="flex items-center space-x-4">
@@ -51,23 +46,13 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
         </div>
       </div>
       
-      <div className="h-72 md:h-96 w-full overflow-hidden">
+      <div className="h-56 md:h-72 w-full overflow-hidden">
         <img 
           src={imageUrl || defaultImage}
-          alt={title}
+          alt="Campaign Hero"
           className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/70"></div>
-      </div>
-      
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-white text-center">
-        <div className="flex justify-center items-center gap-2 mb-3">
-          <div className="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/30 flex items-center gap-2">
-            <Heart size={16} className="text-primary fill-primary" />
-            <span className="text-sm font-medium">{firstName}'s Campaign</span>
-          </div>
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold drop-shadow-md">{title}</h1>
       </div>
     </div>
   );

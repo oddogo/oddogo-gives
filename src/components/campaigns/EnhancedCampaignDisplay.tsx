@@ -68,25 +68,37 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   return (
     <div className="bg-gray-50 min-h-screen">
       <EnhancedCampaignHero 
-        title={campaign.title}
         imageUrl={campaign.image_url}
         recipientName={recipientName}
         navigationItems={navigationItems}
       />
       
-      {/* Campaign Section - More distinct with 75% width */}
+      {/* Campaign Title Section - Moved below hero image */}
+      <div className="text-center py-8 bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-center items-center gap-2 mb-3">
+            <div className="bg-teal-50 backdrop-blur-sm px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
+              <Heart size={16} className="text-teal-600 fill-teal-600" />
+              <span className="text-sm font-medium text-teal-700">{firstName}'s Campaign</span>
+            </div>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{campaign.title}</h1>
+        </div>
+      </div>
+      
+      {/* Campaign Section - More distinct with 80% width */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div id="campaign" className="mb-16 w-3/4 mx-auto">
+        <div id="campaign" className="mb-16 w-4/5 mx-auto">
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
             <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
-              {/* Campaign Story - 2/3 width */}
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-8 p-8">
+              {/* Campaign Story - 7/10 width */}
+              <div className="md:col-span-7">
                 <EnhancedCampaignStory description={campaign.description} />
               </div>
               
-              {/* Progress Tracker - 1/3 width */}
-              <div className="md:col-span-1">
+              {/* Progress Tracker - 3/10 width */}
+              <div className="md:col-span-3">
                 <EnhancedCampaignProgress 
                   targetAmount={campaign.target_amount}
                   currentAmount={totalAmount}

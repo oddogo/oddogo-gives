@@ -13,7 +13,7 @@ export const ProfileHeader = ({ profile, userId }: ProfileHeaderProps) => {
   return (
     <div className="flex flex-col items-center mb-12 text-center">
       <div className="mb-8">
-        <Logo className="text-[#008080]" />
+        <Logo />
       </div>
       <div className="mb-4">
         <Avatar uid={userId} size="lg" url={profile?.avatar_url} />

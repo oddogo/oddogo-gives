@@ -2,6 +2,7 @@
 import { Profile } from "@/hooks/usePublicProfile";
 import { Avatar } from "@/components/Avatar";
 import { MapPin, Trophy, Coins, Flag } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 interface ProfileHeroProps {
   profile: Profile;
@@ -15,11 +16,9 @@ export const ProfileHero = ({ profile, userId }: ProfileHeroProps) => {
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
-          <img 
-            src="/lovable-uploads/84d2bfc5-f954-419b-bc27-5208fd6f2676.png"
-            alt="Oddogo Logo"
-            className="h-16 md:h-20 mb-12"
-          />
+          <div className="h-20 mb-12">
+            <Logo />
+          </div>
           
           <div className="mb-6">
             <Avatar uid={userId} size="lg" url={profile?.avatar_url} />
