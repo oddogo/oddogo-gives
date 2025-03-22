@@ -9,7 +9,7 @@ interface LogoProps {
 export const Logo: React.FC<LogoProps> = ({ className, variant = 'default' }) => {
   return (
     <img 
-      src="/lovable-uploads/0358e0d1-787b-4c48-aeb4-d23c507732e3.png"
+      src="/lovable-uploads/b7702484-a438-4044-b5ef-cc6fbc31513f.png"
       alt="Oddogo Logo"
       className={`h-12 ${className || ''}`}
     />

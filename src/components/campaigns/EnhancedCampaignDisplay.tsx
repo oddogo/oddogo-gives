@@ -2,10 +2,9 @@
 import React, { useState } from "react";
 import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
-import { EnhancedCampaignProgress } from "./EnhancedCampaignProgress";
 import { EnhancedCampaignStory } from "./EnhancedCampaignStory";
 import { PaymentForm } from "@/components/PaymentForm";
-import { HeartHandshake, Heart, List, Award, History, Mail } from "lucide-react";
+import { HeartHandshake, Heart, List, Award, History, Mail, Users } from "lucide-react";
 import { RegisterInterestForm } from "@/components/RegisterInterestForm";
 import { 
   Collapsible,
@@ -21,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { differenceInDays } from "date-fns";
 
 interface EnhancedCampaignDisplayProps {
   userId: string;
@@ -64,6 +64,14 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   const percentage = campaign.target_amount > 0 
     ? Math.min(Math.round((totalAmount / campaign.target_amount) * 100), 100) 
     : 0;
+    
+  // Calculate days remaining if end date exists
+  const daysRemaining = campaign.end_date 
+    ? Math.max(0, differenceInDays(new Date(campaign.end_date), new Date())) 
+    : null;
+  
+  // Mock data for demonstration (in a real app, these would come from the backend)
+  const donorsCount = Math.floor(totalAmount / 2500) + 1; // Just a mock formula
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -71,45 +79,40 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         imageUrl={campaign.image_url}
         recipientName={recipientName}
         navigationItems={navigationItems}
+        targetAmount={campaign.target_amount}
+        currentAmount={totalAmount}
+        percentage={percentage}
+        daysRemaining={daysRemaining}
+        donorsCount={donorsCount}
       />
       
-      {/* Campaign Title Section - Moved below hero image */}
-      <div className="text-center py-8 bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-center items-center gap-2 mb-3">
-            <div className="bg-teal-50 backdrop-blur-sm px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
-              <Heart size={16} className="text-teal-600 fill-teal-600" />
-              <span className="text-sm font-medium text-teal-700">{firstName}'s Campaign</span>
-            </div>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{campaign.title}</h1>
-        </div>
-      </div>
-      
-      {/* Campaign Section - More distinct with 80% width */}
+      {/* Campaign Section - 80% width */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div id="campaign" className="mb-16 w-4/5 mx-auto">
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
             <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
-            <div className="grid grid-cols-1 md:grid-cols-10 gap-8 p-8">
-              {/* Campaign Story - 7/10 width */}
-              <div className="md:col-span-7">
-                <EnhancedCampaignStory description={campaign.description} />
+            <div className="p-8">
+              <div className="mb-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">About This Campaign</h2>
+                  <div className="bg-gray-100 rounded-full px-4 py-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-1.5">
+                      <Users size={16} className="text-teal-600" />
+                      <span>
+                        {donorsCount} {donorsCount === 1 ? 'supporter' : 'supporters'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              {/* Progress Tracker - 3/10 width */}
-              <div className="md:col-span-3">
-                <EnhancedCampaignProgress 
-                  targetAmount={campaign.target_amount}
-                  currentAmount={totalAmount}
-                  percentage={percentage}
-                  endDate={campaign.end_date}
-                />
-                
+              <EnhancedCampaignStory description={campaign.description} />
+              
+              <div className="mt-8 flex justify-center">
                 <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
                   <DialogTrigger asChild>
                     <Button 
-                      className="w-full mt-6 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
+                      className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
                     >
                       <HeartHandshake className="w-5 h-5" />
                       <span>Support {firstName}</span>
