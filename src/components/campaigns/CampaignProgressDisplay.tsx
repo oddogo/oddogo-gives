@@ -8,13 +8,15 @@ interface CampaignProgressDisplayProps {
   percentage: number;
   donorsCount: number;
   recipientName: string;
+  onSupportClick?: () => void;
 }
 
 export const CampaignProgressDisplay: React.FC<CampaignProgressDisplayProps> = ({
   currentAmount,
   percentage,
   donorsCount,
-  recipientName
+  recipientName,
+  onSupportClick
 }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -30,7 +32,7 @@ export const CampaignProgressDisplay: React.FC<CampaignProgressDisplayProps> = (
       <div className="space-y-6">
         {/* Progress chart - increased size */}
         <div className="relative flex justify-center items-center">
-          <div className="relative w-36 h-36">
+          <div className="relative w-40 h-40">
             <svg className="w-full h-full animate-[spin_3s_linear_infinite]" viewBox="0 0 100 100">
               {/* Background circle */}
               <circle
@@ -71,16 +73,10 @@ export const CampaignProgressDisplay: React.FC<CampaignProgressDisplayProps> = (
           </p>
         </div>
         
-        {/* Support button - ensure it works with the correct ID */}
+        {/* Support button - now uses the onSupportClick prop */}
         <Button 
           className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white py-3 shadow-md"
-          onClick={() => {
-            // Fix the donate section ID targeting
-            const element = document.getElementById("donate-section");
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
+          onClick={onSupportClick}
         >
           Support {recipientName.split(' ')[0]}
         </Button>

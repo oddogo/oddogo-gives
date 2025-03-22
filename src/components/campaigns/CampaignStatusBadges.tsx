@@ -12,7 +12,7 @@ export const CampaignStatusBadges: React.FC<CampaignStatusBadgesProps> = ({
   daysRemaining
 }) => {
   return (
-    <div className="px-4 flex justify-center md:justify-start items-center gap-4">
+    <div className="px-4 flex justify-center items-center gap-4">
       <div className="bg-teal-50 px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
         <Heart size={16} className="text-teal-600 fill-teal-600" />
         <span className="text-sm font-medium text-teal-700">{recipientName.split(' ')[0]}'s Campaign</span>

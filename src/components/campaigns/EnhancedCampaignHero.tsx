@@ -15,6 +15,7 @@ interface EnhancedCampaignHeroProps {
   daysRemaining?: number | null;
   donorsCount?: number;
   campaignTitle?: string;
+  onSupportClick?: () => void;
 }
 
 export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
@@ -26,7 +27,8 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
   percentage = 0,
   daysRemaining = null,
   donorsCount = 0,
-  campaignTitle
+  campaignTitle,
+  onSupportClick
 }) => {
   return (
     <div className="relative overflow-hidden">
@@ -49,19 +51,20 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
             percentage={percentage}
             donorsCount={donorsCount}
             recipientName={recipientName}
+            onSupportClick={onSupportClick}
           />
         </div>
       </div>
       
-      {/* Campaign Status Badges - Moved below hero image but above title */}
-      <div className="max-w-6xl mx-auto mt-5 mb-2">
+      {/* Campaign Status Badges - Centered alignment */}
+      <div className="max-w-6xl mx-auto mt-5 mb-2 text-center">
         <CampaignStatusBadges
           recipientName={recipientName}
           daysRemaining={daysRemaining}
         />
       </div>
       
-      {/* Campaign Title Section - Moved below hero image */}
+      {/* Campaign Title Section - Use the campaign title instead of "Help Support" */}
       <div className="text-center py-4 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">

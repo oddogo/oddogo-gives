@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
@@ -73,8 +72,13 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   // Mock data for demonstration (in a real app, these would come from the backend)
   const donorsCount = Math.floor(totalAmount / 2500) + 1; // Just a mock formula
 
+  // Handler to open the donation dialog
+  const handleSupportClick = () => {
+    setIsDonationOpen(true);
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-white min-h-screen">
       {/* Inject ID for the donate section to allow smooth scrolling */}
       <div id="donate-section" className="invisible"></div>
       
@@ -87,6 +91,8 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         percentage={percentage}
         daysRemaining={daysRemaining}
         donorsCount={donorsCount}
+        campaignTitle={campaign.title}
+        onSupportClick={handleSupportClick}
       />
       
       {/* Campaign Section - 80% width with two-column layout */}
