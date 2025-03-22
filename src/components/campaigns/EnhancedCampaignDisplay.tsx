@@ -5,7 +5,7 @@ import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
 import { EnhancedCampaignProgress } from "./EnhancedCampaignProgress";
 import { EnhancedCampaignStory } from "./EnhancedCampaignStory";
 import { PaymentForm } from "@/components/PaymentForm";
-import { HandHeart } from "lucide-react";
+import { HeartHandshake } from "lucide-react";
 
 interface EnhancedCampaignDisplayProps {
   userId: string;
@@ -22,6 +22,7 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   if (loading) {
     return (
       <div className="text-center px-4 sm:px-0 animate-pulse">
+        <div className="h-64 bg-gray-200 rounded-t-xl mb-4"></div>
         <div className="h-6 w-40 bg-gray-200 rounded-full mb-4 mx-auto"></div>
         <div className="h-8 w-3/4 bg-gray-200 rounded mb-4 mx-auto"></div>
         <div className="h-4 w-full bg-gray-200 rounded mb-2 mx-auto"></div>
@@ -39,14 +40,14 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
     : 0;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="bg-gray-50 rounded-xl overflow-hidden shadow-lg">
       <EnhancedCampaignHero 
         title={campaign.title}
         imageUrl={campaign.image_url}
         recipientName={recipientName}
       />
       
-      <div className="px-6 py-8">
+      <div className="px-4 py-6 sm:px-6 md:px-8">
         <EnhancedCampaignProgress 
           targetAmount={campaign.target_amount}
           currentAmount={totalAmount}
@@ -56,17 +57,17 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         
         <EnhancedCampaignStory description={campaign.description} />
         
-        <div className="mt-10 bg-gray-50 p-6 rounded-lg">
+        <div className="mt-8 bg-gradient-to-br from-pastel-blue/50 to-pastel-purple/30 p-6 rounded-xl shadow-sm border border-pastel-purple/20">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 text-primary mb-2">
-              <HandHeart className="w-5 h-5" />
-              <span className="font-medium">Support {firstName}'s Campaign</span>
+            <div className="inline-flex items-center justify-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full mb-3">
+              <HeartHandshake className="w-5 h-5" />
+              <span className="font-medium">Support {firstName}</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">
+            <h3 className="text-2xl font-bold text-gray-900">
               Donate Today
             </h3>
-            <p className="mt-2 text-gray-600">
-              Your generous donation will help reach the target of £{(campaign.target_amount / 100).toLocaleString()}
+            <p className="mt-2 text-gray-600 max-w-lg mx-auto">
+              Your contribution will help reach the goal of £{(campaign.target_amount / 100).toLocaleString()} and make a real difference
             </p>
           </div>
           
