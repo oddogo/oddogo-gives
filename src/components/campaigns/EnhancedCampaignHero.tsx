@@ -14,6 +14,7 @@ interface EnhancedCampaignHeroProps {
   percentage?: number;
   daysRemaining?: number | null;
   donorsCount?: number;
+  campaignTitle?: string;
 }
 
 export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
@@ -24,7 +25,8 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
   currentAmount = 0,
   percentage = 0,
   daysRemaining = null,
-  donorsCount = 0
+  donorsCount = 0,
+  campaignTitle
 }) => {
   return (
     <div className="relative overflow-hidden">
@@ -34,14 +36,8 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
       {/* Added spacing below navigation */}
       <div className="pt-6"></div>
       
-      {/* Campaign Status Badges */}
-      <CampaignStatusBadges
-        recipientName={recipientName}
-        daysRemaining={daysRemaining}
-      />
-      
       {/* Hero section with grid layout in a bordered container with teal border */}
-      <div className="relative bg-white max-w-6xl mx-auto rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="relative bg-white max-w-6xl mx-auto rounded-lg border border-gray-200 shadow-sm overflow-hidden" id="donate-section">
         <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Hero Image - 2/3 width on desktop, full height */}
@@ -57,10 +53,20 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
         </div>
       </div>
       
+      {/* Campaign Status Badges - Moved below hero image but above title */}
+      <div className="max-w-6xl mx-auto mt-5 mb-2">
+        <CampaignStatusBadges
+          recipientName={recipientName}
+          daysRemaining={daysRemaining}
+        />
+      </div>
+      
       {/* Campaign Title Section - Moved below hero image */}
-      <div className="text-center py-8 bg-white">
+      <div className="text-center py-4 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Help Support {recipientName}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+            {campaignTitle || `Help Support ${recipientName}`}
+          </h1>
         </div>
       </div>
     </div>

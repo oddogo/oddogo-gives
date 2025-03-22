@@ -27,10 +27,10 @@ export const CampaignProgressDisplay: React.FC<CampaignProgressDisplayProps> = (
 
   return (
     <div className="md:col-span-1 flex flex-col justify-center p-6 bg-gray-50 shadow-inner">
-      <div className="space-y-5">
-        {/* Progress chart */}
+      <div className="space-y-6">
+        {/* Progress chart - increased size */}
         <div className="relative flex justify-center items-center">
-          <div className="relative w-28 h-28">
+          <div className="relative w-36 h-36">
             <svg className="w-full h-full animate-[spin_3s_linear_infinite]" viewBox="0 0 100 100">
               {/* Background circle */}
               <circle
@@ -57,24 +57,25 @@ export const CampaignProgressDisplay: React.FC<CampaignProgressDisplayProps> = (
               ></circle>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold text-teal-700">{percentage}%</span>
+              <span className="text-3xl font-bold text-teal-700">{percentage}%</span>
             </div>
           </div>
         </div>
         
-        {/* Amount raised and supporters count */}
+        {/* Amount raised and supporters count - larger text */}
         <div className="text-center space-y-2">
-          <p className="text-xl font-bold text-gray-900">{formatCurrency(currentAmount)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentAmount)}</p>
           <p className="text-sm text-gray-600 flex items-center justify-center gap-1.5">
-            <Users size={14} />
+            <Users size={16} />
             <span>{donorsCount} {donorsCount === 1 ? 'Supporter' : 'Supporters'}</span>
           </p>
         </div>
         
-        {/* Support button */}
+        {/* Support button - ensure it works with the correct ID */}
         <Button 
           className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white py-3 shadow-md"
           onClick={() => {
+            // Fix the donate section ID targeting
             const element = document.getElementById("donate-section");
             if (element) {
               element.scrollIntoView({ behavior: "smooth" });
