@@ -1,7 +1,8 @@
 
 import React from "react";
 import { differenceInDays, format } from "date-fns";
-import { Users, Calendar, Clock, Target } from "lucide-react";
+import { Users, Calendar } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface EnhancedCampaignProgressProps {
   targetAmount: number;
@@ -24,72 +25,57 @@ export const EnhancedCampaignProgress: React.FC<EnhancedCampaignProgressProps> =
   // Mock data for demonstration (in a real app, these would come from the backend)
   const donorsCount = Math.floor(currentAmount / 2500) + 1; // Just a mock formula
 
-  const getProgressColor = (percent: number) => {
-    if (percent >= 100) return 'bg-green-500';
-    if (percent >= 75) return 'bg-emerald-500';
-    if (percent >= 50) return 'bg-teal-500';
-    if (percent >= 25) return 'bg-cyan-500';
-    return 'bg-blue-500';
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount / 100);
   };
 
   return (
-    <div className="mb-8 bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-4">
-        <div className="space-y-1">
-          <p className="text-gray-500 text-sm font-medium">Raised so far</p>
-          <div className="flex items-baseline">
-            <span className="text-3xl font-bold text-gray-900">£{(currentAmount / 100).toLocaleString()}</span>
-            <span className="text-gray-500 ml-2 text-sm">of £{(targetAmount / 100).toLocaleString()} target</span>
-          </div>
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">Campaign Progress</h3>
+      
+      {/* Progress indicator */}
+      <div className="text-center mb-6">
+        <div className="inline-flex items-baseline">
+          <span className="text-3xl font-bold text-teal-700">{formatCurrency(currentAmount)}</span>
+          <span className="text-gray-500 ml-2">of {formatCurrency(targetAmount)}</span>
         </div>
-        <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-          <Target className="w-5 h-5 text-primary mr-2" />
-          <span className="text-lg font-semibold">{percentage}% Complete</span>
+        <div className="mt-2">
+          <Progress value={percentage} className="h-2.5 bg-gray-100" />
         </div>
+        <p className="mt-2 text-teal-700 font-semibold">{percentage}% Complete</p>
       </div>
       
-      {/* Progress bar */}
-      <div className="h-4 bg-gray-100 rounded-full mt-2 mb-6 overflow-hidden">
-        <div 
-          className={`h-full ${getProgressColor(percentage)} rounded-full transition-all duration-1000 ease-in-out`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-      
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="bg-gray-50 rounded-lg p-3 flex items-center">
-          <Users size={20} className="text-primary mr-3" />
-          <div>
-            <p className="text-xs text-gray-500 uppercase font-medium">Supporters</p>
-            <p className="font-semibold">{donorsCount} donor{donorsCount !== 1 ? 's' : ''}</p>
+      {/* Stats cards in a cleaner layout */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
+          <p className="text-sm text-gray-500 uppercase font-medium mb-1">Supporters</p>
+          <div className="flex items-center justify-center gap-2">
+            <Users size={18} className="text-teal-600" />
+            <p className="text-lg font-semibold text-gray-900">{donorsCount}</p>
           </div>
         </div>
-        
-        {daysRemaining !== null && (
-          <div className="bg-gray-50 rounded-lg p-3 flex items-center">
-            <Clock size={20} className="text-primary mr-3" />
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-medium">Time Left</p>
-              <p className="font-semibold">
-                {daysRemaining > 0 
-                  ? `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}` 
-                  : 'Campaign ended'}
-              </p>
-            </div>
-          </div>
-        )}
         
         {endDate && (
-          <div className="bg-gray-50 rounded-lg p-3 flex items-center">
-            <Calendar size={20} className="text-primary mr-3" />
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-medium">End Date</p>
-              <p className="font-semibold">{format(new Date(endDate), 'MMM d, yyyy')}</p>
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <p className="text-sm text-gray-500 uppercase font-medium mb-1">
+              {daysRemaining && daysRemaining > 0 ? 'Ends In' : 'Ended On'}
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Calendar size={18} className="text-teal-600" />
+              <p className="text-lg font-semibold text-gray-900">
+                {daysRemaining && daysRemaining > 0 
+                  ? `${daysRemaining} days` 
+                  : format(new Date(endDate), 'MMM d')}
+              </p>
             </div>
           </div>
         )}
       </div>
     </div>
   );
-};
+}

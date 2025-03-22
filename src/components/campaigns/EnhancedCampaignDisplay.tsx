@@ -40,7 +40,7 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
 
   const navigationItems = [
     { name: "Campaign", icon: <Award className="w-4 h-4" />, id: "campaign" },
-    { name: "Fingerprint", icon: <List className="w-4 h-4" />, id: "fingerprint" },
+    { name: `${firstName}'s Fingerprint`, icon: <List className="w-4 h-4" />, id: "fingerprint" },
     { name: "About", icon: <Heart className="w-4 h-4" />, id: "about" },
     { name: "Donation History", icon: <History className="w-4 h-4" />, id: "payment-history" }
   ];
@@ -74,53 +74,60 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         navigationItems={navigationItems}
       />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Campaign Section */}
-        <div id="campaign" className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Campaign Story - 2/3 width */}
-            <div className="md:col-span-2">
-              <EnhancedCampaignStory description={campaign.description} />
-            </div>
-            
-            {/* Progress Tracker - 1/3 width */}
-            <div className="md:col-span-1">
-              <EnhancedCampaignProgress 
-                targetAmount={campaign.target_amount}
-                currentAmount={totalAmount}
-                percentage={percentage}
-                endDate={campaign.end_date}
-              />
+      {/* Campaign Section - More distinct with 75% width */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div id="campaign" className="mb-16 w-3/4 mx-auto">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+            <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+              {/* Campaign Story - 2/3 width */}
+              <div className="md:col-span-2">
+                <EnhancedCampaignStory description={campaign.description} />
+              </div>
               
-              <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="w-full mt-4 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
-                  >
-                    <HeartHandshake className="w-5 h-5" />
-                    <span>Support {firstName}</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-center mb-2">
-                      Support {firstName}'s Campaign
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <PaymentForm 
-                      recipientId={userId} 
-                      recipientName={recipientName}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {/* Progress Tracker - 1/3 width */}
+              <div className="md:col-span-1">
+                <EnhancedCampaignProgress 
+                  targetAmount={campaign.target_amount}
+                  currentAmount={totalAmount}
+                  percentage={percentage}
+                  endDate={campaign.end_date}
+                />
+                
+                <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="w-full mt-6 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
+                    >
+                      <HeartHandshake className="w-5 h-5" />
+                      <span>Support {firstName}</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-bold text-center mb-2">
+                        Support {firstName}'s Campaign
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <PaymentForm 
+                        recipientId={userId} 
+                        recipientName={recipientName}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>
         
-        {/* Allocations Section (Fingerprint) */}
-        <div id="fingerprint" className="mb-12">
+        {/* Allocations Section - Renamed to "FirstName's Fingerprint" */}
+        <div id="fingerprint" className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">{firstName}'s Fingerprint</h2>
+            <p className="text-gray-600 mt-2">See how {firstName}'s donations will be allocated across charities and causes</p>
+          </div>
           <AllocationsSection 
             allocations={allocations} 
             firstName={firstName} 
@@ -128,17 +135,17 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         </div>
         
         {/* About Section */}
-        <div id="about" className="mb-12">
+        <div id="about" className="mb-16">
           {/* This section's content would come from the profile information */}
         </div>
         
         {/* Payment History */}
-        <div id="payment-history" className="mb-12">
+        <div id="payment-history" className="mb-16">
           {/* This section's content would come from PaymentHistory component */}
         </div>
         
         {/* Register Interest Section */}
-        <div className="my-16 bg-white shadow-sm overflow-hidden">
+        <div className="my-16 bg-white shadow-sm overflow-hidden rounded-lg">
           <Collapsible
             open={isInterestOpen}
             onOpenChange={setIsInterestOpen}
@@ -146,7 +153,7 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
           >
             <CollapsibleTrigger asChild>
               <Button 
-                className="w-full flex items-center justify-center gap-2 py-6 rounded-none bg-teal-700 hover:bg-teal-800"
+                className="w-full flex items-center justify-center gap-2 py-6 bg-teal-700 hover:bg-teal-800"
               >
                 <Mail className="h-5 w-5" />
                 <span>{isInterestOpen ? "Close Form" : "Register Interest in Oddogo"}</span>

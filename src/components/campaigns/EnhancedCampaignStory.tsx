@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface EnhancedCampaignStoryProps {
   description?: string | null;
@@ -20,11 +20,8 @@ export const EnhancedCampaignStory: React.FC<EnhancedCampaignStoryProps> = ({
     : description.substring(0, MAX_LENGTH) + '...';
 
   return (
-    <div className="mb-8 bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <FileText size={20} className="text-primary" />
-        <h2 className="text-xl font-bold text-gray-900">Campaign Story</h2>
-      </div>
+    <div>
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">About This Campaign</h3>
       
       <div className="prose prose-sm max-w-none">
         <p className="whitespace-pre-line text-gray-700 leading-relaxed">
@@ -34,7 +31,7 @@ export const EnhancedCampaignStory: React.FC<EnhancedCampaignStoryProps> = ({
         {isTooLong && (
           <button 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="mt-4 flex items-center gap-2 text-primary font-medium hover:underline focus:outline-none transition-colors duration-200 group"
+            className="mt-4 flex items-center gap-2 text-teal-600 font-medium hover:underline focus:outline-none transition-colors duration-200 group"
           >
             {isExpanded ? (
               <>

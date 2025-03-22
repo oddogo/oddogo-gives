@@ -30,18 +30,18 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
 
   return (
     <div className="relative overflow-hidden">
-      {/* Dark Teal Fixed Navigation Header */}
-      <div className="bg-teal-700 bg-opacity-95 backdrop-blur-sm text-white py-3 px-4 sticky top-0 z-30 shadow-md">
+      {/* Dark Teal Fixed Navigation Header - Using the same color as ProfileHero */}
+      <div className="bg-gradient-to-b from-teal-950 to-teal-900 text-white py-3 px-4 sticky top-0 z-30 shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="w-32">
-            <Logo variant="white" />
+            <Logo />
           </div>
           <div className="flex items-center space-x-4">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className="flex items-center space-x-1 px-3 py-1 hover:bg-teal-600 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1 hover:bg-teal-800 transition-colors"
               >
                 <span className="hidden sm:inline">{item.name}</span>
                 {item.icon}
@@ -60,8 +60,8 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/70"></div>
       </div>
       
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="absolute bottom-0 left-0 right-0 p-6 text-white text-center">
+        <div className="flex justify-center items-center gap-2 mb-3">
           <div className="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/30 flex items-center gap-2">
             <Heart size={16} className="text-primary fill-primary" />
             <span className="text-sm font-medium">{firstName}'s Campaign</span>
