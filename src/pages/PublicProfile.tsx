@@ -4,6 +4,7 @@ import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
 import { AllocationsSection } from "@/components/AllocationsSection";
 import { ActiveCampaignDisplay } from "@/components/ActiveCampaignDisplay";
+import { EnhancedCampaignDisplay } from "@/components/campaigns/EnhancedCampaignDisplay";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -30,6 +31,7 @@ const PublicProfile = () => {
 
   const hidePaymentForm = user?.id === id;
   const firstName = profile.display_name.split(' ')[0];
+  const displayStyle = profile.campaign_display_style || 'classic';
 
   return (
     <div className="min-h-screen bg-white">
@@ -46,10 +48,21 @@ const PublicProfile = () => {
         )}
       </div>
 
-      {/* Display active campaign if available */}
-      <ActiveCampaignDisplay userId={id || ''} />
+      {/* Display campaign based on user preference */}
+      {displayStyle === 'enhanced' ? (
+        <div id="campaign" className="w-full py-12 bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <EnhancedCampaignDisplay 
+              userId={id || ''} 
+              recipientName={profile.display_name}
+            />
+          </div>
+        </div>
+      ) : (
+        <ActiveCampaignDisplay userId={id || ''} />
+      )}
 
-      {!hidePaymentForm && (
+      {!hidePaymentForm && displayStyle !== 'enhanced' && (
         <div id="donate-section" className="w-full py-16 bg-gradient-to-b from-white to-gray-50">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">

@@ -10,6 +10,7 @@ export interface Profile {
   location?: string;
   avatar_url?: string;
   causes_description?: string;
+  campaign_display_style?: string;
 }
 
 export function usePublicProfile(id: string | undefined) {
@@ -82,4 +83,3 @@ export function usePublicProfile(id: string | undefined) {
 
   return { profile, allocations, loading };
 }
-

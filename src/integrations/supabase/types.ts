@@ -1359,6 +1359,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          campaign_display_style: string
           causes_description: string | null
           created_at: string
           display_name: string | null
@@ -1369,6 +1370,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          campaign_display_style?: string
           causes_description?: string | null
           created_at?: string
           display_name?: string | null
@@ -1379,6 +1381,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          campaign_display_style?: string
           causes_description?: string | null
           created_at?: string
           display_name?: string | null

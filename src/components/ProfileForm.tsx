@@ -18,7 +18,8 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
     bio: "",
     causes_description: "",
     is_published: false,
-    avatar_url: ""
+    avatar_url: "",
+    campaign_display_style: "classic"
   });
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -51,7 +52,8 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
           bio: data.bio || "",
           causes_description: data.causes_description || "",
           is_published: data.is_published || false,
-          avatar_url: data.avatar_url || ""
+          avatar_url: data.avatar_url || "",
+          campaign_display_style: data.campaign_display_style || "classic"
         });
       }
     } catch (error: any) {
@@ -79,7 +81,8 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
           bio: profile.bio,
           causes_description: profile.causes_description,
           is_published: profile.is_published,
-          avatar_url: profile.avatar_url
+          avatar_url: profile.avatar_url,
+          campaign_display_style: profile.campaign_display_style
         })
         .eq('id', user.id);
 
@@ -164,6 +167,46 @@ export const ProfileForm = ({ onSuccess }: ProfileFormProps) => {
         {profile.is_published && userId && (
           <ShareProfile userId={userId} />
         )}
+      </div>
+
+      <div className="border-t border-gray-700 pt-6 mt-6">
+        <h3 className="text-lg font-medium text-white mb-4">Campaign Display Preferences</h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="display-classic"
+                name="campaign_display_style"
+                type="radio"
+                checked={profile.campaign_display_style === "classic"}
+                onChange={() => setProfile({ ...profile, campaign_display_style: "classic" })}
+                className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="display-classic" className="font-medium text-white">Classic Display</label>
+              <p className="text-gray-400">Simple layout for displaying your active campaigns</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="display-enhanced"
+                name="campaign_display_style"
+                type="radio"
+                checked={profile.campaign_display_style === "enhanced"}
+                onChange={() => setProfile({ ...profile, campaign_display_style: "enhanced" })}
+                className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="display-enhanced" className="font-medium text-white">Enhanced Display</label>
+              <p className="text-gray-400">JustGiving-style campaign display with hero image and progress visualization</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Button type="submit" disabled={loading}>
