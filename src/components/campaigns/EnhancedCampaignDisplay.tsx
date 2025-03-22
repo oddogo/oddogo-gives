@@ -4,7 +4,7 @@ import { useCampaignData } from "@/hooks/useCampaignData";
 import { EnhancedCampaignHero } from "./EnhancedCampaignHero";
 import { EnhancedCampaignStory } from "./EnhancedCampaignStory";
 import { PaymentForm } from "@/components/PaymentForm";
-import { HeartHandshake, Heart, List, Award, History, Mail, Users } from "lucide-react";
+import { HeartHandshake, Heart, List, Award, History, Mail, Users, Share2 } from "lucide-react";
 import { RegisterInterestForm } from "@/components/RegisterInterestForm";
 import { 
   Collapsible,
@@ -73,6 +73,11 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
   // Mock data for demonstration (in a real app, these would come from the backend)
   const donorsCount = Math.floor(totalAmount / 2500) + 1; // Just a mock formula
 
+  // Function to handle donation dialog opening
+  const handleDonationClick = () => {
+    setIsDonationOpen(true);
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <EnhancedCampaignHero 
@@ -86,59 +91,121 @@ export const EnhancedCampaignDisplay: React.FC<EnhancedCampaignDisplayProps> = (
         donorsCount={donorsCount}
       />
       
-      {/* Campaign Section - 80% width */}
+      {/* Campaign Section - 80% width with two-column layout */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div id="campaign" className="mb-16 w-4/5 mx-auto">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-            <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
-            <div className="p-8">
-              <div className="mb-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-gray-900">About This Campaign</h2>
-                  <div className="bg-gray-100 rounded-full px-4 py-1 text-sm text-gray-600">
-                    <div className="flex items-center gap-1.5">
-                      <Users size={16} className="text-teal-600" />
-                      <span>
-                        {donorsCount} {donorsCount === 1 ? 'supporter' : 'supporters'}
-                      </span>
-                    </div>
+        <div id="campaign" className="w-4/5 mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Main content area - 2/3 width */}
+            <div className="md:col-span-2">
+              <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
+                <div className="p-8">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">About This Campaign</h2>
+                  </div>
+                  
+                  <EnhancedCampaignStory description={campaign.description} />
+                  
+                  <div className="mt-8 flex justify-center gap-4">
+                    <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
+                        >
+                          <HeartHandshake className="w-5 h-5" />
+                          <span>Support {firstName}</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl font-bold text-center mb-2">
+                            Support {firstName}'s Campaign
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <PaymentForm 
+                            recipientId={userId} 
+                            recipientName={recipientName}
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Button 
+                      variant="outline"
+                      className="border-teal-200 text-teal-700 hover:bg-teal-50 font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `Help Support ${recipientName}`,
+                            text: `Check out ${recipientName}'s fundraising campaign`,
+                            url: window.location.href,
+                          }).catch(err => console.error('Error sharing:', err));
+                        } else {
+                          // Fallback for browsers that don't support navigator.share
+                          navigator.clipboard.writeText(window.location.href)
+                            .then(() => alert('Link copied to clipboard!'))
+                            .catch(err => console.error('Error copying link:', err));
+                        }
+                      }}
+                    >
+                      <Share2 className="w-5 h-5" />
+                      <span>Share Campaign</span>
+                    </Button>
                   </div>
                 </div>
               </div>
-              
-              <EnhancedCampaignStory description={campaign.description} />
-              
-              <div className="mt-8 flex justify-center">
-                <Dialog open={isDonationOpen} onOpenChange={setIsDonationOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2"
-                    >
-                      <HeartHandshake className="w-5 h-5" />
-                      <span>Support {firstName}</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-bold text-center mb-2">
-                        Support {firstName}'s Campaign
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <PaymentForm 
-                        recipientId={userId} 
-                        recipientName={recipientName}
-                      />
+            </div>
+            
+            {/* Sidebar - 1/3 width */}
+            <div className="md:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
+                <div className="p-1 bg-gradient-to-r from-teal-500 to-teal-700"></div>
+                <div className="p-6">
+                  <div className="space-y-6">
+                    {/* Supporters section */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Recent Supporters</h3>
+                      <div className="space-y-3">
+                        {/* Mock supporters - In a real app, these would come from the database */}
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-semibold">
+                              {String.fromCharCode(65 + i)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Anonymous Supporter</p>
+                              <p className="text-xs text-gray-500">{(donorsCount - i) * 100} minutes ago</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
+                    
+                    {/* Campaign organizer */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Campaign Organizer</h3>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-semibold">
+                          {recipientName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium">{recipientName}</p>
+                          <Button variant="link" className="p-0 h-auto text-sm text-teal-600">
+                            Contact
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
         {/* Allocations Section - Renamed to "FirstName's Fingerprint" */}
-        <div id="fingerprint" className="mb-16">
+        <div id="fingerprint" className="mb-16 mt-16">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">{firstName}'s Fingerprint</h2>
             <p className="text-gray-600 mt-2">See how {firstName}'s donations will be allocated across charities and causes</p>

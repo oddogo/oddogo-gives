@@ -2,9 +2,10 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { Heart, Calendar, Users } from "lucide-react";
+import { Heart, Calendar, Users, Share2, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 interface EnhancedCampaignHeroProps {
   imageUrl?: string | null;
@@ -68,80 +69,125 @@ export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
         </div>
       </div>
       
-      {/* Hero section with grid layout */}
-      <div className="relative bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Hero Image - 2/3 width on desktop */}
-            <div className="md:col-span-2 h-56 md:h-72 overflow-hidden">
-              <img 
-                src={imageUrl || defaultImage}
-                alt="Campaign Hero"
-                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 md:hidden"></div>
-            </div>
-            
-            {/* Progress Section - 1/3 width on desktop */}
-            <div className="md:col-span-1 flex flex-col justify-center p-6 bg-gray-50 shadow-inner">
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900">Campaign Progress</h3>
-                
-                {/* Progress bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{formatCurrency(currentAmount)}</span>
-                    <span className="font-medium">{formatCurrency(targetAmount)}</span>
-                  </div>
-                  <Progress value={percentage} className="h-2.5 bg-gray-200" />
-                  <p className="text-sm text-teal-700 font-semibold">{percentage}% Complete</p>
+      {/* Added spacing below navigation */}
+      <div className="pt-6"></div>
+      
+      {/* Hero section with grid layout in a bordered container */}
+      <div className="relative bg-white max-w-6xl mx-auto rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Hero Image - 2/3 width on desktop */}
+          <div className="md:col-span-2 h-56 md:h-72 overflow-hidden">
+            <img 
+              src={imageUrl || defaultImage}
+              alt="Campaign Hero"
+              className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 md:hidden"></div>
+          </div>
+          
+          {/* Progress Section - 1/3 width on desktop */}
+          <div className="md:col-span-1 flex flex-col justify-center p-6 bg-gray-50 shadow-inner">
+            <div className="space-y-5">
+              {/* Campaign badge with days remaining */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="bg-teal-50 px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
+                  <Heart size={16} className="text-teal-600 fill-teal-600" />
+                  <span className="text-sm font-medium text-teal-700">{recipientName.split(' ')[0]}'s Campaign</span>
                 </div>
                 
-                {/* Stats cards in a 2-column grid */}
-                <div className="grid grid-cols-2 gap-3 my-4">
-                  <div className="bg-white rounded-lg p-3 shadow-sm">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Users size={16} className="text-teal-600" />
-                      <p className="text-sm font-semibold text-gray-900">{donorsCount} Supporters</p>
-                    </div>
+                {daysRemaining !== null && (
+                  <div className="flex items-center gap-1.5 text-sm bg-gray-100 px-3 py-1 rounded-full">
+                    <Calendar size={14} className="text-teal-600" />
+                    <span className="font-medium text-gray-700">
+                      {daysRemaining > 0 
+                        ? `${daysRemaining} days left` 
+                        : 'Campaign ended'}
+                    </span>
                   </div>
-                  
-                  {daysRemaining !== null && (
-                    <div className="bg-white rounded-lg p-3 shadow-sm">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Calendar size={16} className="text-teal-600" />
-                        <p className="text-sm font-semibold text-gray-900">
-                          {daysRemaining > 0 
-                            ? `${daysRemaining} days left` 
-                            : 'Campaign ended'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Support button */}
-                <Button 
-                  className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white py-3 shadow-md"
-                  onClick={() => scrollToSection("donate-section")}
-                >
-                  Support {recipientName.split(' ')[0]}
-                </Button>
+                )}
               </div>
+              
+              {/* Progress chart */}
+              <div className="relative flex justify-center items-center">
+                <div className="relative w-28 h-28">
+                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                    {/* Background circle */}
+                    <circle
+                      className="text-gray-200 stroke-current"
+                      strokeWidth="10"
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="transparent"
+                    ></circle>
+                    
+                    {/* Progress circle */}
+                    <circle
+                      className="text-teal-600 stroke-current"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="transparent"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - percentage / 100)}`}
+                      transform="rotate(-90 50 50)"
+                    ></circle>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-teal-700">{percentage}%</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Amount raised and supporters count */}
+              <div className="text-center space-y-2">
+                <p className="text-xl font-bold text-gray-900">{formatCurrency(currentAmount)}</p>
+                <p className="text-sm text-gray-600 flex items-center justify-center gap-1.5">
+                  <Users size={14} />
+                  <span>{donorsCount} {donorsCount === 1 ? 'Supporter' : 'Supporters'}</span>
+                </p>
+              </div>
+              
+              {/* Support button */}
+              <Button 
+                className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white py-3 shadow-md"
+                onClick={() => scrollToSection("donate-section")}
+              >
+                Support {recipientName.split(' ')[0]}
+              </Button>
+              
+              {/* Share button */}
+              <Button 
+                variant="outline"
+                className="w-full border-teal-200 text-teal-700 hover:bg-teal-50"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: `Help Support ${recipientName}`,
+                      text: `Check out ${recipientName}'s fundraising campaign`,
+                      url: window.location.href,
+                    }).catch(err => console.error('Error sharing:', err));
+                  } else {
+                    // Fallback for browsers that don't support navigator.share
+                    navigator.clipboard.writeText(window.location.href)
+                      .then(() => alert('Link copied to clipboard!'))
+                      .catch(err => console.error('Error copying link:', err));
+                  }
+                }}
+              >
+                <Share2 size={16} className="mr-1" />
+                Share
+              </Button>
             </div>
           </div>
         </div>
       </div>
       
       {/* Campaign Title Section - Moved below hero image */}
-      <div className="text-center py-8 bg-white shadow-sm">
+      <div className="text-center py-8 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-center items-center gap-2 mb-3">
-            <div className="bg-teal-50 px-4 py-1.5 rounded-full border border-teal-100 flex items-center gap-2">
-              <Heart size={16} className="text-teal-600 fill-teal-600" />
-              <span className="text-sm font-medium text-teal-700">{recipientName.split(' ')[0]}'s Campaign</span>
-            </div>
-          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Help Support {recipientName}</h1>
         </div>
       </div>
