@@ -1,24 +1,56 @@
 
 import React from "react";
 import { Heart } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { Link } from "react-router-dom";
 
 interface EnhancedCampaignHeroProps {
   title: string;
   imageUrl?: string | null;
   recipientName: string;
+  navigationItems: Array<{id: string, name: string, icon: React.ReactNode}>;
 }
 
 export const EnhancedCampaignHero: React.FC<EnhancedCampaignHeroProps> = ({
   title,
   imageUrl,
-  recipientName
+  recipientName,
+  navigationItems
 }) => {
   const defaultImage = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1600&q=80";
   
   const firstName = recipientName.split(' ')[0];
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="relative rounded-t-xl overflow-hidden">
+      {/* Teal Navigation Header */}
+      <div className="bg-teal-600 text-white py-3 px-4 sticky top-0 z-30 shadow-md">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="w-32">
+            <Logo variant="white" />
+          </div>
+          <div className="flex items-center space-x-4">
+            {navigationItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className="flex items-center space-x-1 px-3 py-1 rounded-full hover:bg-teal-500 transition-colors"
+              >
+                <span className="hidden sm:inline">{item.name}</span>
+                {item.icon}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      
       <div className="h-72 md:h-96 w-full overflow-hidden">
         <img 
           src={imageUrl || defaultImage}

@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { ProfileHero } from "@/components/ProfileHero";
@@ -10,7 +9,6 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { PaymentForm } from "@/components/PaymentForm";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { HandHeart } from "lucide-react";
-import { ProfileNavigation } from "@/components/ProfileNavigation";
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -33,10 +31,27 @@ const PublicProfile = () => {
   const firstName = profile.display_name.split(' ')[0];
   const displayStyle = profile.campaign_display_style || 'classic';
 
+  if (displayStyle === 'enhanced') {
+    return (
+      <div className="min-h-screen bg-white">
+        <EnhancedCampaignDisplay 
+          userId={id || ''} 
+          recipientName={profile.display_name}
+          allocations={allocations}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <ProfileHero profile={profile} userId={id || ''} />
-      <ProfileNavigation />
+      
+      <div className="w-full py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ActiveCampaignDisplay userId={id || ''} />
+        </div>
+      </div>
 
       <div id="allocations">
         {allocations.length > 0 ? (
@@ -48,21 +63,7 @@ const PublicProfile = () => {
         )}
       </div>
 
-      {/* Display campaign based on user preference */}
-      {displayStyle === 'enhanced' ? (
-        <div id="campaign" className="w-full py-12 bg-gray-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <EnhancedCampaignDisplay 
-              userId={id || ''} 
-              recipientName={profile.display_name}
-            />
-          </div>
-        </div>
-      ) : (
-        <ActiveCampaignDisplay userId={id || ''} />
-      )}
-
-      {!hidePaymentForm && displayStyle !== 'enhanced' && (
+      {!hidePaymentForm && (
         <div id="donate-section" className="w-full py-16 bg-gradient-to-b from-white to-gray-50">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
